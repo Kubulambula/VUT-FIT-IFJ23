@@ -19,6 +19,11 @@ debug:
 	$(CC) $(CFLAGS_DEBUG) -o $(EXECUTABLE) ./src/*.c
 
 
+# make test - runs all tests
+test:
+	./tests/test.py -c ./ifj23compiler
+
+
 # make zip - zips all required resources in .zip file
 zip:
 	zip -j $(TEAM_NAME).zip Makefile src/*.c src/*.h doc/dokumentace.pdf rozdeleni rozsireni
