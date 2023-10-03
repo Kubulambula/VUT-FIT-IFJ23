@@ -1,3 +1,23 @@
+# === Project specific ignores ===
+
+
+
+# .zip file for submission
+*.zip
+
+
+# IFJ23compiler
+ifj23compiler
+
+# Testdir for is_it_ok.sh
+.testdir
+
+
+
+# === C ignores ===
+
+
+
 # Prerequisites
 *.d
 
