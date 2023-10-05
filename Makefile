@@ -21,7 +21,7 @@ debug:
 
 # make test - runs all tests
 test:
-	./tests/test.py -c ./ifj23compiler
+	./tests/test.py -d ./tests/tests/ -c ./ifj23compiler -i ./ic23int_linux/ic23int
 
 
 # make zip - zips all required resources in .zip file

@@ -1,0 +1,9 @@
+ic23int - referencni interpret ciloveho jazyka IFJcode23
+verze 2023-10-04, 64-bitova
+
+Prubezne doplnovane informace najdete na Moodle predmetu IFJ na strance "Interpret cíloveho kodu IFJcode23".
+
+CHANGES:
+  * 2023-10-04:
+    * zverejnena prvni verze interpretu (upravena kompatibilita s jazykem Swift hlavne u instrukci READ a WRITE, podpora 64-bitoveho int)
+
