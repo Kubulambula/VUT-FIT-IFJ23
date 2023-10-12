@@ -1,6 +1,6 @@
 #ifndef ERROR_H
 #define ERROR_H
-	
+
 	#define OK 0 // no error
 	#define ERR_OK 0 // no error
 	#define ERR_LEXICAL 1 // lexical error
@@ -17,9 +17,9 @@
 	#define ERR_SEMATIC_OTHER 9 // other sematic errors
 	#define ERR_INTERNAL 99 // internal error - e.g. failed malloc()
 
-	#ifdef DEBUG
-		#define ERR_DEBUG 100 // debug error
-	#else
+	#ifdef NDEBUG
 		#define ERR_DEBUG ERR_INTERNAL // if debug is disabled, handle it like ERR_INTERNAL
+	#else
+		#define ERR_DEBUG 100 // debug error
 	#endif
 #endif
