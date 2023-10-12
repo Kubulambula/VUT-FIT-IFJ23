@@ -22,6 +22,11 @@ typedef struct{
 // Returns true on success and false otherwise.
 bool buffer_string_init(BufferString* buffer_string_p);
 
+// Initializes BufferString with content of str.
+// Returns true on success and false otherwise.
+// str MUST BE NULL TERMINATED. Otherwise the behavior is undefined.
+bool buffer_string_init_from(BufferString* buffer_string_p, char* str);
+
 // Frees and uninitializes BufferString.
 void buffer_string_free(BufferString* buffer_string_p);
 
