@@ -19,6 +19,10 @@ debug:
 	$(CC) $(CFLAGS_DEBUG) -o $(EXECUTABLE) ./src/*.c
 
 
+run:
+	./$(EXECUTABLE)
+
+
 # make test - runs all tests
 test:
 	./tests/test.py -d ./tests/tests/ -c ./ifj23compiler -i ./ic23int_linux/ic23int
@@ -31,4 +35,4 @@ zip:
 
 # make is_is_ok - runs is_it_ok.sh
 is_it_ok: zip
-	./external/is_it_ok.sh $(TEAM_NAME).zip $(TEST_DIR)
+	yes | ./external/is_it_ok.sh $(TEAM_NAME).zip $(TEST_DIR)
