@@ -1,8 +1,8 @@
 TEAM_NAME = xnecas31
 
 CC=gcc
-CFLAGS = -std=c99 -Wall -Wextra -pedantic
-CFLAGS_DEBUG = -std=c99 -Wall -Wextra -pedantic -DDEBUG
+CFLAGS = -std=c99 -Wall -Wextra -pedantic -DNDEBUG
+CFLAGS_DEBUG = -std=c99 -Wall -Wextra -pedantic
 
 EXECUTABLE = ifj23compiler
 
