@@ -2,6 +2,7 @@ TEAM_NAME = xnecas31
 
 CC=gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -DNDEBUG
+CFLAGS_WERROR = -std=c99 -Wall -Wextra -Werror -pedantic
 CFLAGS_DEBUG = -std=c99 -Wall -Wextra -pedantic
 
 EXECUTABLE = ifj23compiler
@@ -17,6 +18,10 @@ default:
 # make debug - just like make, but compiles with debug
 debug:
 	$(CC) $(CFLAGS_DEBUG) -o $(EXECUTABLE) ./src/*.c
+
+
+werror:
+	$(CC) $(CFLAGS_WERROR) -o $(EXECUTABLE) ./src/*.c
 
 
 run:
