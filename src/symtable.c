@@ -1,29 +1,9 @@
-#ifndef _SYMTABLE_
-#define _SYMTABLE_
-
 #include <stdlib.h>
-#include <stdbool.h>
 
-#define INIT_SIZE 30
-#define EXPAND 20
-typedef struct
-{
-    char* name;
-    int length; //name length;
-    int value;
-}Symbol;
-
-typedef struct  
-{
-
-    Symbol** table;  //pointer to symbol table
-    int size;   //table size
-    int count;  //count of symbols inserted
-
-}SymTable;
-
+#include "symtable.h"
 
 //TO DO
+// Is this supposed to be static?
 int hash(char* name,int nameLength)
 {
     return 0;
@@ -56,12 +36,10 @@ void SymTable_free(SymTable* table)
     free(table);
 }
 
-bool SymTable_insert(SymTable* ,char* ,int, int );
-
-
+// Is this supposed to be static?
 SymTable* SymTable_resize(SymTable* table)
 {
-    int newSize = table->size + EXPAND;
+    int newSize = table->size + SYMTABLE_EXPAND_SIZE;
     if(newSize % 3 == 0)
         newSize++;
     SymTable* newTable;
@@ -81,7 +59,7 @@ SymTable* SymTable_resize(SymTable* table)
 
 
 //TO DO
-
+// Is this supposed to be static?
 //returns symbol if said symbol exists
 Symbol* SymTable_lookup(SymTable* table,char* name,int nameLength)
 {
@@ -136,7 +114,3 @@ int SymTable_get(SymTable* table,char* name)
 {
     return 0;
 }
-
-
-
-#endif
