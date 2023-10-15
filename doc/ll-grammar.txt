@@ -1,0 +1,30 @@
+<global_statements> ->
+<func_statements> -> <return>
+
+
+
+
+
+<func_definition> -> <func_head> <func_body>
+<func_head> -> TOKEN_KEYWORD_FUNC TOKEN_IDENTIFIER TOKEN_PARENTHESIS_LEFT <func_params> TOKEN_PARENTHESIS_RIGHT <func_type>
+<func_params> -> ɛ
+<func_params> -> <func_param> <func_nth_param> 
+<func_param> -> TOKEN_IDENTIFIER TOKEN_IDENTIFIER TOKEN_COLON <type>
+<func_nth_param> -> TOKEN_COMMA <func_param>
+<func_nth_param> -> ɛ
+<func_type> -> ɛ
+<func_type> -> TOKEN_ARROW <type>
+<func_body> -> TOKEN_BRACKET_LEFT <func_statements> TOKEN_BRACKET_RIGHT
+
+<return> -> TOKEN_KEYWORD_RETURN
+<return> -> TOKEN_KEYWORD_RETURN <expression>
+
+<expression> -> 
+
+<type> -> TOKEN_KEYWORD_INT
+<type> -> TOKEN_KEYWORD_DOUBLE
+<type> -> TOKEN_KEYWORD_STRING
+<type> -> TOKEN_KEYWORD_INT
+<if_statement> -> TOKEN_KEYWORD_IF TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT <if_body>
+<if_body> ->
+<while_statement> ->
