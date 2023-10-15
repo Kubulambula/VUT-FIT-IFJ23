@@ -4,7 +4,8 @@
 
 //TO DO
 // Is this supposed to be static?
-int hash(char* name,int nameLength)
+//yes
+static int hash(char* name,int nameLength)
 {
     return 0;
 }
@@ -37,7 +38,8 @@ void SymTable_free(SymTable* table)
 }
 
 // Is this supposed to be static?
-SymTable* SymTable_resize(SymTable* table)
+// yes.
+static SymTable* SymTable_resize(SymTable* table)
 {
     int newSize = table->size + SYMTABLE_EXPAND_SIZE;
     if(newSize % 3 == 0)
@@ -59,7 +61,8 @@ SymTable* SymTable_resize(SymTable* table)
 
 
 //TO DO
-// Is this supposed to be static?
+// Is this supposed to be static? 
+// no.
 //returns symbol if said symbol exists
 Symbol* SymTable_lookup(SymTable* table,char* name,int nameLength)
 {
