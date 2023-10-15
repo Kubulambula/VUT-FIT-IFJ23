@@ -3,10 +3,11 @@
 
 #include "error.h"
 #include "symtable.h"
+#include "syntax_ll_grammar.h"
 
 
 
-Error parse();
+Error parse(SymTable* sym_table);
 
 
 #endif
