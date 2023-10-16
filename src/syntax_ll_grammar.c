@@ -65,7 +65,12 @@ Error ll_func_params(BufferString* buffer_string){
 		unget_token();
 		return OK;
 	}
-	return OK;
+	// <func_param>
+	Error err = ll_func_param(buffer_string);
+	if (err)
+		return err;
+	// <func_more_params>
+	return ll_func_more_params(buffer_string);
 }
 
 
