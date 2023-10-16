@@ -11,21 +11,6 @@ Token get_next_token(BufferString* b){
 }
 
 
-// <func_definitnions>
-Error ll_func_definitions(BufferString* buffer_string){
-	// <func_definitions> -> <func_definition> <func_definitions>
-	Error err = ll_func_definition(buffer_string);
-	if (err)
-		return err;
-	// <func_definitions> -> ɛ
-	if (get_next_token(buffer_string) != TOKEN_KEYWORD_IF)
-		return OK;
-	// if (get_next_token(buffer_string) == TOKEN_KEYWORD_IF)
-	// <func_definitions> -> <func_definition> <func_definitions>
-	return ll_func_definitions(buffer_string);
-}
-
-
 // <func_definitnion>
 Error ll_func_definition(BufferString* buffer_string){
 	Error err = ll_func_head(buffer_string);
@@ -82,7 +67,7 @@ Error ll_program(BufferString* buffer_string){
 	
 	// <program> -> <func_definitions>
 	if (get_next_token(buffer_string) == TOKEN_KEYWORD_FUNC){
-		err = ll_func_definitions(buffer_string);
+		err = ll_func_definition(buffer_string);
 		return err ? err : ll_program(buffer_string);
 	}
 

@@ -4,7 +4,7 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 
 <program> -> TOKEN_EOL <program>
 <program> -> <statements>
-<program> -> <func_definitions>
+<program> -> <func_definition> <program>
 <program> -> TOKEN_EOF
 
 ===/program===
@@ -66,9 +66,6 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 
 
 ===func_definition===
-
-<func_definitions> -> ɛ
-<func_definitions> -> <func_definition> <func_definitions>
 
 <func_definition> -> <func_head> <func_body>
 
