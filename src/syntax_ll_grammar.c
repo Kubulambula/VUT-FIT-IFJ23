@@ -10,6 +10,10 @@ Token get_next_token(BufferString* b){
 	return TOKEN_ERR + x++;
 }
 
+void unget_token(){
+
+}
+
 
 // <func_definitnion>
 Error ll_func_definition(BufferString* buffer_string){
@@ -23,6 +27,9 @@ Error ll_func_definition(BufferString* buffer_string){
 // <func_head>
 // TOKEN_KEYWORD_FUNC TOKEN_IDENTIFIER TOKEN_PARENTHESIS_LEFT <func_params> TOKEN_PARENTHESIS_RIGHT <func_type>
 Error ll_func_head(BufferString* buffer_string){
+	// TOKEN_KEYWORD_FUNC
+	if (get_next_token(buffer_string) != TOKEN_KEYWORD_FUNC)
+		return ERR_SYNTAX;
 	// TOKEN_IDENTIFIER
 	if (get_next_token(buffer_string) != TOKEN_IDENTIFIER)
 		return ERR_SYNTAX;
@@ -31,8 +38,17 @@ Error ll_func_head(BufferString* buffer_string){
 		return ERR_SYNTAX;
 	// <func_params>
 	Error err = ll_func_params(buffer_string);
+	if (err)
+		return err;
+	// TOKEN_PARENTHESIS_RIGHT
+	if (get_next_token(buffer_string) != TOKEN_PARENTHESIS_RIGHT)
+		return ERR_SYNTAX;
+	// <func_type>
+	err = ll_func_type(buffer_string);
+	if (err)
+		return err;
 
-	return err;
+	return OK;
 }
 
 
@@ -44,7 +60,66 @@ Error ll_func_body(BufferString* buffer_string){
 
 // <func_params>
 Error ll_func_params(BufferString* buffer_string){
+	// ɛ
+	if (get_next_token(buffer_string) != TOKEN_IDENTIFIER){
+		unget_token();
+		return OK;
+	}
 	return OK;
+}
+
+
+// <func_param>
+Error ll_func_param(BufferString* buffer_string){
+	// TOKEN_IDENTIFIER - param name
+	if (get_next_token(buffer_string) != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+	// TOKEN_IDENTIFIER - param identifier
+	if (get_next_token(buffer_string) != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+	// TOKEN_COLON
+	if (get_next_token(buffer_string) != TOKEN_COLON)
+		return ERR_SYNTAX;
+	// <type>
+	return ll_type(buffer_string);
+}
+
+
+Error ll_func_more_params(BufferString* buffer_string){
+	// ɛ
+	if (get_next_token(buffer_string) != TOKEN_COMMA){
+		unget_token();
+		return OK;
+	}
+	// TOKEN_COMMA
+	// <func_param>
+	Error err = ll_func_param(buffer_string);
+	if (err)
+		return err;
+	// <func_more_params>
+	return ll_func_more_params(buffer_string);
+}
+
+
+
+Error ll_func_type(BufferString* buffer_string){
+	if (get_next_token(buffer_string) != TOKEN_ARROW){
+		unget_token();
+		return OK;
+	}
+	return ll_type(buffer_string);
+}
+
+
+Error ll_type(BufferString* buffer_string){
+	switch (get_next_token(buffer_string)){
+		case TOKEN_KEYWORD_INT:
+		case TOKEN_KEYWORD_DOUBLE:
+		case TOKEN_KEYWORD_STRING:
+			return OK;
+		default:
+			return ERR_SYNTAX;
+	}
 }
 
 
@@ -67,6 +142,7 @@ Error ll_program(BufferString* buffer_string){
 	
 	// <program> -> <func_definitions>
 	if (get_next_token(buffer_string) == TOKEN_KEYWORD_FUNC){
+		unget_token();
 		err = ll_func_definition(buffer_string);
 		return err ? err : ll_program(buffer_string);
 	}

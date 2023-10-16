@@ -72,10 +72,10 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 <func_head> -> TOKEN_KEYWORD_FUNC TOKEN_IDENTIFIER TOKEN_PARENTHESIS_LEFT <func_params> TOKEN_PARENTHESIS_RIGHT <func_type>
 
 <func_params> -> ɛ
-<func_params> -> <func_param> <func_nth_param> 
+<func_params> -> <func_param> <func_more_params>
 <func_param> -> TOKEN_IDENTIFIER TOKEN_IDENTIFIER TOKEN_COLON <type>
-<func_nth_param> -> ɛ
-<func_nth_param> -> TOKEN_COMMA <func_param>
+<func_more_params> -> ɛ
+<func_more_params> -> TOKEN_COMMA <func_param> <func_more_params>
 
 <func_type> -> ɛ
 <func_type> -> TOKEN_ARROW <type>
