@@ -8,9 +8,7 @@
 #include "buffer_string.h"
 #include "lexer.h"
 
-bool DELIMITER = 0;
-bool BLANK =0;
-FILE* g_file; 
+FILE* source_file; 
 
 typedef enum{
     // Error token
@@ -64,32 +62,56 @@ typedef enum{
     TOKEN_IDENTIFIER, // variable / function identifier
 } Token;
 
+typedef enum {
+    // Start state
+    LEXER_STATE_START,
+    LEXER_STATE_COMMENT,
+    // Identifier, possible keyword
+    LEXER_STATE_IDENTIFIER_OR_KEYWORD,
+    // Literals
+    LEXER_STATE_INT,
+    LEXER_STATE_DOUBLE,
+    LEXER_STATE_STRING,
+
+    //TODO 
+    LEXER_STATE_MINUS_OR_ARROW,
+    LEXER_STATE_MORE_POSSIBLE_EQUAL,
+    LEXER_STATE_LESS_POSSIBLE_EQUAL,
+    LEXER_STATE_POSSIBLE_EQUALS,
+    LEXER_STATE_POSSIBLE_NOT_EQUALS,
+    LEXER_STATE_POSSIBLE_COALESCING,
 
 
 
-void initLexer(char* filename){
-    //printf("%s",filename);
-    g_file = fopen(filename, "r");
-    if (g_file == NULL) {
-        perror("Error opening file for reading");
-        exit(1); 
+
+    // End of a file
+    LEXER_STATE_EOF,
+    // Invalide character
+    LEXER_STATE_INVALID_CHARACTER,
+} State;
+
+
+void initLexer(FILE* file){
+    if (file == NULL){
+        return;
     }
+    source_file = file;
 };
 
 
 //
 char get_next_char(){
-    char Nextchar = getc(g_file);
+    char Nextchar = getc(source_file);
     //printf("%C",Nextchar);
     return Nextchar;
 };
 
-// Handle whitespaces
-void skip_white_space(char* whiteSpace){
-    do{
-        *whiteSpace = get_next_char();
-    } while(isblank(*whiteSpace));
-};
+void skip_white_space(char whiteSpace){
+    while(isblank(whiteSpace)) {
+        whiteSpace = get_next_char();
+    }
+    ungetc(source_file,whiteSpace);
+}
 
 // Handle comments mutli line
 void skip_comments_ML(){
@@ -111,8 +133,10 @@ void skip_comments_SL(){
 };
 
 
-//
-bool is_keyword(char *str, int *TokenType){
+// Handle keyword matching
+bool is_keyword(BufferString* buffer_string, Token* TokenType){
+
+
     // List of C keywords
     int offset = 4;
 
@@ -126,7 +150,7 @@ bool is_keyword(char *str, int *TokenType){
 
     // Check if the input string matches any keyword
     for (size_t i = 0; i < numKeywords; ++i) {
-        if (strcmp(str, keywords[i]) == 0) {
+        if (buffer_string_cmp_str(buffer_string,keywords[i]) == 0) {
             *TokenType = i + offset;
             return true;  // Its a keyword
         }
@@ -135,26 +159,7 @@ bool is_keyword(char *str, int *TokenType){
     return false;  // Not a keyword
 }
 
-//TO DO 
-bool is_double(){
-
-}
-
-//TO DO
-bool is_int(){
-
-}
-
-//TO DO
-bool is_string(){
-
-}
-
-//TO DO
-bool is_identifier(){
-
-}
-
+/*
 // Delimeter functions checks if theres another token ahead
 bool is_delimiter(char Char){
     // List of common delimiters, add more as needed
@@ -170,107 +175,153 @@ bool is_delimiter(char Char){
 
     return false;  // Not a delimiter
 }
-
-//TO DO
-bool is_Miscellaneous(char *str, int *TokenType){
-
-}
-
-//TO DO
-bool is_aritmethic_operator(char *str, int *TokenType){
-
-}
-
-//TO DO
-bool is_comparison_operator(char Char, int *TokenType){
-
-} 
+*/
 
 // Funkce najde a vytvori token
 Token get_next_token(BufferString* buffer_string){    
-    
-    //TO DO, example 'a+b*c' or comparison
-    if(DELIMITER==1){
-    /*
-        is_aritmethic_operator();
-        is_comparison_operator();
-        is_Miscellaneous();
-    */
-    }
 
+        char nextChar;
+        int tokenType = 0;
+        Token token;
+        State state = LEXER_STATE_START;
 
-    int tokenType = 0;
-    char nextChar = get_next_char();
-    Token token;
-    
-    //End of the file, nothing to do
-    if(nextChar == EOF){
-        //should still return token
-        exit;
-    }
+        while(1){
 
-    //White space
-    if(isblank(nextChar)){
-        skip_white_space(nextChar);
-    }
-
-    //Comment
-    if(nextChar == '/'){
-        nextChar = get_next_char();
-        if(nextChar == '*'){skip_comments_ML();}
-        if(nextChar == '/'){skip_comments_SL();}
-    }
-
-
-
-    // TOKEN STARTS WITH NUMBER
-    if(isalnum(nextChar)){
-        do {
             nextChar = get_next_char();
-            if(nextChar == EOF){exit;}
 
-            buffer_string->string[buffer_string->length]=nextChar;
-            buffer_string_append_char(buffer_string,nextChar);
-            buffer_string->length++;
-            buffer_string->alloc_length++;
-        
-        } while(!isblank(nextChar) && !is_delimiter(nextChar));
-        
+            switch (state) {
+                case LEXER_STATE_START:
+                    
+                    //White space
+                    if(isblank(nextChar)){
+                        skip_white_space(nextChar);
+                    }
+                    
+                    //Comment
+                    if(nextChar == '/'){
+                        state = LEXER_STATE_COMMENT;
+                    }
+                    
+                    //END OF FILE
+                    if(nextChar == EOF){
+                        state = LEXER_STATE_EOF;
+                    }
 
-    }
+                    //END OF LINE
+                    if(nextChar == '\n'){
+                        token = TOKEN_EOL;
+                        return token;
+                    }
 
-    // TOKEN STARTS WITH A LETTER
-    if(isalpha(nextChar)){
-        do {
-            nextChar = get_next_char();
-            if(nextChar == EOF){exit;}
+                    //token is int or double
+                    if(isalnum(nextChar)){
+                        state = LEXER_STATE_INT; 
+                    }
 
-            buffer_string->string[buffer_string->length]=nextChar;
-            buffer_string_append_char(buffer_string,nextChar);
-            buffer_string->length++;
-            buffer_string->alloc_length++;
-        
-        } while(!isblank(nextChar));
+                    //token is keyword or identifier
+                    if(isalpha(nextChar) || nextChar=='_'){
+                        state = LEXER_STATE_IDENTIFIER_OR_KEYWORD; 
+                    }    
 
-        if(is_keyword(buffer_string->string,tokenType)){
-            token = tokenType;
-            return;
+                    //token is plus
+                    if(nextChar=='+'){
+                        token = TOKEN_OPERATOR_PLUS;
+                        return token;
+                    }
+
+                    //token is multiplication
+                    if(nextChar=='*'){
+                        token = TOKEN_OPERATOR_MULTIPLICATION;
+                        return token;
+                    }
+
+                    //token is comma
+                    if(nextChar==','){
+                        token = TOKEN_COMMA;
+                        return token;
+                    }
+
+                    //token is colon
+                    if(nextChar==':'){
+                        token = TOKEN_COLON;
+                        return token;
+                    }
+
+                    //token could be minus or arrow
+                    if(nextChar=='-'){
+                        state = LEXER_STATE_MINUS_OR_ARROW;
+                    }
+
+                    //token could be "less than" or "less than or equal"
+                    //token could be "more than" or "more than or equal"
+                    //token could be "negation" or "not equal"
+                    //token could be ""
+
+                    break;
+                
+                case LEXER_STATE_EOF:
+                    token = TOKEN_EOF;
+                    break;
+
+                case LEXER_STATE_COMMENT:
+                    if(nextChar == '*'){skip_comments_ML();}
+                    if(nextChar == '/'){skip_comments_SL();}
+                    break;
+                
+                case LEXER_STATE_INT:
+                    if (isalnum(nextChar)){
+                        buffer_string_append_char(buffer_string, nextChar);
+                    } else{
+                        if( nextChar == '.' || nextChar=='e' || nextChar=='E'){
+                            buffer_string_append_char(buffer_string, nextChar);
+                            state = LEXER_STATE_DOUBLE;
+                        } else{
+                            token = TOKEN_LITEREAL_INT;
+                            return token;
+                        }
+                    }
+                    break;
+
+                case LEXER_STATE_DOUBLE:
+                    if (isalnum(nextChar)){
+                        buffer_string_append_char(buffer_string, nextChar);
+                    } else{
+                        ungetc(nextChar,source_file);
+                        token = TOKEN_LITEREAL_DOUBLE;
+                        return token;
+                    }
+                    break;
+
+                case LEXER_STATE_IDENTIFIER_OR_KEYWORD:
+                    if(isalnum(nextChar) || isalpha(nextChar) || nextChar=='_'){
+                        buffer_string_append_char(buffer_string, nextChar);
+                    } else{
+                        ungetc(nextChar,source_file);
+                        if(is_keyword(buffer_string,tokenType)){
+                            token = tokenType;
+                        } else {
+                            token = TOKEN_IDENTIFIER;
+                        }
+                        return token;
+                    }
+
+                    break;
+                
+                /*
+                case LEXER_STATE_START:
+                    
+                    break;
+
+                case LEXER_STATE_START:
+                    
+                    break;
+                
+                */
+                default:
+
+                    break;
         }
-    }   
-
-    // TO DO, could be increment or assign after white space
-    if(is_delimiter(nextChar)){
-
-
     }
 
-};
-
-/* TESTING
-int main(int argc, char* argv[]) {
-	initLexer("test");
-    BufferString* buffer_string;
-    get_next_token(buffer_string);
-	return OK;
 }
-*/
+
