@@ -15,12 +15,85 @@ void unget_token(){
 }
 
 
+
+Error ll_while(BufferString* buffer_string){
+	Error err = ll_while_head(buffer_string);
+	if (err)
+		return err;
+	return ll_statement_body(buffer_string);
+}
+
+
+//  TOKEN_KEYWORD_WHILE TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
+Error ll_while_head(BufferString* buffer_string){
+	// TOKEN_KEYWORD_WHILE
+	if (get_next_token(buffer_string) != TOKEN_KEYWORD_WHILE)
+		return ERR_SYNTAX;
+	// TOKEN_PARENTHESIS_LEFT
+	if (get_next_token(buffer_string) != TOKEN_PARENTHESIS_LEFT)
+		return ERR_SYNTAX;
+	// <func_params>
+	Error err = ll_expression(buffer_string);
+	if (err)
+		return err;
+	// TOKEN_PARENTHESIS_RIGHT
+	if (get_next_token(buffer_string) != TOKEN_PARENTHESIS_RIGHT)
+		return ERR_SYNTAX;
+	
+	return OK;
+}
+
+
+Error ll_if(BufferString* buffer_string){
+	// if_head
+	Error err = ll_if_head(buffer_string);
+	if (err)
+		return err;
+	// <statement_body> - if body
+	err = ll_statement_body(buffer_string);
+	if (err)
+		return err;
+	// TOKEN_KEYWORD_ELSE
+	if (get_next_token(buffer_string) != TOKEN_KEYWORD_ELSE)
+		return ERR_SYNTAX;
+	// <statement_body> - else body
+	err = ll_statement_body(buffer_string);
+	return err;
+}
+
+
+// TOKEN_KEYWORD_IF TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
+// TOKEN_KEYWORD_IF TOKEN_KEYWORD_LET TOKEN_IDENTIFIER
+Error ll_if_head(BufferString* buffer_string){
+	// TOKEN_KEYWORD_IF
+	Token current_token = get_next_token(buffer_string);
+	if (current_token != TOKEN_KEYWORD_IF)
+		return ERR_SYNTAX;
+	// TOKEN_PARENTHESIS_LEFT | TOKEN_KEYWORD_LET
+	current_token = get_next_token(buffer_string);
+	// TOKEN_PARENTHESIS_LEFT
+	if (current_token == TOKEN_PARENTHESIS_LEFT){
+		// <expression>
+		Error err = ll_expression(buffer_string);
+		if (err)
+			return err;
+		// TOKEN_PARENTHESIS_RIGHT
+		return (get_next_token(buffer_string) == TOKEN_PARENTHESIS_RIGHT) ? OK : ERR_SYNTAX;
+
+	// TOKEN_KEYWORD_LET
+	} else if (current_token == TOKEN_KEYWORD_LET){
+		return (get_next_token(buffer_string) == TOKEN_IDENTIFIER) ? OK : ERR_SYNTAX;
+	}
+	return ERR_SYNTAX;
+}
+
+
 // <func_definitnion>
 Error ll_func_definition(BufferString* buffer_string){
 	Error err = ll_func_head(buffer_string);
 	if (err)
 		return err;
-	return ll_func_body(buffer_string);
+	return ll_statement_body(buffer_string);
 }
 
 
@@ -48,19 +121,6 @@ Error ll_func_head(BufferString* buffer_string){
 	if (err)
 		return err;
 
-	return OK;
-}
-
-
-// <func_body>
-Error ll_func_body(BufferString* buffer_string){
-	if (get_next_token(buffer_string) != TOKEN_BRACE_LEFT)
-		return ERR_SYNTAX;
-	Error err = ll_statements(buffer_string);
-	if (err)
-		return err;
-	if (get_next_token(buffer_string) != TOKEN_BRACE_RIGHT)
-		return ERR_SYNTAX;
 	return OK;
 }
 
@@ -135,8 +195,48 @@ Error ll_type(BufferString* buffer_string){
 }
 
 
+Error ll_literal(BufferString* buffer_string){
+	switch (get_next_token(buffer_string)){
+		case TOKEN_LITEREAL_INT:
+		case TOKEN_LITEREAL_DOUBLE:
+		case TOKEN_LITEREAL_STRING:
+			return OK;
+		default:
+			return ERR_SYNTAX;
+	}
+}
+
+
+Error ll_statement_body(BufferString* buffer_string){
+	if (get_next_token(buffer_string) != TOKEN_BRACE_LEFT)
+		return ERR_SYNTAX;
+	Error err = ll_statements(buffer_string);
+	if (err)
+		return err;
+	if (get_next_token(buffer_string) != TOKEN_BRACE_RIGHT)
+		return ERR_SYNTAX;
+	return OK;
+}
+
+
 // <statements>
+// TODO
 Error ll_statements(BufferString* buffer_string){
+	Token current_token = get_next_token(buffer_string);
+	switch (current_token){
+		case TOKEN_KEYWORD_IF:
+			/* code */
+			break;
+		case TOKEN_KEYWORD_WHILE:
+			break;
+		
+		default:
+			break;
+	}
+	return OK;
+}
+
+Error ll_expression(BufferString* buffer_string){
 	return OK;
 }
 
