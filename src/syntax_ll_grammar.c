@@ -157,13 +157,24 @@ Error ll_program(BufferString* buffer_string){
 	return err ? err : ll_program(buffer_string);
 }
 
+//<lit>
+Error ll_lit(BufferString* buffer_string, Token t){
+	switch(t){
+		case TOKEN_LITEREAL_INT:	//<lit> -> #Int literal
+		case TOKEN_LITEREAL_DOUBLE:	//<lit> -> #Double literal
+		case TOKEN_LITEREAL_STRING:	//<lit> -> #String literal
+			return true;
+			break;
+		default:
+			return false;
+			break;
+	}
+}
+
 // <val>
 Error ll_val(BufferString* buffer_string, Token t){
 	switch(t){
 		case TOKEN_IDENTIFIER:			//<val> -> #identif
-		case TOKEN_LITEREAL_INT:		//<val> -> #int literal
-		case TOKEN_LITEREAL_DOUBLE:		//<val> -> #double literal
-		case TOKEN_LITEREAL_STRING:		//<val> -> #string literal
 			return true;	
 			break;
 		case TOKEN_KEYWORD_FUNC:	 	//<val> -> <func_call>
@@ -174,7 +185,7 @@ Error ll_val(BufferString* buffer_string, Token t){
 			return ll_expressions(buffer_string, get_next_token(buffer_string)) && (get_next_token(buffer_string) == TOKEN_PARENTHESIS_RIGHT);
 			break;
 		default:
-			return false;
+			return ll_lit(buffer_string, t);
 			break;
 	}
 }
@@ -192,7 +203,7 @@ Error ll_more_val(BufferString* buffer_string, Token t){
 
 		//<more_val> -> ɛ :
 		case TOKEN_EOF:
-		case TOKEN_EOL:				
+		case TOKEN_EOL:
 		case TOKEN_BRACE_RIGHT:						// }
 		case TOKEN_PARENTHESIS_RIGHT:				// )
 		case TOKEN_OPERATOR_LESS_THAN:				// <
