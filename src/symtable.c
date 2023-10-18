@@ -23,7 +23,7 @@ static bool SymTable_init_Spec(SymTable* symTable,int size)
     symTable->size=size;
     symTable->count=0;
     
-    symTable->table = malloc(size*sizeof(Symbol*)); 
+    symTable->table = calloc(size*sizeof(Symbol*)); 
     if(symTable->table == NULL)
         return false;
     
@@ -55,9 +55,10 @@ static SymTable* SymTable_resize(SymTable* symTable)
         if(!SymTable_insert(newTable,symTable->table[i]->name,symTable->table[i]->value))
         {
             SymTable_free(newTable);
-            SymTable_free(symTable);
             return NULL;
         }
+    SymTable_free(symTable);
+    *symTable = newTable;
     }
     
     return newTable;
@@ -79,10 +80,11 @@ static Symbol* SymTable_lookup(SymTable* symTable,char* name)
     while(symTable->table[index] != NULL)
     {
         
-        if(strcmp(name,symTable->table[index]->name) != 0)
-            found=false;
-        if(found == true)
-            return symTable->table[index];
+        if(strcmp(name,symTable->table[index]->name) != 0){
+            index += 3;
+            continue;
+        }
+        return symTable->table[index];
     
         found = true;
         index +=3;
@@ -95,7 +97,7 @@ static Symbol* SymTable_lookup(SymTable* symTable,char* name)
 bool SymTable_insert(SymTable* symTable,char* name, int value)
 {
 
-    if(symTable->size = symTable->count -1)
+    if(symTable->size == symTable->count -1)
         SymTable_resize(symTable);
     
 
@@ -103,7 +105,7 @@ bool SymTable_insert(SymTable* symTable,char* name, int value)
     
     while(symTable->table[index] != NULL )
     {
-        if(strcmp(symTable->table[index]->name,name))
+        if(strcmp(symTable->table[index]->name,name) == 0)
         {
             symTable->table[index]->value = value;
             return true;
