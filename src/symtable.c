@@ -23,7 +23,7 @@ static bool SymTable_init_Spec(SymTable* symTable,int size)
     symTable->size=size;
     symTable->count=0;
     
-    symTable->table = calloc(size*sizeof(Symbol*)); 
+    symTable->table = calloc(size,sizeof(Symbol*)); 
     if(symTable->table == NULL)
         return false;
     
@@ -48,7 +48,7 @@ static SymTable* SymTable_resize(SymTable* symTable)
     int newSize = symTable->size + SYMTABLE_EXPAND_SIZE;
     if(newSize % 3 == 0)
         newSize++;
-    SymTable* newTable;
+    SymTable* newTable = malloc(sizeof(symTable));
     SymTable_init_Spec(newTable,newSize);
     for(int i = 0;i<symTable->size;i++)
     {
@@ -58,7 +58,7 @@ static SymTable* SymTable_resize(SymTable* symTable)
             return NULL;
         }
     SymTable_free(symTable);
-    *symTable = newTable;
+    *symTable = *newTable;
     }
     
     return newTable;
