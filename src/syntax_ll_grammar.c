@@ -54,6 +54,13 @@ Error ll_func_head(BufferString* buffer_string){
 
 // <func_body>
 Error ll_func_body(BufferString* buffer_string){
+	if (get_next_token(buffer_string) != TOKEN_BRACE_LEFT)
+		return ERR_SYNTAX;
+	Error err = ll_statements(buffer_string);
+	if (err)
+		return err;
+	if (get_next_token(buffer_string) != TOKEN_BRACE_RIGHT)
+		return ERR_SYNTAX;
 	return OK;
 }
 
@@ -137,16 +144,18 @@ Error ll_statements(BufferString* buffer_string){
 // <program>
 Error ll_program(BufferString* buffer_string){
 	Error err;
+	// diky za najiti chyby Jimbo <3
+	Token current_token = get_next_token(buffer_string);
 	// <program> -> TOKEN_EOL <program>
-	if (get_next_token(buffer_string) == TOKEN_EOL)
+	if (current_token == TOKEN_EOL)
 		return ll_program(buffer_string);
 
 	// <program> -> TOKEN_EOF
-	if (get_next_token(buffer_string) == TOKEN_EOF)
+	if (current_token == TOKEN_EOF)
 		return OK;
 	
 	// <program> -> <func_definitions>
-	if (get_next_token(buffer_string) == TOKEN_KEYWORD_FUNC){
+	if (current_token == TOKEN_KEYWORD_FUNC){
 		unget_token();
 		err = ll_func_definition(buffer_string);
 		return err ? err : ll_program(buffer_string);
