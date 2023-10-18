@@ -37,7 +37,7 @@ bool SymTable_init(SymTable* symTable);
 void SymTable_free(SymTable* symTable);
 
 /**
- * Inserts new Symbol to SymTable
+ * Inserts new Symbol to SymTable, if item allready exists, just sets new value
  * 
  * @param symTable Pointer to initialized SymTable
  * @param name Pointer to name String (must end in \0)  

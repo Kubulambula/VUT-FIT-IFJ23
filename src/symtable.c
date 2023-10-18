@@ -6,7 +6,7 @@
 
 static int64_t hash(char* name)
 {
-    int64_t hash = 0;
+    int64_t hash = 1;
     int index = 0;
     while(name[index] != '\0')
     {
@@ -101,8 +101,16 @@ bool SymTable_insert(SymTable* symTable,char* name, int value)
 
     int index = hash(name) % symTable->size;
     
-    while(symTable->table[index] != NULL)
+    while(symTable->table[index] != NULL )
+    {
+        if(strcmp(symTable->table[index]->name,name))
+        {
+            symTable->table[index]->value = value;
+            return true;
+        }
         index +=3;
+    }
+    
     
     symTable->table[index] = malloc(sizeof(Symbol));
     if (symTable->table[index] == NULL)
