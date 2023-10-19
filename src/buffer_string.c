@@ -116,16 +116,3 @@ bool buffer_string_append_str(BufferString* buffer_string_p, char* str){
 	buffer_string_p->length += str_length;
 	return true;
 }
-
-
-inline bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str){
-	assert(buffer_string_p != NULL);
-	assert(str != NULL);
-	return strcmp(buffer_string_p->string, str);
-}
-
-
-inline unsigned buffer_string_get_length(BufferString* buffer_string_p){
-	assert(buffer_string_p != NULL);
-	return buffer_string_p->length;
-}

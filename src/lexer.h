@@ -1,6 +1,9 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <stdbool.h>
+#include "buffer_string.h"
+
 typedef enum{
     // Error token
     TOKEN_ERR, // token indicating lexical error (ERR_LEXICAL)
@@ -38,10 +41,10 @@ typedef enum{
     TOKEN_OPERATOR_EQUALS, // ==
     TOKEN_OPERATOR_NOT_EQUALS, // !=
     // Literals
-    TOKEN_LITEREAL_INT, // an int literal
-    TOKEN_LITEREAL_DOUBLE, // a double literal
-    TOKEN_LITEREAL_STRING, // a string literal
-    TOKEN_LITEREAL_MULTILINE_STRING, // a multiline string literal
+    TOKEN_LITERAL_INT, // an int literal
+    TOKEN_LITERAL_DOUBLE, // a double literal
+    TOKEN_LITERAL_STRING, // a string literal
+    //TOKEN_LITERAL_MULTILINE_STRING, // a multiline string literal // this can be passed as a regular string
     // Miscellaneous 
     TOKEN_ASSIGN, // =
     TOKEN_EXCLAMATION, // ! - after identifier it's OPERATOR_FORCED_UNWRAPPING and before it's OPERATOR_NOT
@@ -54,6 +57,7 @@ typedef enum{
     TOKEN_IDENTIFIER, // variable / function identifier
 } Token;
 
+
 typedef enum {
     // Start state
     LEXER_STATE_START, // starting state
@@ -65,41 +69,24 @@ typedef enum {
     LEXER_STATE_DOUBLE, // State from 'LEXER_STATE_INT' -> 'LEXER_STATE_DOUBLE'
     //States to check double char operators and such
     //All start from 'LEXER_STATE_START'
-    LEXER_STATE_STRING, // Leads from '"' to anything until '"'
     LEXER_STATE_MINUS_OR_ARROW, // Leads from '-' -> '->'
     LEXER_STATE_GREATER_POSSIBLE_EQUAL, // Leads from '>' -> '>='
     LEXER_STATE_LESS_POSSIBLE_EQUAL, // Leads from '<' -> '<='
     LEXER_STATE_POSSIBLE_EQUALS, // Leads from '=' -> '=='
     LEXER_STATE_POSSIBLE_NOT_EQUALS, // Leads from '!' -> '!='
     LEXER_STATE_POSSIBLE_COALESCING, // Leads from '?' -> '??'
-    LEXER_STATE_POSSIBLE_MULTI_STRING, // Leads from " -> ""
-    LEXER_STATE_MULTI_STRING, // Leads from "" -> """
+    LEXER_STATE_STRING_BEGIN,
+    LEXER_STATE_STRING,
+    LEXER_STATE_POSSIBLE_MULTILINE_STRING,
+    LEXER_STATE_MULTILINE_STRING,
+    LEXER_STATE_POSSIBLE_MULTILINE_STRING_END,
+    LEXER_STATE_MULTILINE_STRING_END,
     // End of a file
     LEXER_STATE_EOF,
     // Invalide character
     LEXER_STATE_INVALID_CHARACTER,
 } State;
 
-
-
-// gets next char
-char get_next_char();
-
-// sets source_file
-void initLexer(FILE* file);
-
-//skips white space
-void skip_white_space(char whiteSpace);
-
-// skips single line comment
-// TODO should still return '\n' as token
-void skip_comments_SL();
-
-// skips multiline comments
-void skip_comments_ML();
-
-// checks if loaded buffer_string is keyword 
-bool is_keyword(BufferString* buffer_string, Token* TokenType);
 
 // finds next token
 // returns Token type
