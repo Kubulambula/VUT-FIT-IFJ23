@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 
-#define SYMTABLE_INIT_SIZE 30
+#define SYMTABLE_INIT_SIZE 5
 #define SYMTABLE_EXPAND_SIZE 20
 
 

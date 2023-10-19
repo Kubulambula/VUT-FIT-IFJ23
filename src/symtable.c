@@ -1,18 +1,16 @@
 #include <stdlib.h>
 #include <string.h>
-
 #include "symtable.h"
-
-
-static int64_t hash(char* name)
+static unsigned hash(char* name,int size)
 {
-    int64_t hash = 1;
-    int index = 0;
+    unsigned long long hash = 1;
+    unsigned int index = 0;
     while(name[index] != '\0')
     {
         hash *=(int)name[index];
+        index++;
     }
-    return hash;
+    return hash % size;
 }
 
 static bool SymTable_init_Spec(SymTable* symTable,int size)
@@ -37,31 +35,78 @@ bool SymTable_init(SymTable* symTable)
 
 void SymTable_free(SymTable* symTable)
 {
-    for(int i=0;i<symTable->size;i++)
-        free(symTable->table[i]);
-    free(symTable->table);
-    free(symTable);
+    if(symTable != NULL)
+    {
+        for(int i=0;i<symTable->size;i++)
+        {
+            if(symTable->table[i]!=NULL)
+            {
+                free(symTable->table[i]->name);
+                free(symTable->table[i]);
+
+            }
+        }
+        free(symTable->table);
+        free(symTable);
+    }
 }
 
-static SymTable* SymTable_resize(SymTable* symTable)
+static bool SymTable_resize(SymTable* symTable)
 {
     int newSize = symTable->size + SYMTABLE_EXPAND_SIZE;
     if(newSize % 3 == 0)
         newSize++;
-    SymTable* newTable = malloc(sizeof(symTable));
-    SymTable_init_Spec(newTable,newSize);
+    
+    Symbol** newTable= calloc(newSize,sizeof(Symbol*)); 
+    SymTable temp;
+    temp.table = newTable;
+    temp.size = newSize;
+    temp.count = 0;
+    
     for(int i = 0;i<symTable->size;i++)
     {
-        if(!SymTable_insert(newTable,symTable->table[i]->name,symTable->table[i]->value))
+        if(symTable->table[i] != NULL  && !SymTable_insert(&temp,symTable->table[i]->name,symTable->table[i]->value))
         {
-            SymTable_free(newTable);
-            return NULL;
+            return false;
         }
-    SymTable_free(symTable);
-    *symTable = *newTable;
     }
+
+    symTable->table = newTable;
+    symTable->size = newSize;
+    return true;
+}
+
+
+//inserts new symbol
+bool SymTable_insert(SymTable* symTable,char* name, int value)
+{
+    if(symTable->count == symTable->size-1 )
+    {
+        if(!SymTable_resize(symTable))
+            return false;
+    }
+
+    int index = hash(name,symTable->size);
+   
+    while(symTable->table[index] != NULL )
+    {
+        if(strcmp(symTable->table[index]->name,name) == 0)
+        {
+            
+            symTable->table[index]->value = value;
+            return true;
+        }
+        index = (index+3 ) % symTable->size;
+    }
+     
+    symTable->table[index] = malloc(sizeof(Symbol));
+    if (symTable->table[index] == NULL)
+        return false;
     
-    return newTable;
+    symTable->table[index]->name = name;
+    symTable->table[index]->value = value;
+    symTable->count++;
+    return true;
 }
 
 
@@ -73,10 +118,10 @@ static Symbol* SymTable_lookup(SymTable* symTable,char* name)
 
 
 
-    int index= hash(name) % symTable->size;
+    int index= hash(name,symTable->size) ;
     
     
-    bool found=true;
+   
     while(symTable->table[index] != NULL)
     {
         
@@ -86,42 +131,11 @@ static Symbol* SymTable_lookup(SymTable* symTable,char* name)
         }
         return symTable->table[index];
     
-        found = true;
-        index +=3;
     }
 
     return NULL;
 }
 
-//inserts new symbol
-bool SymTable_insert(SymTable* symTable,char* name, int value)
-{
-
-    if(symTable->size == symTable->count -1)
-        SymTable_resize(symTable);
-    
-
-    int index = hash(name) % symTable->size;
-    
-    while(symTable->table[index] != NULL )
-    {
-        if(strcmp(symTable->table[index]->name,name) == 0)
-        {
-            symTable->table[index]->value = value;
-            return true;
-        }
-        index +=3;
-    }
-    
-    
-    symTable->table[index] = malloc(sizeof(Symbol));
-    if (symTable->table[index] == NULL)
-        return false;
-    
-    symTable->table[index]->name = name;
-    symTable->table[index]->value = value;
-    return true;
-}
 
 //sets value of symbol
 bool SymTable_set(SymTable* symTable,char* name, int value)
@@ -140,6 +154,6 @@ int SymTable_get(SymTable* symTable,char* name)
 {
     Symbol* symbol = SymTable_lookup(symTable,name);
     if (symbol == NULL)
-        return 0;
+        return 666;
     return symbol->value;
 }
