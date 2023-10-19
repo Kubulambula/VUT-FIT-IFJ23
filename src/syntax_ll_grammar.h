@@ -6,6 +6,8 @@
 #include "error.h"
 
 
+
+
 // delete after merging with lexer
 typedef enum{
     // Error token
