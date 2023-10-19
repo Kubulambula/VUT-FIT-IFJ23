@@ -177,9 +177,9 @@ Error ll_val(BufferString* buffer_string, Token t){
 		case TOKEN_IDENTIFIER:			//<val> -> #identif
 			return true;	
 			break;
-		case TOKEN_KEYWORD_FUNC:	 	//<val> -> <func_call>
-			return true; // doplnit az bude funkce napsana
-			break;
+		// case TOKEN_KEYWORD_FUNC:	 	//<val> -> <func_call>
+		// 	return true; // doplnit az bude funkce napsana
+		// 	break;
 		case TOKEN_PARENTHESIS_LEFT:	//<val> -> (<expressions>)
 											  // first token of <expressions>		right parenthesis
 			return ll_expressions(buffer_string, get_next_token(buffer_string)) && (get_next_token(buffer_string) == TOKEN_PARENTHESIS_RIGHT);
