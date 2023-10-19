@@ -34,10 +34,10 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 <statements> -> <statement> <statements>
 
 <statement> -> EOL
-<statement> -> <condition>
+<statement> -> <if>
 <statement> -> <while>
 <statement> -> <assign>
-<statement> -> <func_call>
+// <statement> -> <func_call>
 <statement> -> <return>
 <statement> -> <var_let_definitnion>
 <statement> -> <expression>
