@@ -4,13 +4,12 @@
 #include <stdbool.h>
 
 
-#define SYMTABLE_INIT_SIZE 30
+#define SYMTABLE_INIT_SIZE 5
 #define SYMTABLE_EXPAND_SIZE 20
 
 
 typedef struct{
     char* name;
-    int length; //name length;
     int value;
 } Symbol;
 
@@ -21,18 +20,51 @@ typedef struct{
     int count;  //count of symbols inserted
 } SymTable;
 
+/**
+ * Allocates space for array of pointers to symbols to default size of INIT_SIZE (30) 
+ * Sets default values of symTable (.count , .size)
+ * 
+ * @param symTable Pointer to initialized SymTable
+ * @returns true/false if the allocation was successfull 
+*/
+bool SymTable_init(SymTable* symTable);
 
-bool SymTable_init(SymTable* table, int size);
+/**
+ * Deletes all symbol in table and frees the memory 
+ * 
+ * @param symTable Pointer to initialized SymTable
+*/
+void SymTable_free(SymTable* symTable);
 
-void SymTable_free(SymTable* table);
+/**
+ * Inserts new Symbol to SymTable, if item allready exists, just sets new value
+ * 
+ * @param symTable Pointer to initialized SymTable
+ * @param name Pointer to name String (must end in \0)  
+ * @param value value of Symbol
+ * @returns true/false if the insertion and allocation was successfull
+*/
+bool SymTable_insert(SymTable* symTable,char* name, int value);
 
-bool SymTable_insert(SymTable* table,char* name,int nameLength, int value);
 
-//sets value of symbol
-bool SymTable_set(SymTable* table,char* name, int value);
+/**
+ * Sets value of Symbol if said Symbol exists in Symtable
+ * 
+ * @param symTable Pointer to initialized SymTable
+ * @param name Pointer to name String (must end in \0)  
+ * @param value value of Symbol
+ * @returns true/false if Symbol exists
+*/
+bool SymTable_set(SymTable* symTable,char* name, int value);
 
-//returns value of said symbol
-int SymTable_get(SymTable* table,char* name);
+/**
+ * Gets value of Symbol if said Symbol exists in Symtable
+ * 
+ * @param symTable Pointer to initialized SymTable
+ * @param name Pointer to name String (must end in \0)  
+ * @returns value of wanted Symbol -- must think of error handling
+*/
+int SymTable_get(SymTable* symTable,char* name);
 
 
 #endif
