@@ -1,20 +1,13 @@
 #include "syntax_ll_grammar.h"
-
-
+#include "lexer.h"
+#include "lexer.c"
 #include <stdio.h>
 
-
-int x = 0;
-// delete after merging with lexer
-Token get_next_token(BufferString* b){
-	return TOKEN_ERR + x++;
-}
+Token current_token;
 
 void unget_token(){
 
 }
-
-
 
 Error ll_while(BufferString* buffer_string){
 	Error err = ll_while_head(buffer_string);
@@ -33,7 +26,7 @@ Error ll_while_head(BufferString* buffer_string){
 	if (get_next_token(buffer_string) != TOKEN_PARENTHESIS_LEFT)
 		return ERR_SYNTAX;
 	// <func_params>
-	Error err = ll_expression(buffer_string);
+	Error err = ll_expressions(buffer_string);
 	if (err)
 		return err;
 	// TOKEN_PARENTHESIS_RIGHT
@@ -74,7 +67,7 @@ Error ll_if_head(BufferString* buffer_string){
 	// TOKEN_PARENTHESIS_LEFT
 	if (current_token == TOKEN_PARENTHESIS_LEFT){
 		// <expression>
-		Error err = ll_expression(buffer_string);
+		Error err = ll_expressions(buffer_string);
 		if (err)
 			return err;
 		// TOKEN_PARENTHESIS_RIGHT
@@ -236,10 +229,6 @@ Error ll_statements(BufferString* buffer_string){
 	return OK;
 }
 
-Error ll_expression(BufferString* buffer_string){
-	return OK;
-}
-
 
 // <program>
 Error ll_program(BufferString* buffer_string){
@@ -267,49 +256,56 @@ Error ll_program(BufferString* buffer_string){
 }
 
 //<lit>
-Error ll_lit(BufferString* buffer_string, Token t){
-	switch(t){
+bool ll_lit(BufferString* buffer_string){
+	printf("ll_lit\n");
+	switch(current_token){
 		case TOKEN_LITEREAL_INT:	//<lit> -> #Int literal
 		case TOKEN_LITEREAL_DOUBLE:	//<lit> -> #Double literal
 		case TOKEN_LITEREAL_STRING:	//<lit> -> #String literal
+			current_token = get_next_token(buffer_string);
+			printf("true\n");
+			printf(")\n");
 			return true;
 			break;
 		default:
+			printf("false\n");
+			printf(")\n");
 			return false;
 			break;
 	}
 }
 
 // <val>
-Error ll_val(BufferString* buffer_string, Token t){
-	switch(t){
+bool ll_val(BufferString* buffer_string){
+	printf("ll_val(\n");
+	switch(current_token){
 		case TOKEN_IDENTIFIER:			//<val> -> #identif
+			current_token = get_next_token(buffer_string);
+			printf("true\n");
+			printf(")\n");
 			return true;	
 			break;
-		// case TOKEN_KEYWORD_FUNC:	 	//<val> -> <func_call>
-		// 	return true; // doplnit az bude funkce napsana
-		// 	break;
-		case TOKEN_PARENTHESIS_LEFT:	//<val> -> (<expressions>)
-											  // first token of <expressions>		right parenthesis
-			return ll_expressions(buffer_string, get_next_token(buffer_string)) && (get_next_token(buffer_string) == TOKEN_PARENTHESIS_RIGHT);
+		case TOKEN_PARENTHESIS_LEFT:	//<val> -> ( <expressions> )
+			current_token = get_next_token(buffer_string);
+			return ll_expressions(buffer_string) && (current_token == TOKEN_PARENTHESIS_RIGHT);
 			break;
-		default:
-			return ll_lit(buffer_string, t);
+		default:						//<val> -> <lit>
+			return ll_lit(buffer_string);
 			break;
 	}
 }
 
 // <more_val>
-Error ll_more_val(BufferString* buffer_string, Token t){
-	switch(t){
+bool ll_more_val(BufferString* buffer_string){
+	printf("ll_more_val(\n");
+	switch(current_token){
 		case TOKEN_OPERATOR_PLUS:			//<more_val> -> + <val><more_val>
 		case TOKEN_OPERATOR_MINUS:			//<more_val> -> - <val><more_val>
 		case TOKEN_OPERATOR_MULTIPLICATION:	//<more_val> -> * <val><more_val>
 		case TOKEN_OPERATOR_DIVISION:		//<more_val> -> / <val><more_val>
-									  // first token of <val>										  first token of <more_val>
-			return ll_val(buffer_string, get_next_token(buffer_string)) && ll_more_val(buffer_string, get_next_token(buffer_string));
+			current_token = get_next_token(buffer_string);
+			return ll_val(buffer_string) && ll_more_val(buffer_string);
 			break;
-
 		//<more_val> -> ɛ :
 		case TOKEN_EOF:
 		case TOKEN_EOL:
@@ -321,49 +317,61 @@ Error ll_more_val(BufferString* buffer_string, Token t){
     	case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:	// >=
     	case TOKEN_OPERATOR_EQUALS:					// ==
     	case TOKEN_OPERATOR_NOT_EQUALS:				// !=
+			printf("true\n");
+			printf(")\n");
 			return true;
 			break;
 		default:
+			printf("false\n");
+			printf(")\n");
 			return false;
 	}
 }
 
 // <exp>
-Error ll_exp(BufferString* buffer_string, Token t){
-	switch(t){
+bool ll_exp(BufferString* buffer_string){
+	printf("ll_exp: ");
+	switch(current_token){
 		case TOKEN_EXCLAMATION:	// <exp> -> !<exp>
-			return ll_exp(buffer_string, get_next_token(buffer_string)) && ll_more_exp(buffer_string, get_next_token(buffer_string));
+			current_token = get_next_token(buffer_string);
+			return ll_exp(buffer_string) && ll_more_exp(buffer_string);
 			break;
-		default:
-			return ll_val(buffer_string, get_next_token(buffer_string)) && ll_more_val(buffer_string, get_next_token(buffer_string));
+		default:				//<exp> -> <val><more_val>
+			return ll_val(buffer_string) && ll_more_val(buffer_string);
 	}
 }
 
 // <more_exp>
-Error ll_more_exp(BufferString* buffer_string, Token t){
-	switch(t){
+bool ll_more_exp(BufferString* buffer_string){
+	printf("ll_more_exp(\n");
+	switch(current_token){
 		case TOKEN_OPERATOR_LESS_THAN:				// <more_exp> -> < <exp><more_exp>
     	case TOKEN_OPERATOR_GREATER_THAN:			// <more_exp> -> > <exp><more_exp>
     	case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:		// <more_exp> -> <= <exp><more_exp>
     	case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:	// <more_exp> -> >= <exp><more_exp>
     	case TOKEN_OPERATOR_EQUALS:					// <more_exp> -> == <exp><more_exp>
     	case TOKEN_OPERATOR_NOT_EQUALS:				// <more_exp> -> != <exp><more_exp>
-			return ll_exp(buffer_string, get_next_token(buffer_string)) && ll_more_exp(buffer_string, get_next_token(buffer_string)); 
+			current_token = get_next_token(buffer_string);
+			return ll_exp(buffer_string) && ll_more_exp(buffer_string); 
 			break;
 		// <more_exp> -> ɛ :
 		case TOKEN_EOF:								// EOF
 		case TOKEN_EOL:								// EOL
 		case TOKEN_BRACE_RIGHT:						// }
 		case TOKEN_PARENTHESIS_RIGHT:				// )	<= pro jistotu
+		printf("true\n");
+		printf(")\n");
 			return true;
 			break;
 		default:
+		printf("false\n");
+		printf(")\n");
 			return false;
 	}
 }
 
 // <expressions>
-Error ll_expressions(BufferString* buffer_string, Token t){
-	//<expressions> -> <exp><more_exp>
-	return ll_exp(buffer_string, get_next_token(buffer_string)) && ll_more_exp(buffer_string, get_next_token(buffer_string));
+bool ll_expressions(BufferString* buffer_string){
+	printf("ll_expressions(\n");
+	return ll_exp(buffer_string) && ll_more_exp(buffer_string); //<expressions> -> <exp><more_exp>
 }
