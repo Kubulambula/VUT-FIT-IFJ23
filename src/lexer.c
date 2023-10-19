@@ -1,4 +1,3 @@
-#include "error.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -10,81 +9,6 @@
 
 FILE* source_file; 
 
-typedef enum{
-    // Error token
-    TOKEN_ERR, // token indicating lexical error (ERR_LEXICAL)
-    // Control tokens
-    TOKEN_EOL, // ned of line / new line / linefeed / whatever you call it
-    TOKEN_EOF, // end of file
-    // Keywords
-    TOKEN_KEYWORD_NIL, // nil
-    TOKEN_KEYWORD_INT, // Int
-    TOKEN_KEYWORD_DOUBLE, // Double
-    TOKEN_KEYWORD_STRING, // String
-    TOKEN_KEYWORD_VAR, // var
-    TOKEN_KEYWORD_LET, // let
-    TOKEN_KEYWORD_IF, // if
-    TOKEN_KEYWORD_ELSE, // else
-    TOKEN_KEYWORD_WHILE, // while
-    TOKEN_KEYWORD_FUNC, // func
-    TOKEN_KEYWORD_RETURN, // return
-    // Parentheses
-    TOKEN_PARENTHESIS_LEFT, // (
-    TOKEN_PARENTHESIS_RIGHT, // )
-    // Braces
-    TOKEN_BRACE_LEFT, // {
-    TOKEN_BRACE_RIGHT, // }
-    // Aritmethic operators
-    TOKEN_OPERATOR_PLUS, // +
-    TOKEN_OPERATOR_MINUS, // -
-    TOKEN_OPERATOR_MULTIPLICATION, // *
-    TOKEN_OPERATOR_DIVISION, // /
-    // Comparison operatos
-    TOKEN_OPERATOR_LESS_THAN, // <
-    TOKEN_OPERATOR_GREATER_THAN, // >
-    TOKEN_OPERATOR_LESS_THAN_OR_EQUAL, // <=
-    TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL, // >=
-    TOKEN_OPERATOR_EQUALS, // ==
-    TOKEN_OPERATOR_NOT_EQUALS, // !=
-    // Literals
-    TOKEN_LITEREAL_INT, // an int literal
-    TOKEN_LITEREAL_DOUBLE, // a double literal
-    TOKEN_LITEREAL_STRING, // a string literal
-    // Miscellaneous 
-    TOKEN_ASSIGN, // =
-    TOKEN_EXCLAMATION, // ! - after identifier it's OPERATOR_FORCED_UNWRAPPING and before it's OPERATOR_NOT
-    TOKEN_QUESTION, // ?
-    TOKEN_NIL_COALESCING, // ??
-    TOKEN_COMMA, // ,
-    TOKEN_COLON, // :
-    TOKEN_ARROW, // ->
-    // Identifier
-    TOKEN_IDENTIFIER, // variable / function identifier
-} Token;
-
-typedef enum {
-    // Start state
-    LEXER_STATE_START, // starting state
-    LEXER_STATE_POSSIBLE_COMMENT, // Leads from '/' to -> '//' '*' 
-    // Identifier, possible keyword
-    LEXER_STATE_IDENTIFIER_OR_KEYWORD, // State from 'LEXER_STATE_START' -> 'LEXER_STATE_INDETIFIER_OR_KEYWORD'
-    // Literals
-    LEXER_STATE_INT, // State from 'LEXER_STATE_START' -> 'LEXER_STATE_INT'
-    LEXER_STATE_DOUBLE, // State from 'LEXER_STATE_INT' -> 'LEXER_STATE_DOUBLE'
-    //States to check double char operators and such
-    //All start from 'LEXER_STATE_START'
-    LEXER_STATE_STRING, // Leads from '"' to anything until '"'
-    LEXER_STATE_MINUS_OR_ARROW, // Leads from '-' -> '->'
-    LEXER_STATE_GREATER_POSSIBLE_EQUAL, // Leads from '>' -> '>='
-    LEXER_STATE_LESS_POSSIBLE_EQUAL, // Leads from '<' -> '<='
-    LEXER_STATE_POSSIBLE_EQUALS, // Leads from '=' -> '=='
-    LEXER_STATE_POSSIBLE_NOT_EQUALS, // Leads from '!' -> '!='
-    LEXER_STATE_POSSIBLE_COALESCING, // Leads from '?' -> '??'
-    // End of a file
-    LEXER_STATE_EOF,
-    // Invalide character
-    LEXER_STATE_INVALID_CHARACTER,
-} State;
 
 
 void initLexer(FILE* file){
@@ -96,10 +20,14 @@ void initLexer(FILE* file){
 
 
 //
-char get_next_char(){
+inline char get_next_char(){
+#ifdef NDEBUG
+    return  getc(source_file);
+#else
     char Nextchar = getc(source_file);
-    //printf("%C",Nextchar);
+    printf("%C",Nextchar);
     return Nextchar;
+#endif
 };
 
 void skip_white_space(char whiteSpace){
@@ -111,7 +39,7 @@ void skip_white_space(char whiteSpace){
 
 // Handle comments mutli line
 void skip_comments_ML(){
-    char Char;
+    char Char = '\0';
     char prevChar;
     while(1){
         prevChar = Char;
@@ -190,8 +118,8 @@ Token get_next_token(BufferString* buffer_string){
 
                     //END OF LINE
                     else if(nextChar == '\n'){
-                        token = TOKEN_EOL;
-                        return token;
+                        return TOKEN_EOL;
+                        
                     }
 
 
@@ -212,33 +140,32 @@ Token get_next_token(BufferString* buffer_string){
                     //token is string
                     else if(nextChar == '"'){
                         state = LEXER_STATE_STRING;
-                        buffer_string_append_char(buffer_string,nextChar); // append the first '"'
                         // ungetc(nextChar,source_file); //"unreading" char to get read it again for next state?
                     }
                     //--------------------------
 
                     //token is plus
                     else if(nextChar == '+'){
-                        token = TOKEN_OPERATOR_PLUS;
-                        return token;
+                        return TOKEN_OPERATOR_PLUS;
+                        
                     }
 
                     //token is multiplication
                     else if(nextChar == '*'){
-                        token = TOKEN_OPERATOR_MULTIPLICATION;
-                        return token;
+                        return TOKEN_OPERATOR_MULTIPLICATION;
+                        
                     }
 
                     //token is comma
                     else if(nextChar == ','){
-                        token = TOKEN_COMMA;
-                        return token;
+                        return TOKEN_COMMA;
+                        
                     }
 
                     //token is colon
                     else if(nextChar ==':'){
-                        token = TOKEN_COLON;
-                        return token;
+                        return TOKEN_COLON;
+                        
                     }
 
                     //token could be minus or arrow
@@ -273,26 +200,26 @@ Token get_next_token(BufferString* buffer_string){
 
                     //token is left parenthesis
                     else if(nextChar == '('){
-                        token = TOKEN_PARENTHESIS_LEFT;
-                        return token;
+                        return TOKEN_PARENTHESIS_LEFT;
+                        
                     }
 
                     //token is right parenthesis
                     else if(nextChar == ')'){
-                        token = TOKEN_PARENTHESIS_RIGHT;
-                        return token;
+                        return TOKEN_PARENTHESIS_RIGHT;
+                        
                     }
 
                     //token is left brace
                     else if(nextChar == '{'){
-                        token = TOKEN_BRACE_LEFT;
-                        return token;
+                        return TOKEN_BRACE_LEFT;
+                        
                     }
 
                     //token is right brace
                     else if(nextChar == '}'){
-                        token = TOKEN_BRACE_RIGHT;
-                        return token;
+                        return TOKEN_BRACE_RIGHT;
+                        
                     }
 
                     //Possible for white space to fall through start state
@@ -305,13 +232,13 @@ Token get_next_token(BufferString* buffer_string){
                 
                 // STATES
                 case LEXER_STATE_EOF:
-                    token = TOKEN_EOF;
-                    return token;
+                    return TOKEN_EOF;
+                    
                     break;
 
                 case LEXER_STATE_INVALID_CHARACTER:
-                    token = TOKEN_ERR;
-                    return token;
+                    return TOKEN_ERR;
+                    
                     break;
 
                 case LEXER_STATE_POSSIBLE_COMMENT:
@@ -323,24 +250,22 @@ Token get_next_token(BufferString* buffer_string){
                     }
                     else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_OPERATOR_DIVISION;
-                        return token;
+                        return TOKEN_OPERATOR_DIVISION;
+                        
                     }
                     break;
                 
                 case LEXER_STATE_INT:
                     if (isdigit(nextChar)){
                         buffer_string_append_char(buffer_string, nextChar);
-                    } else{
-                        if( nextChar == '.' || nextChar=='e' || nextChar=='E'){
+                    } else if( nextChar == '.' || nextChar=='e' || nextChar=='E'){
                             buffer_string_append_char(buffer_string, nextChar);
                             state = LEXER_STATE_DOUBLE;
-                        } else{
-                            token = TOKEN_LITEREAL_INT;
-                            buffer_string_append_char(buffer_string, '\0');
-                            return token;
-                        }
+                    } else{
+                            return TOKEN_LITEREAL_INT;
+                            
                     }
+                    
                     break;
 
                 case LEXER_STATE_DOUBLE:
@@ -348,9 +273,8 @@ Token get_next_token(BufferString* buffer_string){
                         buffer_string_append_char(buffer_string, nextChar);
                     } else{
                         ungetc(nextChar,source_file);
-                        token = TOKEN_LITEREAL_DOUBLE;
-                        buffer_string_append_char(buffer_string, '\0');
-                        return token;
+                        return TOKEN_LITEREAL_DOUBLE;
+                        
                     }
                     break;
 
@@ -361,94 +285,110 @@ Token get_next_token(BufferString* buffer_string){
                     } else{
                         ungetc(nextChar,source_file); // to read unknown char again for the start state
                         if(is_keyword(buffer_string,tokenType)){
-                            token = tokenType;
+                            return tokenType;
                         } else {
-                            token = TOKEN_IDENTIFIER;
+                            return TOKEN_IDENTIFIER;
                         }
-                        buffer_string_append_char(buffer_string, '\0');
-                        return token;
+                        
                     }
 
                     break;
 
                 case LEXER_STATE_STRING:
+                    bool bufferEmpty = buffer_string_get_length(buffer_string);
                     if(nextChar != '"'){
                         buffer_string_append_char(buffer_string, nextChar);
-                    } else{
-                        buffer_string_append_char(buffer_string, nextChar); // apppend the second '"'
-                        buffer_string_append_char(buffer_string, '\0'); // append '\0' symbol
-                        token = TOKEN_LITEREAL_STRING;
-                        return token;
+                    } else if(!bufferEmpty){
+                        return TOKEN_LITEREAL_STRING;
+                        
+                    } else {
+                        state = LEXER_STATE_POSSIBLE_MULTI_STRING;
                     }
                     break;
 
                 
                 case LEXER_STATE_MINUS_OR_ARROW:
                     if(nextChar == '>'){
-                        token = TOKEN_ARROW;
-                        return token;
+                        return TOKEN_ARROW;
+                        
                     } else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_OPERATOR_MINUS;
-                        return token;
+                        return TOKEN_OPERATOR_MINUS;
+                        
                     }
                     break;
 
                 // could be single state somehow ?
                 case LEXER_STATE_LESS_POSSIBLE_EQUAL:
                     if(nextChar == '='){
-                        token = TOKEN_OPERATOR_LESS_THAN_OR_EQUAL;
-                        return token;
+                        return TOKEN_OPERATOR_LESS_THAN_OR_EQUAL;
+                        
                     } else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_OPERATOR_LESS_THAN;
-                        return token;
+                        return TOKEN_OPERATOR_LESS_THAN;
+                        
                     }
                     break;
 
                 case LEXER_STATE_GREATER_POSSIBLE_EQUAL:
                     if(nextChar == '='){
-                        token = TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL;
-                        return token;
+                        return TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL;
+                        
                     } else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_OPERATOR_GREATER_THAN;
-                        return token;
+                        return TOKEN_OPERATOR_GREATER_THAN;
+                        
                     }
                     break;
                     
                 case LEXER_STATE_POSSIBLE_NOT_EQUALS:
                     if(nextChar == '='){
-                        token = TOKEN_OPERATOR_NOT_EQUALS;
-                        return token;
+                        return TOKEN_OPERATOR_NOT_EQUALS;
+                        
                     } else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_EXCLAMATION;
-                        return token;
+                        return TOKEN_EXCLAMATION;
+                        
                     }
                     break;
 
                 case LEXER_STATE_POSSIBLE_EQUALS:
                     if(nextChar == '='){
-                        token = TOKEN_OPERATOR_EQUALS;
-                        return token;
+                        return TOKEN_OPERATOR_EQUALS;
+                        
                     } else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_ASSIGN;
-                        return token;
+                        return TOKEN_ASSIGN;
+                        
                     }
                     break;
                 // -----------------------------------------------------
                 
                 case LEXER_STATE_POSSIBLE_COALESCING:
                     if(nextChar == '?'){
-                        token = TOKEN_QUESTION;
-                        return token;
+                        return TOKEN_QUESTION;
+                        
                     } else {
                         ungetc(nextChar,source_file);
-                        token = TOKEN_NIL_COALESCING;
-                        return token;
+                        return TOKEN_NIL_COALESCING;
+                        
                     }                    
+                    break;
+
+                case LEXER_STATE_POSSIBLE_MULTI_STRING:
+                    if (nextChar == '"'){
+                        state = LEXER_STATE_MULTI_STRING;
+                    } else {
+                        ungetc(nextChar,source_file);
+                        state = LEXER_STATE_STRING; 
+                    }
+                    break;
+                case LEXER_STATE_MULTI_STRING:
+                    if(nextChar != '"'){
+                        buffer_string_append_char(buffer_string, nextChar);
+                    } else {
+                        return TOKEN_LITEREAL_MULTILINE_STRING;
+                    }
                     break;
                 default:
                     break;
