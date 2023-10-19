@@ -1,7 +1,6 @@
 #ifndef BUFFER_STRING_H
 #define BUFFER_STRING_H
 
-
 #include <stdbool.h>
 
 
@@ -47,17 +46,9 @@ bool buffer_string_append_char(BufferString* buffer_string_p, char c);
 bool buffer_string_append_str(BufferString* buffer_string_p, char* str);
 
 // Returns the result of strcmp of BufferString and string str.
-inline bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str){
-	assert(buffer_string_p != NULL);
-	assert(str != NULL);
-	return strcmp(buffer_string_p->string, str);
-}
+bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str);
 
 // Returns the length of BufferString.
-inline unsigned buffer_string_get_length(BufferString* buffer_string_p){
-	assert(buffer_string_p != NULL);
-	return buffer_string_p->length;
-}
-
+unsigned buffer_string_get_length(BufferString* buffer_string_p);
 
 #endif

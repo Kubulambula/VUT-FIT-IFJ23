@@ -19,7 +19,7 @@ void initLexer(FILE* file){
 
 
 
-inline char get_next_char(){
+char get_next_char(){
 #ifdef NDEBUG
     return  getc(source_file);
 #else
