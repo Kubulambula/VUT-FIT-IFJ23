@@ -27,13 +27,20 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 
 ===statements===
 
+
+<statement_body> -> TOKEN_BRACKET_LEFT <statements> TOKEN_BRACKET_RIGHT
+
 <statements> -> ɛ
 <statements> -> <statement> <statements>
 
+<statement> -> EOL
 <statement> -> <condition>
 <statement> -> <while>
 <statement> -> <assign>
 <statement> -> <func_call>
+<statement> -> <return>
+<statement> -> <var_let_definitnion>
+<statement> -> <expression>
 
 ===/statements===
 
@@ -95,12 +102,11 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 
 ===condition===
 
-<condition> -> <condition_head> <condition_body>
+<if> -> <condition_head> <statement_body> TOKEN_KEYWORD_ELSE <statement_body>
 
-<condition_head> -> TOKEN_KEYWORD_IF TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
-<condition_head> -> TOKEN_KEYWORD_IF TOKEN_KEYWORD_LET TOKEN_IDENTIFIER
+<if_head> -> TOKEN_KEYWORD_IF TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
+<if_head> -> TOKEN_KEYWORD_IF TOKEN_KEYWORD_LET TOKEN_IDENTIFIER
 
-<condition_body> -> TOKEN_BRACKET_LEFT <statements> TOKEN_BRACKET_RIGHT TOKEN_KEYWORD_ELSE TOKEN_BRACKET_LEFT <statements> TOKEN_BRACKET_RIGHT
 
 ===/condition===
 
