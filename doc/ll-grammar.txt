@@ -39,7 +39,7 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 <statement> -> <assign>
 <statement> -> <func_call>
 <statement> -> <return>
-<statement> -> <var_let_definitnion>
+<statement> -> <var_let_definition>
 <statement> -> <expression>
 
 ===/statements===

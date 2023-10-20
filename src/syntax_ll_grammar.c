@@ -375,3 +375,26 @@ bool ll_expressions(BufferString* buffer_string){
 	printf("ll_expressions(\n");
 	return ll_exp(buffer_string) && ll_more_exp(buffer_string); //<expressions> -> <exp><more_exp>
 }
+
+//<assign>
+bool ll_assign(BufferString* buffer_string){
+	
+}
+// <var_def> example:
+//			 let inp
+//		  => inp = readInt()
+bool ll_var_let_def(BufferString* buffer_string){
+
+}
+// <var_declar>	example: let inp = readInt()
+bool ll_var_let_declar(BufferString* buffer_string){
+	switch(current_token){
+		case TOKEN_KEYWORD_LET:
+		case TOKEN_KEYWORD_VAR:
+			current_token = get_next_token(buffer_string);
+			return ll_var_let_def(buffer_string);
+			break;
+		default:
+			return false;
+	}
+}

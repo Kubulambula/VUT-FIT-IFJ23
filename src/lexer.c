@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "buffer_string.h"
 #include "lexer.h"
@@ -34,7 +35,7 @@ void skip_white_space(char whiteSpace){
     while(isblank(whiteSpace)) {
         whiteSpace = get_next_char();
     }
-    ungetc(source_file,whiteSpace);
+    ungetc(whiteSpace, source_file);
 }
 
 // Handle comments mutli line
@@ -44,14 +45,14 @@ void skip_comments_ML(){
     while(1){
         prevChar = Char;
         Char = get_next_char();
-        if(prevChar == '*' && Char == "/"){return;}
+        if(prevChar == '*' && Char == '/'){return;}
     }
 };
 
 // Handle comments single line
 void skip_comments_SL(){
     char Char = get_next_char();
-    while(Char != "\n"){
+    while(Char != '\n'){
         Char = get_next_char();
     }
     ungetc(Char,source_file); // to read '\n' again

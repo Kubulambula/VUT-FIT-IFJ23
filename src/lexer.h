@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
-
+#include <stdbool.h>
+#include "buffer_string.c"
 typedef enum{
     // Error token
     TOKEN_ERR, // token indicating lexical error (ERR_LEXICAL)
