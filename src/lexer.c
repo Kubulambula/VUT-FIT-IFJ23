@@ -6,17 +6,21 @@
 
 #include "lexer.h"
 
-FILE* source_file; 
 
+FILE* source_file = NULL;
+Token last_token = TOKEN_ERR;
+bool use_last_token = false;
 
 
 void initLexer(FILE* file){
+    // sanity check
+    assert(file != NULL);
+
     if (file == NULL){
-        return;
+        file = stdin;
     }
     source_file = file;
 }
-
 
 
 char get_next_char(){
@@ -29,12 +33,14 @@ char get_next_char(){
 #endif
 }
 
+
 void skip_white_space(char whiteSpace){
     while(isblank(whiteSpace)) {
         whiteSpace = get_next_char();
     }
     ungetc(whiteSpace, source_file);
 }
+
 
 // Handle comments mutli line
 void skip_comments_ML(){
@@ -46,13 +52,15 @@ void skip_comments_ML(){
     }
 }
 
+
 // Handle comments single line
 void skip_comments_SL(){
     char Char = get_next_char();
     while(Char != '\n'){
         Char = get_next_char();
     }
-    ungetc(Char, source_file); // to read '\n' again
+    // The \n can be consumed. This way the comment line is effectively removed instead of replaced by a blank line.
+    //ungetc(Char, source_file); // to read '\n' again
 }
 
 
@@ -82,20 +90,35 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
 }
 
 
-// Funkce najde a vytvori token
-Token get_next_token(BufferString* buffer_string){    
-        
+// obal pro get_next_token(). Vraci dalsi token a pokud je pred volanim pouzito unget_token(), cte stejny token znovu.
+Token get_token(BufferString* buffer_string){
+    if (use_last_token){
+        use_last_token = false;
+        return last_token;
+    }
+    last_token = get_next_token(buffer_string);
+    return last_token;
+}
+
+
+// Zajisti, ze prave precteny token se precte znovu - nekolikanasobne volani porad cte jeden posledni token
+void unget_token(){
+    use_last_token = true;
+}
+
+
+// Funkce najde dalsi token
+Token get_next_token(BufferString* buffer_string){
         char nextChar;
         State state = LEXER_STATE_START;
+        // Clear the BufferString from the junk accumulated from previous token
+        buffer_string_clear(buffer_string);
 
         while(1){
-
             nextChar = get_next_char();
 
             switch (state) {
                 case LEXER_STATE_START:
-                    //else if could be better?
-
                     //White space
                     if(isblank(nextChar)){
                         skip_white_space(nextChar);
@@ -108,63 +131,54 @@ Token get_next_token(BufferString* buffer_string){
                     
                     //END OF FILE
                     else if(nextChar == EOF){
-                        state = LEXER_STATE_EOF;
+                        return TOKEN_EOF;
                     }
 
                     //END OF LINE
                     else if(nextChar == '\n'){
                         return TOKEN_EOL;
-                        
                     }
-
 
                     //Should append here or use ungetc?
                     //token is int or double
                     else if(isdigit(nextChar)){
-                        state = LEXER_STATE_INT;
-                        ungetc(nextChar,source_file); //"unreading" char to get read it again for next state?  
+                        state = LEXER_STATE_NUMBER;
+                        ungetc(nextChar,source_file); //unreading char to get read it again int the next state
                     }
 
                     //token is keyword or identifier
-                    else if(isalpha(nextChar) || nextChar=='_'){
+                    else if(isalpha(nextChar) || nextChar == '_'){
                         state = LEXER_STATE_IDENTIFIER_OR_KEYWORD;
-                        ungetc(nextChar,source_file); //"unreading" char to get read it again for next state?
+                        ungetc(nextChar,source_file); //unreading char to get read it again int the next state
                     }    
                     
-
                     //token is string
                     else if(nextChar == '"'){
                         state = LEXER_STATE_STRING_BEGIN;
-                        // ungetc(nextChar,source_file); //"unreading" char to get read it again for next state?
                     }
-                    //--------------------------
 
                     //token is plus
                     else if(nextChar == '+'){
                         return TOKEN_OPERATOR_PLUS;
-                        
                     }
 
                     //token is multiplication
                     else if(nextChar == '*'){
                         return TOKEN_OPERATOR_MULTIPLICATION;
-                        
                     }
 
                     //token is comma
                     else if(nextChar == ','){
                         return TOKEN_COMMA;
-                        
                     }
 
                     //token is colon
-                    else if(nextChar ==':'){
+                    else if(nextChar == ':'){
                         return TOKEN_COLON;
-                        
                     }
 
                     //token could be minus or arrow
-                    else if(nextChar =='-'){
+                    else if(nextChar == '-'){
                         state = LEXER_STATE_MINUS_OR_ARROW;
                     }
 
@@ -180,7 +194,7 @@ Token get_next_token(BufferString* buffer_string){
 
                     //token could be "EXCLAMATION" or "not equal"
                     else if(nextChar == '!'){
-                        state=LEXER_STATE_POSSIBLE_NOT_EQUALS;
+                        state = LEXER_STATE_POSSIBLE_NOT_EQUALS;
                     }
 
                     //token could be "assign" or "equal"
@@ -196,19 +210,16 @@ Token get_next_token(BufferString* buffer_string){
                     //token is left parenthesis
                     else if(nextChar == '('){
                         return TOKEN_PARENTHESIS_LEFT;
-                        
                     }
 
                     //token is right parenthesis
                     else if(nextChar == ')'){
                         return TOKEN_PARENTHESIS_RIGHT;
-                        
                     }
 
                     //token is left brace
                     else if(nextChar == '{'){
                         return TOKEN_BRACE_LEFT;
-                        
                     }
 
                     //token is right brace
@@ -218,19 +229,10 @@ Token get_next_token(BufferString* buffer_string){
 
                     //Possible for white space to fall through start state
                     //Character cannot be processed
-                    else {
-                        state = LEXER_STATE_INVALID_CHARACTER;
-                    }
-
-                    break;
-                
-                // STATES
-                case LEXER_STATE_EOF:
-                    return TOKEN_EOF;
-                    
-                case LEXER_STATE_INVALID_CHARACTER:
                     return TOKEN_ERR;
-                    
+
+                // INTERESTING STATES
+
                 case LEXER_STATE_POSSIBLE_COMMENT:
                     if(nextChar == '*'){
                         skip_comments_ML();
@@ -244,43 +246,55 @@ Token get_next_token(BufferString* buffer_string){
                     }
                     break;
                 
-                case LEXER_STATE_INT:
+                case LEXER_STATE_NUMBER:
                     if (isdigit(nextChar)){
                         buffer_string_append_char(buffer_string, nextChar);
-                    } else if( nextChar == '.' || nextChar=='e' || nextChar=='E'){
+                    } else if(nextChar == '.'){
                         buffer_string_append_char(buffer_string, nextChar);
-                        state = LEXER_STATE_DOUBLE;
-                    } else{
-                        return TOKEN_LITERAL_INT;
+                        state = LEXER_STATE_DOUBLE_AFTER_DOT;
+                    } else if(nextChar == 'e' || nextChar == 'E'){
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_DOUBLE_AFTER_E;
                     }
-                    
-                    break;
 
-                case LEXER_STATE_DOUBLE:
+                    ungetc(nextChar, source_file);
+                    return TOKEN_LITERAL_INT;
+                
+                case LEXER_STATE_DOUBLE_AFTER_DOT:
                     if (isdigit(nextChar)){
                         buffer_string_append_char(buffer_string, nextChar);
-                        break;
+                    } else if(nextChar == 'e' || nextChar == 'E'){
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_DOUBLE_AFTER_E;
                     }
-                    ungetc(nextChar,source_file);
+
+                    ungetc(nextChar, source_file);
+                    return TOKEN_LITERAL_DOUBLE;
+                
+                case LEXER_STATE_DOUBLE_AFTER_E:
+                    if (isdigit(nextChar))
+                        buffer_string_append_char(buffer_string, nextChar);
+
+                    ungetc(nextChar, source_file);
                     return TOKEN_LITERAL_DOUBLE;
 
                 case LEXER_STATE_IDENTIFIER_OR_KEYWORD:
-                    // Rhis matches both alpha AND numerical, but we can get to this state only from alpha.
+                    // This matches both alpha AND numerical, but we can get to this state only from alpha.
                     // Meaning we don't need to check if the first char is numerical. Good job Kunikus
-                    if(isalnum(nextChar) || nextChar=='_'){
+                    if(isalnum(nextChar) || nextChar == '_'){
                         buffer_string_append_char(buffer_string, nextChar);
-                    } else{
-                        ungetc(nextChar,source_file); // to read unknown char again for the start state
-                        Token tokenType;
-                        return is_keyword(buffer_string, &tokenType) ? tokenType : TOKEN_IDENTIFIER;
                     }
-                    break;
+
+                    ungetc(nextChar,source_file); // to read unknown char again for the start state
+                    Token tokenType;
+                    return is_keyword(buffer_string, &tokenType) ? tokenType : TOKEN_IDENTIFIER;
 
                 case LEXER_STATE_STRING_BEGIN:
                     if (nextChar == '"'){ // this would be the 2nd "
                         state = LEXER_STATE_POSSIBLE_MULTILINE_STRING;
                         break;
                     }
+                    // The character after first " was not "
                     buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_STRING;
                     break;
@@ -297,7 +311,7 @@ Token get_next_token(BufferString* buffer_string){
                         state = LEXER_STATE_MULTILINE_STRING;
                         break;
                     }
-                    return TOKEN_LITERAL_STRING;
+                    return TOKEN_LITERAL_STRING; // it was just an empty string
                 
                 case LEXER_STATE_MULTILINE_STRING:
                     if (nextChar == '"'){ // 1st closing "
@@ -328,75 +342,51 @@ Token get_next_token(BufferString* buffer_string){
                     break;
 
                 case LEXER_STATE_MINUS_OR_ARROW:
-                    if(nextChar == '>'){
+                    if(nextChar == '>')
                         return TOKEN_ARROW;
-                        
-                    } else {
-                        ungetc(nextChar,source_file);
-                        return TOKEN_OPERATOR_MINUS;
-                        
-                    }
-                    break;
 
-                // could be single state somehow ?
+                    ungetc(nextChar,source_file);
+                    return TOKEN_OPERATOR_MINUS;
+
                 case LEXER_STATE_LESS_POSSIBLE_EQUAL:
-                    if(nextChar == '='){
+                    if(nextChar == '=')
                         return TOKEN_OPERATOR_LESS_THAN_OR_EQUAL;
-                        
-                    } else {
-                        ungetc(nextChar,source_file);
-                        return TOKEN_OPERATOR_LESS_THAN;
-                        
-                    }
-                    break;
+                    
+                    ungetc(nextChar,source_file);
+                    return TOKEN_OPERATOR_LESS_THAN;
 
                 case LEXER_STATE_GREATER_POSSIBLE_EQUAL:
-                    if(nextChar == '='){
+                    if(nextChar == '=')
                         return TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL;
                         
-                    } else {
-                        ungetc(nextChar,source_file);
-                        return TOKEN_OPERATOR_GREATER_THAN;
+                    ungetc(nextChar,source_file);
+                    return TOKEN_OPERATOR_GREATER_THAN;
                         
-                    }
-                    break;
-                    
                 case LEXER_STATE_POSSIBLE_NOT_EQUALS:
-                    if(nextChar == '='){
+                    if(nextChar == '=')
                         return TOKEN_OPERATOR_NOT_EQUALS;
                         
-                    } else {
-                        ungetc(nextChar,source_file);
-                        return TOKEN_EXCLAMATION;
-                        
-                    }
-                    break;
+                    ungetc(nextChar,source_file);
+                    return TOKEN_EXCLAMATION;
 
                 case LEXER_STATE_POSSIBLE_EQUALS:
-                    if(nextChar == '='){
+                    if(nextChar == '=')
                         return TOKEN_OPERATOR_EQUALS;
                         
-                    } else {
-                        ungetc(nextChar,source_file);
-                        return TOKEN_ASSIGN;
-                        
-                    }
-                    break;
-                
+                    ungetc(nextChar,source_file);
+                    return TOKEN_ASSIGN;
+
                 case LEXER_STATE_POSSIBLE_COALESCING:
-                    if(nextChar == '?'){
+                    if(nextChar == '?')
                         return TOKEN_NIL_COALESCING;
                         
-                    } else {
-                        ungetc(nextChar,source_file);
-                        return TOKEN_QUESTION;
-                    }                    
-                    break;
+                    ungetc(nextChar,source_file);
+                    return TOKEN_QUESTION;
                 
                 default:
+                    // sanity check for unimplemented state
+                    assert(false);
                     break;
         }
     }
-
 }
-

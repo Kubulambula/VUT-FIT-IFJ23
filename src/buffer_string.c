@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 
 #include "buffer_string.h"
 
@@ -128,4 +129,44 @@ bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str){
 unsigned buffer_string_get_length(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 	return buffer_string_p->length;
+}
+
+
+// Clamps long range to int range just in case the architecture has different sizes for int and long
+static int clamp_long_to_int(long l){
+	if (l < INT_MIN)
+		return INT_MIN;
+	if (l > INT_MAX)
+		return INT_MAX;
+	return l;
+}
+
+
+int buffer_string_get_as_int(BufferString* buffer_string_p){
+	assert(buffer_string_p != NULL);
+#ifdef NDEBUG
+	// Just return without any checks if not debug - returns 0 on error
+	return clamp_long_to_int(strtol(buffer_string_p->string, NULL, 10));
+#else
+	char* char_after_value;
+	int value = clamp_long_to_int(strtol(buffer_string_p->string, &char_after_value, 10));
+	// If char_after_value equals buffer_string_p->string, then we know that there was nothing converted - no numerical value on the beginning of string.
+	assert(char_after_value != buffer_string_p->string); 
+	return value;
+#endif
+}
+
+
+double buffer_string_get_as_double(BufferString* buffer_string_p){
+	assert(buffer_string_p != NULL);
+#ifdef NDEBUG
+	// Just return without any checks if not debug - returns 0.0 on error
+	return strtod(buffer_string_p->string, NULL);
+#else
+	char* char_after_value;
+	double value = strtod(buffer_string_p->string, &char_after_value);
+	// If char_after_value equals buffer_string_p->string, then we know that there was nothing converted - no numerical value on the beginning of string.
+	assert(char_after_value != buffer_string_p->string); 
+	return value;
+#endif
 }
