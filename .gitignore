@@ -3,6 +3,7 @@
 src/prog
 src/test.c
 src/test
+src/test.exe
 
 # .zip file for submission
 *.zip
