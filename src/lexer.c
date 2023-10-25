@@ -24,12 +24,12 @@ void initLexer(FILE* file){
 
 
 char get_next_char(){
-#ifdef NDEBUG
-    return  getc(source_file);
-#else
+#if !defined NDEBUG && defined VERBOSE // only print in verbose debug
     char Nextchar = getc(source_file);
-    printf("%c",Nextchar);
+    printf("Read char: %c\n", Nextchar);
     return Nextchar;
+#else
+    return  getc(source_file);
 #endif
 }
 
@@ -199,7 +199,7 @@ Token get_next_token(BufferString* buffer_string){
 
                     //token could be "assign" or "equal"
                     else if(nextChar == '='){
-                        state = LEXER_STATE_GREATER_POSSIBLE_EQUAL;
+                        state = LEXER_STATE_POSSIBLE_EQUALS;
                     }
 
                     //token could be "question" or "coalescing"
@@ -227,9 +227,13 @@ Token get_next_token(BufferString* buffer_string){
                         return TOKEN_BRACE_RIGHT;
                     }
 
-                    //Possible for white space to fall through start state
-                    //Character cannot be processed
-                    return TOKEN_ERR;
+                    else {
+                        //Possible for white space to fall through start state
+                        //Character cannot be processed
+                        return TOKEN_ERR;
+                    }
+
+                    break;
 
                 // INTERESTING STATES
 
@@ -255,10 +259,11 @@ Token get_next_token(BufferString* buffer_string){
                     } else if(nextChar == 'e' || nextChar == 'E'){
                         buffer_string_append_char(buffer_string, nextChar);
                         state = LEXER_STATE_DOUBLE_AFTER_E;
+                    } else{
+                        ungetc(nextChar, source_file);
+                        return TOKEN_LITERAL_INT;
                     }
-
-                    ungetc(nextChar, source_file);
-                    return TOKEN_LITERAL_INT;
+                    break;
                 
                 case LEXER_STATE_DOUBLE_AFTER_DOT:
                     if (isdigit(nextChar)){
@@ -266,15 +271,17 @@ Token get_next_token(BufferString* buffer_string){
                     } else if(nextChar == 'e' || nextChar == 'E'){
                         buffer_string_append_char(buffer_string, nextChar);
                         state = LEXER_STATE_DOUBLE_AFTER_E;
+                    } else{
+                        ungetc(nextChar, source_file);
+                        return TOKEN_LITERAL_DOUBLE;
                     }
-
-                    ungetc(nextChar, source_file);
-                    return TOKEN_LITERAL_DOUBLE;
+                    break;
                 
                 case LEXER_STATE_DOUBLE_AFTER_E:
-                    if (isdigit(nextChar))
+                    if (isdigit(nextChar)){
                         buffer_string_append_char(buffer_string, nextChar);
-
+                        break;
+                    }
                     ungetc(nextChar, source_file);
                     return TOKEN_LITERAL_DOUBLE;
 
@@ -283,11 +290,12 @@ Token get_next_token(BufferString* buffer_string){
                     // Meaning we don't need to check if the first char is numerical. Good job Kunikus
                     if(isalnum(nextChar) || nextChar == '_'){
                         buffer_string_append_char(buffer_string, nextChar);
+                        break;
+                    } else{
+                        ungetc(nextChar,source_file); // to read unknown char again for the start state
+                        Token tokenType;
+                        return is_keyword(buffer_string, &tokenType) ? tokenType : TOKEN_IDENTIFIER;
                     }
-
-                    ungetc(nextChar,source_file); // to read unknown char again for the start state
-                    Token tokenType;
-                    return is_keyword(buffer_string, &tokenType) ? tokenType : TOKEN_IDENTIFIER;
 
                 case LEXER_STATE_STRING_BEGIN:
                     if (nextChar == '"'){ // this would be the 2nd "

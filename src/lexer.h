@@ -58,6 +58,54 @@ typedef enum{
 } Token;
 
 
+static inline void print_token_as_string(Token t){
+#ifndef NDEBUG
+    char* tokens_as_string[] = {
+        "TOKEN_ERR",
+        "TOKEN_EOL",
+        "TOKEN_EOF",
+        "TOKEN_KEYWORD_NIL",
+        "TOKEN_KEYWORD_INT",
+        "TOKEN_KEYWORD_DOUBLE",
+        "TOKEN_KEYWORD_STRING",
+        "TOKEN_KEYWORD_VAR",
+        "TOKEN_KEYWORD_LET",
+        "TOKEN_KEYWORD_IF",
+        "TOKEN_KEYWORD_ELSE",
+        "TOKEN_KEYWORD_WHILE",
+        "TOKEN_KEYWORD_FUNC",
+        "TOKEN_KEYWORD_RETURN",
+        "TOKEN_PARENTHESIS_LEFT",
+        "TOKEN_PARENTHESIS_RIGHT",
+        "TOKEN_BRACE_LEFT",
+        "TOKEN_BRACE_RIGHT",
+        "TOKEN_OPERATOR_PLUS",
+        "TOKEN_OPERATOR_MINUS",
+        "TOKEN_OPERATOR_MULTIPLICATION",
+        "TOKEN_OPERATOR_DIVISION",
+        "TOKEN_OPERATOR_LESS_THAN",
+        "TOKEN_OPERATOR_GREATER_THAN",
+        "TOKEN_OPERATOR_LESS_THAN_OR_EQUAL",
+        "TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL",
+        "TOKEN_OPERATOR_EQUALS",
+        "TOKEN_OPERATOR_NOT_EQUALS",
+        "TOKEN_LITERAL_INT",
+        "TOKEN_LITERAL_DOUBLE",
+        "TOKEN_LITERAL_STRING",
+        "TOKEN_ASSIGN",
+        "TOKEN_EXCLAMATION",
+        "TOKEN_QUESTION",
+        "TOKEN_NIL_COALESCING",
+        "TOKEN_COMMA",
+        "TOKEN_COLON",
+        "TOKEN_ARROW",
+        "TOKEN_IDENTIFIER",
+    };
+    printf("%s\n", tokens_as_string[t]);
+#endif
+}
+
+
 typedef enum {
     // Start state
     LEXER_STATE_START, // starting state
@@ -88,6 +136,12 @@ typedef enum {
     LEXER_STATE_INVALID_CHARACTER,
 } State;
 
+
+void initLexer(FILE* file);
+
+Token get_token(BufferString* buffer_string);
+
+void unget_token();
 
 // finds next token
 // returns Token type
