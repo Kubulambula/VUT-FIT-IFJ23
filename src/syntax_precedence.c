@@ -23,13 +23,16 @@ bool Stack_IsFull( const Stack *stack ) {
 	return (stack->topIndex + 1) == STACK_SIZE ? 1 : 0;
 }
 
+void Stack_Top( const Stack *stack, Token* token ) {
+	*token = stack->array[stack->topIndex];
+}
 
 void Stack_Top_Token( const Stack *stack, Token* token ) {
     int i = 0;
     if(Stack_IsEmpty(stack)){
 		*token = TOKEN_ERR;		
 	}
-    while((stack->array[stack->topIndex - i] == PRECEDENCE_E) || (stack->array[stack->topIndex - i] == PRECEDENCE_SHIFT_BEGIN) ){
+    while((stack->array[stack->topIndex - i] == PRECEDENCE_E)){
         i++;
     }
 	*token = stack->array[stack->topIndex];
@@ -62,6 +65,7 @@ int token2index(Token token){
         case TOKEN_LITERAL_DOUBLE:
         case TOKEN_LITERAL_INT:
         case TOKEN_LITERAL_STRING:
+        case PRECEDENCE_E:
             return 0;
         case TOKEN_PARENTHESIS_LEFT:
             return 1;
@@ -87,6 +91,7 @@ int token2index(Token token){
         case TOKEN_EOF:
         case TOKEN_BRACE_LEFT:
         case TOKEN_BRACE_RIGHT:
+        case PRECEDENCE_END:
             return 8;
     }
 }
@@ -94,49 +99,98 @@ int token2index(Token token){
 bool shift_end(Stack* stack, Token stack_top_token){
     Token token;
     int rule = token2index(stack_top_token);
+
+    Stack_Top(stack, &token);
     switch(rule){
-        case 0:
-            Stack_Pop(&stack);
-            Stack_Push(&stack, PRECEDENCE_E);
-            break;
+        case 0: // i
+            if(token2index(token) != 0)
+                return false;
 
-        case 2:
-            Stack_Pop(&stack);
-            Stack_Top(&stack, token);
+            Stack_Pop(stack);
+            Stack_Push(stack, PRECEDENCE_E);
+            return true;
+
+        case 2: // )
+            if(token != TOKEN_PARENTHESIS_LEFT);
+                return false;
+
+            Stack_Pop(stack);
+            Stack_Top(stack, &token);
             if(token != PRECEDENCE_E);
                 return false;
 
-            Stack_Pop(&stack);
-            Stack_Top(&stack, token);
+            Stack_Pop(stack);
+            Stack_Top(stack, &token);
             if(token != TOKEN_PARENTHESIS_RIGHT);
                 return false;
             
-            Stack_Pop(&stack);
+            Stack_Pop(stack);
+            Stack_Push(stack, PRECEDENCE_E);
             return true;
 
-        case 3:
-            Stack_Top(&stack, token);
+        case 3: // !
+            if(token != TOKEN_EXCLAMATION)
+                return false;
+
+            Stack_Pop(stack);
+            Stack_Top(stack, &token);
+            if(token != PRECEDENCE_E)
+                return false;
+
+            //Stack_Pop(&stack);
+            //Stack_Push(&stack, PRECEDENCE_E);
+            return true;
+
+        case 4: // * /
+        case 5: // + -
+        case 6: // == != < > <= >=
+        case 7: // ??
             if(token != PRECEDENCE_E);
                 return false;
 
-            Stack_Pop(&stack);
-            Stack_Top(&stack, token);
-            if(token != TOKEN_PARENTHESIS_RIGHT);
+            Stack_Pop(stack);
+            Stack_Top(stack, &token);
+            switch(rule){
+                case 4:
+                    if(token2index(token) != 4);
+                        return false;
+                    break;
+
+                case 5:
+                    if(token2index(token) != 5);
+                        return false;
+                    break;
+
+                case 6:
+                    if(token2index(token) != 6);
+                        return false;
+                    break;
+
+                case 7:
+                    if(token2index(token) != 7);
+                        return false;
+            }
+            Stack_Pop(stack);
+            Stack_Top(stack, &token);
+            if(token != PRECEDENCE_E);
+                return false;
+
+            return true;
+
+        case 8: // $
+            if(token != PRECEDENCE_E);
                 return false;
             
-            Stack_Pop(&stack);
-            return true;
-        case 4: 
-        case 5: 
-        case 6:
-        case 7:
+            Stack_Pop(stack);
+            Stack_Top(stack, &token);
+            if(token != PRECEDENCE_END);
+                return false;
 
-        case 8:
+            return true;
 
         default:
             return false;
     }
-
 }
 
 int precedence_table(Token stack_top_token, Token current_token){
@@ -173,7 +227,7 @@ bool precedenc(BufferString* buffer_string){
     current = get_next_token(buffer_string);
     Stack_Init(&stack);
     Stack_Push(&stack, PRECEDENCE_END);
-    Stack_Top_Token(&stack, top);
+    Stack_Top_Token(&stack, &top);
     while(top != PRECEDENCE_END || token2index(current) != 8){
         state = precedence_table(top, current);
         switch(state){
@@ -185,11 +239,18 @@ bool precedenc(BufferString* buffer_string){
                 Stack_Push(&stack, current);
                 break;
             case 2:
-                shift_end(&stack, top);
-            case 3:
+                if(shift_end(&stack, top)){
+                    Stack_Push(&stack, current);
+                }
+                else{
+                    return false;
+                }
+                break;
+            //case 3:
         }
-        Stack_Top_Token(&stack, top);
+        Stack_Top_Token(&stack, &top);
         current = get_next_token(buffer_string);
     }
     Stack_Dispose(&stack);
+    return true;
 }
