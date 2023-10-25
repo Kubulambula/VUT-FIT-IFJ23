@@ -1,9 +1,12 @@
 # === Project specific ignores ===
 .vscode/
-src/prog
-src/test.c
-src/test
-src/test.exe
+/src/prog
+/src/test.c
+/src/test
+/src/test.exe
+/src/lexer_tester
+/src/lexer_tester.c
+
 
 # .zip file for submission
 *.zip
