@@ -4,6 +4,7 @@ CC=gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -DNDEBUG
 CFLAGS_WERROR = -std=c99 -Wall -Wextra -Werror -pedantic
 CFLAGS_DEBUG = -std=c99 -Wall -Wextra -pedantic
+CFLAGS_VERBOSE = -std=c99 -Wall -Wextra -pedantic -DVERBOSE
 
 EXECUTABLE = ifj23compiler
 
@@ -20,8 +21,14 @@ debug:
 	$(CC) $(CFLAGS_DEBUG) -o $(EXECUTABLE) ./src/*.c
 
 
+# same as debug, but handles warning as errors
 werror:
 	$(CC) $(CFLAGS_WERROR) -o $(EXECUTABLE) ./src/*.c
+
+
+# same as debug, but prints more stuff
+verbose:
+	$(CC) $(CFLAGS_VERBOSE) -o $(EXECUTABLE) ./src/*.c
 
 
 run:
