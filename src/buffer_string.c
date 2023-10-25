@@ -87,6 +87,7 @@ bool buffer_string_append_char(BufferString* buffer_string_p, char c){
 		if (new_string == NULL){
 			return false;
 		}
+		buffer_string_p->string = new_string;
 		buffer_string_p->alloc_length += BUFFER_STRING_LENGTH_INCREMENT; 
 	}
 
@@ -109,6 +110,7 @@ bool buffer_string_append_str(BufferString* buffer_string_p, char* str){
 		if (new_string == NULL){
 			return false;
 		}
+		buffer_string_p->string = new_string;
 		buffer_string_p->alloc_length = required_alloc_length_after_append;
 	}
 
