@@ -255,27 +255,58 @@ Token get_next_token(BufferString* buffer_string){
                         buffer_string_append_char(buffer_string, nextChar);
                     } else if(nextChar == '.'){
                         buffer_string_append_char(buffer_string, nextChar);
-                        state = LEXER_STATE_DOUBLE_AFTER_DOT;
+                        state = LEXER_STATE_DOUBLE_DOT;
                     } else if(nextChar == 'e' || nextChar == 'E'){
                         buffer_string_append_char(buffer_string, nextChar);
-                        state = LEXER_STATE_DOUBLE_AFTER_E;
+                        state = LEXER_STATE_DOUBLE_E;
                     } else{
                         ungetc(nextChar, source_file);
                         return TOKEN_LITERAL_INT;
                     }
                     break;
                 
+                case LEXER_STATE_DOUBLE_DOT:
+                    if (isdigit(nextChar)){
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_DOUBLE_AFTER_DOT;
+                        break;
+                    }
+                    ungetc(nextChar, source_file);
+                    return TOKEN_ERR;
+               
                 case LEXER_STATE_DOUBLE_AFTER_DOT:
                     if (isdigit(nextChar)){
                         buffer_string_append_char(buffer_string, nextChar);
                     } else if(nextChar == 'e' || nextChar == 'E'){
                         buffer_string_append_char(buffer_string, nextChar);
-                        state = LEXER_STATE_DOUBLE_AFTER_E;
+                        state = LEXER_STATE_DOUBLE_E;
                     } else{
                         ungetc(nextChar, source_file);
                         return TOKEN_LITERAL_DOUBLE;
                     }
                     break;
+                    
+                case LEXER_STATE_DOUBLE_E:
+                    if (isdigit(nextChar)){
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_DOUBLE_AFTER_E;
+                        break;
+                    } else if (nextChar == '-' || nextChar == '+'){
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_DOUBLE_E_SIGN;
+                        break;
+                    }
+                    ungetc(nextChar, source_file);
+                    return TOKEN_ERR;
+                
+                case LEXER_STATE_DOUBLE_E_SIGN:
+                    if (isdigit(nextChar)){
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_DOUBLE_AFTER_E;
+                        break;
+                    }
+                    ungetc(nextChar, source_file);
+                    return TOKEN_ERR;
                 
                 case LEXER_STATE_DOUBLE_AFTER_E:
                     if (isdigit(nextChar)){
