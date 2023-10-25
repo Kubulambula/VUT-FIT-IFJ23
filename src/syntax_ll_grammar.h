@@ -26,33 +26,37 @@ Error ll_func_more_params(BufferString* buffer_string);
 
 Error ll_func_type(BufferString* buffer_string);
 
-Error ll_type(BufferString* buffer_string);
-
-Error ll_literal(BufferString* buffer_string);
-
 Error ll_statement_body(BufferString* buffer_string);
-
-Error ll_statements(BufferString* buffer_string);
 
 Error ll_program(BufferString* buffer_string);
 
-//<lit>
-bool ll_lit(BufferString* buffer_string);
-
-//<val>
-bool ll_val(BufferString* buffer_string);
-
-//<more_val>
-bool ll_more_val(BufferString* buffer_string);
-
-//<exp>
-bool ll_exp(BufferString* buffer_string);
-
-//<more_exp>
-bool ll_more_exp(BufferString* buffer_string);
-
-//<expressions>
-bool ll_expressions(BufferString* buffer_string);
 
 
+Error ll_func_call(BufferString* buffer_string);
+
+Error ll_func_args(BufferString* buffer_string);
+
+Error ll_func_arg(BufferString* buffer_string);
+
+Error ll_func_more_arg(BufferString* buffer_string);
+
+Error ll_type(BufferString* buffer_string);
+
+Error ll_lit(BufferString* buffer_string);
+
+Error ll_lit(BufferString* buffer_string);
+
+Error ll_val(BufferString* buffer_string);
+
+Error ll_more_val(BufferString* buffer_string);
+
+Error ll_exp(BufferString* buffer_string);
+
+Error ll_more_exp(BufferString* buffer_string);
+
+Error ll_expressions(BufferString* buffer_string);
+
+Error ll_statement(BufferString* buffer_string);
+
+Error ll_statements(BufferString* buffer_string);
 #endif

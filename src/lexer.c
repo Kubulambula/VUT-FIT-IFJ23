@@ -3,8 +3,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "lexer.h"
+#include "buffer_string.c"
 
 FILE* source_file; 
 
@@ -43,6 +45,7 @@ void skip_comments_ML(){
     while(prevChar != '*' || Char != '/'){
         prevChar = Char;
         Char = get_next_char();
+        if(prevChar == '*' && Char == '/'){return;}
     }
 }
 

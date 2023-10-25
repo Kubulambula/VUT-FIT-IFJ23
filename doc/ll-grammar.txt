@@ -102,7 +102,7 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 
 ===condition===
 
-<if> -> <condition_head> <statement_body> TOKEN_KEYWORD_ELSE <statement_body>
+<if> -> <if_head> <statement_body> TOKEN_KEYWORD_ELSE <statement_body>
 
 <if_head> -> TOKEN_KEYWORD_IF TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
 <if_head> -> TOKEN_KEYWORD_IF TOKEN_KEYWORD_LET TOKEN_IDENTIFIER

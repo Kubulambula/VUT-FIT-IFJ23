@@ -1,6 +1,8 @@
 # === Project specific ignores ===
 .vscode/
-
+src/prog
+src/test.c
+src/test
 
 # .zip file for submission
 *.zip
