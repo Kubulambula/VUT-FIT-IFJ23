@@ -80,9 +80,11 @@ void skip_comments_SL(){
         Char = get_next_char();
         if (Char == '\n')
             return;
-        if (Char == EOF)
+        
+        if (Char == EOF){
             ungetc(EOF, source_file);
             return;
+        }
     }while(1);
 }
 
@@ -262,10 +264,13 @@ Token get_next_token(BufferString* buffer_string){
 
                 case LEXER_STATE_POSSIBLE_COMMENT:
                     if(nextChar == '*'){
-                        skip_comments_ML();
+                        if (!skip_comments_ML())
+                            return TOKEN_ERR;
+                        state = LEXER_STATE_START;
                     }   
                     else if(nextChar == '/'){
                         skip_comments_SL();
+                        state = LEXER_STATE_START;
                     }
                     else {
                         ungetc(nextChar,source_file);
