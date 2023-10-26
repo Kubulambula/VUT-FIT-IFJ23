@@ -51,4 +51,14 @@ bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str);
 // Returns the length of BufferString.
 unsigned buffer_string_get_length(BufferString* buffer_string_p);
 
+// Reads the string from left to right and tries to convert it to int.
+// After encountering the first characher, that cannot be convertet, it stops and converts all the previous characters. Read the strtol() manual.
+// If nothing can be converted, returns 0 on non debug builds.
+int buffer_string_get_as_int(BufferString* buffer_string_p);
+
+// Reads the string from left to right and tries to convert it to double.
+// After encountering the first characher, that cannot be convertet, it stops and converts all the previous characters. Read the strtod() manual.
+// If nothing can be converted, returns 0.0 on non debug builds.
+double buffer_string_get_as_double(BufferString* buffer_string_p);
+
 #endif

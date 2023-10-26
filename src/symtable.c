@@ -1,119 +1,159 @@
 #include <stdlib.h>
-
+#include <string.h>
 #include "symtable.h"
-
-//TO DO
-// Is this supposed to be static?
-//yes
-static int hash(char* name,int nameLength)
+static unsigned hash(char* name,int size)
 {
-    return 0;
+    unsigned long long hash = 1;
+    unsigned int index = 0;
+    while(name[index] != '\0')
+    {
+        hash *=(int)name[index];
+        index++;
+    }
+    return hash % size;
 }
 
-bool SymTable_init(SymTable* table,int size)
+static bool SymTable_init_Spec(SymTable* symTable,int size)
 {
     if(size <=0)
         return false;
 
-    table = malloc(sizeof(SymTable));
-    if(table == NULL)
+    symTable->size=size;
+    symTable->count=0;
+    
+    symTable->table = calloc(size,sizeof(Symbol*)); 
+    if(symTable->table == NULL)
         return false;
     
-    table->size=size;
-    table->table = malloc(size*sizeof(Symbol*)); 
-    if(table->table == NULL)
-    {
-        free(table);    
-        return false;
-    }
     
     return true;
 }
-
-void SymTable_free(SymTable* table)
+bool SymTable_init(SymTable* symTable)
 {
-    for(int i=0;i<table->size;i++)
-        free(table->table[i]);
-    free(table);
+    return SymTable_init_Spec(symTable,SYMTABLE_INIT_SIZE);
 }
 
-// Is this supposed to be static?
-// yes.
-static SymTable* SymTable_resize(SymTable* table)
+void SymTable_free(SymTable* symTable)
 {
-    int newSize = table->size + SYMTABLE_EXPAND_SIZE;
+    if(symTable != NULL)
+    {
+        for(int i=0;i<symTable->size;i++)
+        {
+            if(symTable->table[i]!=NULL)
+            {
+                free(symTable->table[i]->name);
+                free(symTable->table[i]);
+
+            }
+        }
+        free(symTable->table);
+        free(symTable);
+    }
+}
+
+static bool SymTable_resize(SymTable* symTable)
+{
+    int newSize = symTable->size + SYMTABLE_EXPAND_SIZE;
     if(newSize % 3 == 0)
         newSize++;
-    SymTable* newTable;
-    SymTable_init(newTable,newSize);
-    for(int i = 0;i<table->size;i++)
+    
+    Symbol** newTable= calloc(newSize,sizeof(Symbol*)); 
+    SymTable temp;
+    temp.table = newTable;
+    temp.size = newSize;
+    temp.count = 0;
+    
+    for(int i = 0;i<symTable->size;i++)
     {
-        if(!SymTable_insert(newTable,table->table[i]->name,table->table[i]->length,table->table[i]->value))
+        if(symTable->table[i] != NULL  && !SymTable_insert(&temp,symTable->table[i]->name,symTable->table[i]->value))
         {
-            SymTable_free(newTable);
-            SymTable_free(table);
-            return NULL;
+            return false;
         }
     }
-    
-    return newTable;
+
+    symTable->table = newTable;
+    symTable->size = newSize;
+    return true;
 }
 
 
-//TO DO
-// Is this supposed to be static? 
-// no.
-//returns symbol if said symbol exists
-Symbol* SymTable_lookup(SymTable* table,char* name,int nameLength)
+//inserts new symbol
+bool SymTable_insert(SymTable* symTable,char* name, int value)
 {
-    if (table->count==0)
-        return NULL;
-
-
-    int index= hash(name,nameLength) % table->size;
-
-    bool found=true;
-    
-    if(table->table[index] == NULL)
-        return NULL;
-    
-    
-    do
+    if(symTable->count == symTable->size-1 )
     {
-        if (nameLength == table->table[index]->length)
-        {
+        if(!SymTable_resize(symTable))
+            return false;
+    }
 
-            for (int k = 0; k<nameLength;k++)
-                if(name[k] != table->table[index]->name[k])
-                    found = false;
-            if(found == true)
-                return table->table[index];
+    int index = hash(name,symTable->size);
+   
+    while(symTable->table[index] != NULL )
+    {
+        if(strcmp(symTable->table[index]->name,name) == 0)
+        {
+            
+            symTable->table[index]->value = value;
+            return true;
         }
-        found = true;
-        index++;
-    }while(table->table[index] !=NULL); 
+        index = (index+3 ) % symTable->size;
+    }
+     
+    symTable->table[index] = malloc(sizeof(Symbol));
+    if (symTable->table[index] == NULL)
+        return false;
+    
+    symTable->table[index]->name = name;
+    symTable->table[index]->value = value;
+    symTable->count++;
+    return true;
+}
+
+
+//returns symbol if said symbol exists
+static Symbol* SymTable_lookup(SymTable* symTable,char* name)
+{
+    if (symTable->count==0)
+        return NULL;
+
+
+
+    int index= hash(name,symTable->size) ;
+    
+    
+   
+    while(symTable->table[index] != NULL)
+    {
+        
+        if(strcmp(name,symTable->table[index]->name) != 0){
+            index += 3;
+            continue;
+        }
+        return symTable->table[index];
+    
+    }
 
     return NULL;
 }
 
-//TO DO
-//inserts new symbol
-bool SymTable_insert(SymTable* table,char* name,int nameLength, int value)
-{
 
-    return false;
-}
-
-//TO DO
 //sets value of symbol
-bool SymTable_set(SymTable* table,char* name, int value)
+bool SymTable_set(SymTable* symTable,char* name, int value)
 {
-    return false;
+    Symbol* symbol = SymTable_lookup(symTable,name);
+    if (symbol == NULL)
+        return false;
+
+    symbol->value = value;
+    
+    return true;
 }
 
-//TO DO
 //returns value of said symbol
-int SymTable_get(SymTable* table,char* name)
+int SymTable_get(SymTable* symTable,char* name)
 {
-    return 0;
+    Symbol* symbol = SymTable_lookup(symTable,name);
+    if (symbol == NULL)
+        return 666;
+    return symbol->value;
 }
