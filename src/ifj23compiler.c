@@ -15,6 +15,8 @@ int main(void) {
 		if (t == TOKEN_IDENTIFIER){
 			printf("Indetifier >>> %s <<<\n", b.string);
 		}
+		if (t == TOKEN_ERR)
+			return 1;
 	}
 
 
