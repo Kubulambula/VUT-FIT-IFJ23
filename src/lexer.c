@@ -29,7 +29,7 @@ char get_next_char(){
     printf("Read char: %c\n", Nextchar);
     return Nextchar;
 #else
-    return  getc(source_file);
+    return getc(source_file);
 #endif
 }
 
@@ -43,24 +43,47 @@ void skip_white_space(char whiteSpace){
 
 
 // Handle comments mutli line
-void skip_comments_ML(){
+// We have to handle inner multiline comments
+bool skip_comments_ML(){
+    int depth = 1; // we start already in side the comment
     char Char = '\0';
     char prevChar = '\0';
-    while(prevChar != '*' || Char != '/'){
+    do{
         prevChar = Char;
         Char = get_next_char();
-    }
+        // comment block start
+        if(prevChar == '/' && Char == '*'){
+            depth++;
+            Char = '\0'; // just so that /* /*/* */*/ */ works correctly
+            continue;
+        }
+        // comment block end
+        if(prevChar == '*' && Char == '/'){
+            if (--depth == 0)
+                // If we exited all the inner blocks, we know that the block comment is over
+                return true;
+            // We are still inside block comment
+            Char = '\0'; // just so that /* /**/* */ works correctly
+            continue;
+        }
+        // unexpected EOF inside block comment
+        if(Char == EOF)
+            return false;
+    }while(1);
 }
 
 
 // Handle comments single line
 void skip_comments_SL(){
-    char Char = get_next_char();
-    while(Char != '\n'){
+    char Char;
+    do{
         Char = get_next_char();
-    }
-    // The \n can be consumed. This way the comment line is effectively removed instead of replaced by a blank line.
-    //ungetc(Char, source_file); // to read '\n' again
+        if (Char == '\n')
+            return;
+        if (Char == EOF)
+            ungetc(EOF, source_file);
+            return;
+    }while(1);
 }
 
 

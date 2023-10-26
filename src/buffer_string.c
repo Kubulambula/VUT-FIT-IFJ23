@@ -144,6 +144,24 @@ static int clamp_long_to_int(long l){
 }
 
 
+int buffer_string_escape(BufferString* buffer_string_p){
+	assert(buffer_string_p != NULL);
+	// Setup temp BufferString
+	BufferString temp;
+	if(buffer_string_init(&temp))
+		return true;
+
+
+	// Copy temp to buffer_string_p
+	free(buffer_string_p->string);
+	buffer_string_p->alloc_length = temp.alloc_length;
+	buffer_string_p->length = temp.length;
+	buffer_string_p->string = temp.string;
+	// DO NOT FREE temp!!! It's on the stack so it is freed after return and the string is passed to buffer_string_p
+	return true;
+}
+
+
 int buffer_string_get_as_int(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 #ifdef NDEBUG
