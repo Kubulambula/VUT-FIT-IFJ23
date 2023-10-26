@@ -116,12 +116,14 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
 
 
 // obal pro get_next_token(). Vraci dalsi token a pokud je pred volanim pouzito unget_token(), cte stejny token znovu.
-Token get_token(BufferString* buffer_string){
+Token get_token(BufferString* buffer_string, bool skip_eol){
     if (use_last_token){
         use_last_token = false;
         return last_token;
     }
-    last_token = get_next_token(buffer_string);
+    do{
+        last_token = get_next_token(buffer_string);// get next token
+    } while(skip_eol && last_token == TOKEN_EOL); // go to the next token, if the token is EOL
     return last_token;
 }
 

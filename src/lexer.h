@@ -142,7 +142,7 @@ typedef enum {
 
 void initLexer(FILE* file);
 
-Token get_token(BufferString* buffer_string);
+Token get_token(BufferString* buffer_string, bool skip_eol);
 
 void unget_token();
 
