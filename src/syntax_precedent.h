@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "lexer.h"
+#include "syntax_ll_grammar.h"
 
 typedef struct {
 	Token *array;
@@ -24,5 +25,13 @@ void Stack_Pop( Stack * );
 void Stack_Push( Stack *, Token token );
 
 void Stack_Dispose( Stack * );
+
+int token2index(Token token);
+
+bool shift_end(Stack* stack, Token stack_top_token);
+
+int precedent_table(Token stack_top_token, Token current_token);
+
+Error precedent(BufferString* buffer_string);
 
 #endif
