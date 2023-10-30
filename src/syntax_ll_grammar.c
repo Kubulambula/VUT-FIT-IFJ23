@@ -79,6 +79,9 @@ Error ll_func_definition(BufferString* buffer_string){
 	if(ll_func_head(buffer_string))
 		return ERR_SYNTAX;
 
+	if(CURRENT_TOKEN == TOKEN_EOL)
+		CURRENT_TOKEN = get_next_token(buffer_string);
+	
 	return ll_statement_body(buffer_string);
 }
 
@@ -139,11 +142,11 @@ Error ll_func_param(BufferString* buffer_string){
 
 Error ll_func_more_params(BufferString* buffer_string){
 	ll_log("ll_func_more_params");
-	switch(CURRENT_TOKEN){
+	switch(CURRENT_TOKEN){	// <func_more_params> -> ɛ
 		case TOKEN_PARENTHESIS_RIGHT:
 			return OK;
 
-		case TOKEN_COMMA:
+		case TOKEN_COMMA:	// <func_more_params> -> ,<func_param><func_more_params>
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			if(ll_func_param(buffer_string))
 				return ERR_SYNTAX;
@@ -255,13 +258,13 @@ Error ll_func_arg(BufferString* buffer_string){
 Error ll_func_more_arg(BufferString* buffer_string){
 	ll_log("ll_func_more_arg");
 	switch(CURRENT_TOKEN){
-		case TOKEN_COMMA:
+		case TOKEN_COMMA:	// <func_more_arg> -> , <func_arg> <func_more_arg>
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			if(ll_func_arg(buffer_string))
 				return ERR_SYNTAX;
 			return ll_func_more_arg(buffer_string);
 
-		case TOKEN_PARENTHESIS_RIGHT:
+		case TOKEN_PARENTHESIS_RIGHT:	// <func_more_arg> -> ɛ
 			return OK;
 
 		default:
@@ -272,9 +275,9 @@ Error ll_func_more_arg(BufferString* buffer_string){
 Error ll_type_guestion(BufferString* buffer_string){
 	ll_log("ll_type_guestion");
 	switch(CURRENT_TOKEN){
-		case TOKEN_KEYWORD_INT:
-		case TOKEN_KEYWORD_DOUBLE:
-		case TOKEN_KEYWORD_STRING:
+		case TOKEN_KEYWORD_INT:		// <type> -> Int?
+		case TOKEN_KEYWORD_DOUBLE:	// <type> -> Double?
+		case TOKEN_KEYWORD_STRING:	// <type> -> String?
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			if(CURRENT_TOKEN == TOKEN_QUESTION)
 				CURRENT_TOKEN = get_next_token(buffer_string);
@@ -289,9 +292,9 @@ Error ll_type_guestion(BufferString* buffer_string){
 Error ll_type(BufferString* buffer_string){
 	ll_log("ll_type");
 	switch(CURRENT_TOKEN){
-		case TOKEN_KEYWORD_INT:
-		case TOKEN_KEYWORD_DOUBLE:
-		case TOKEN_KEYWORD_STRING:
+		case TOKEN_KEYWORD_INT:		// <type> -> Int
+		case TOKEN_KEYWORD_DOUBLE:	// <type> -> Double
+		case TOKEN_KEYWORD_STRING:	// <type> -> String
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			return OK;
 
@@ -303,7 +306,7 @@ Error ll_type(BufferString* buffer_string){
 Error ll_lit(BufferString* buffer_string){
 	ll_log("ll_lit");
 	switch(CURRENT_TOKEN){
-		case TOKEN_LITERAL_INT:	//<lit> -> #Int literal
+		case TOKEN_LITERAL_INT:		//<lit> -> #Int literal
 		case TOKEN_LITERAL_DOUBLE:	//<lit> -> #Double literal
 		case TOKEN_LITERAL_STRING:	//<lit> -> #String literal
 			CURRENT_TOKEN = get_next_token(buffer_string);
@@ -314,111 +317,16 @@ Error ll_lit(BufferString* buffer_string){
 	}
 }
 
-// Error ll_val(BufferString* buffer_string){
-// 	switch(CURRENT_TOKEN){
-// 		case TOKEN_IDENTIFIER:			//<val> -> <identifier>
-// 			return ll_identifier(buffer_string);	
-
-// 		case TOKEN_PARENTHESIS_LEFT:	//<val> -> ( <expressions> )
-// 			CURRENT_TOKEN = get_next_token(buffer_string);
-// 			if(ll_expressions(buffer_string))
-// 				return ERR_SYNTAX;
-
-// 			if(CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
-// 				return ERR_SYNTAX;
-// 			return OK;
-
-// 		default:						//<val> -> <lit>
-// 			return ll_lit(buffer_string);
-// 	}
-// }
-
-// Error ll_more_val(BufferString* buffer_string){
-// 	switch(CURRENT_TOKEN){
-// 		case TOKEN_OPERATOR_PLUS:			//<more_val> -> + <val><more_val>
-// 		case TOKEN_OPERATOR_MINUS:			//<more_val> -> - <val><more_val>
-// 		case TOKEN_OPERATOR_MULTIPLICATION:	//<more_val> -> * <val><more_val>
-// 		case TOKEN_OPERATOR_DIVISION:		//<more_val> -> / <val><more_val>
-// 			CURRENT_TOKEN = get_next_token(buffer_string);
-// 			if(ll_val(buffer_string))
-// 				return ERR_SYNTAX;
-
-// 			return ll_more_val(buffer_string);
-
-// 		//<more_val> -> ɛ :
-// 		case TOKEN_EOF:
-// 		case TOKEN_EOL:
-// 		case TOKEN_BRACE_RIGHT:						// }
-// 		case TOKEN_BRACE_LEFT:						// {
-// 		case TOKEN_PARENTHESIS_RIGHT:				// )
-// 		case TOKEN_OPERATOR_LESS_THAN:				// <
-//     	case TOKEN_OPERATOR_GREATER_THAN:			// >
-//     	case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:		// <=
-//     	case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:	// >=
-//     	case TOKEN_OPERATOR_EQUALS:					// ==
-//     	case TOKEN_OPERATOR_NOT_EQUALS:				// !=
-// 			return OK;
-
-// 		default:
-// 			return ERR_SYNTAX;
-// 	}
-// }
-
-// Error ll_exp(BufferString* buffer_string){
-// 	if(ll_val(buffer_string))
-// 		return ERR_SYNTAX;
-// 	return ll_more_val(buffer_string);
-// }
-
-// Error ll_more_exp(BufferString* buffer_string){
-// 	switch(CURRENT_TOKEN){
-// 		case TOKEN_OPERATOR_LESS_THAN:				// <more_exp> -> < <exp><more_exp>
-//     	case TOKEN_OPERATOR_GREATER_THAN:			// <more_exp> -> > <exp><more_exp>
-//     	case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:		// <more_exp> -> <= <exp><more_exp>
-//     	case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:	// <more_exp> -> >= <exp><more_exp>
-//     	case TOKEN_OPERATOR_EQUALS:					// <more_exp> -> == <exp><more_exp>
-//     	case TOKEN_OPERATOR_NOT_EQUALS:				// <more_exp> -> != <exp><more_exp>
-// 		case TOKEN_NIL_COALESCING:					// <more_exp> -> ?? <exp><more_exp>
-// 			CURRENT_TOKEN = get_next_token(buffer_string);
-// 			if(ll_exp(buffer_string))
-// 				return ERR_SYNTAX;
-
-// 			return ll_more_exp(buffer_string); 
-
-// 		case TOKEN_EXCLAMATION:						// <more_exp> -> !<more_exp>	debilní polskej unární postfixovej operátor
-// 			CURRENT_TOKEN = get_next_token(buffer_string);
-// 			return ll_more_exp(buffer_string);
-
-// 		// <more_exp> -> ɛ :
-// 		case TOKEN_EOF:								// EOF
-// 		case TOKEN_EOL:								// EOL
-// 		case TOKEN_BRACE_LEFT:						// {
-// 		case TOKEN_BRACE_RIGHT:						// }
-// 		case TOKEN_PARENTHESIS_RIGHT:				// )	<= pro jistotu
-// 			return OK;
-
-// 		default:
-// 			return ERR_SYNTAX;
-// 	}
-// }
-
-// Error ll_expressions(BufferString* buffer_string){
-// 	if(ll_exp(buffer_string))
-// 		return ERR_SYNTAX;
-	
-// 	return ll_more_exp(buffer_string); //<expressions> -> <exp><more_exp>
-// }
-
 Error ll_assign(BufferString* buffer_string){
 	ll_log("ll_assign");
 	switch(CURRENT_TOKEN){
-		case TOKEN_ASSIGN:			//<assign> -> = <expressions>
+		case TOKEN_ASSIGN:	//<assign> -> = <expressions>
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			return precedent(buffer_string);
 
-		case TOKEN_EOF:				//<assign> -> ɛ :
+		case TOKEN_EOF:		//<assign> -> ɛ :
 		case TOKEN_EOL:
-		case TOKEN_PARENTHESIS_RIGHT:
+		//case TOKEN_PARENTHESIS_RIGHT:		// nevim co to tady dělá, kdyby se něco pokazilo možná je to tohle
 		case TOKEN_BRACE_RIGHT:
 			return OK;
 
@@ -429,13 +337,13 @@ Error ll_assign(BufferString* buffer_string){
 
 Error ll_assign_type(BufferString* buffer_string){
 	ll_log("ll_assign_type");
-	switch(CURRENT_TOKEN){
+	switch(CURRENT_TOKEN){	// <assign_type> -> : <type_guestion> <assign>
 		case TOKEN_COLON:
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			if(ll_type_guestion(buffer_string))
 				return ERR_SYNTAX;
 			
-		default:
+		default:			// <assign_type> -> <assign>
 			return ll_assign(buffer_string);
 	}
 }
@@ -443,13 +351,12 @@ Error ll_assign_type(BufferString* buffer_string){
 Error ll_identifier(BufferString* buffer_string){
 	ll_log("ll_identifier");
 	switch(CURRENT_TOKEN){
-		case TOKEN_PARENTHESIS_LEFT:	//<idnetifier> -> #identifier<func_call>
+		case TOKEN_PARENTHESIS_LEFT:	// <identifier> -> #identifier <func_call>
 			if(ll_func_call(buffer_string))
 				return ERR_SYNTAX;
-
 			return OK;
 
-		case TOKEN_ASSIGN:
+		case TOKEN_ASSIGN:		// <identifier> -> #identifier = <expression>
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			return precedent(buffer_string);
 
@@ -461,13 +368,13 @@ Error ll_identifier(BufferString* buffer_string){
 Error ll_return(BufferString* buffer_string){
 	ll_log("ll_return");
 	switch(CURRENT_TOKEN){
-		case TOKEN_EOL:					//<return> -> return
+		case TOKEN_EOL:		//<return> -> return
 		case TOKEN_EOF:
-		case TOKEN_PARENTHESIS_RIGHT:	//<return> -> return
+		case TOKEN_PARENTHESIS_RIGHT:
 		case TOKEN_BRACE_RIGHT:
 			return OK;
 
-		default:						//<return> -> return<expressions>
+		default:			//<return> -> return <expression>
 			return precedent(buffer_string);	
 	}
 }
@@ -475,8 +382,9 @@ Error ll_return(BufferString* buffer_string){
 Error ll_statement(BufferString* buffer_string){
 	ll_log("ll_statement");
 	switch(CURRENT_TOKEN){
-		case TOKEN_EOL:
+		case TOKEN_EOL:				//<statement> -> EOL
 			CURRENT_TOKEN = get_next_token(buffer_string);
+
 		case TOKEN_BRACE_RIGHT:		//<statement> -> ɛ
 		case TOKEN_KEYWORD_FUNC:
 			return OK;
@@ -497,8 +405,8 @@ Error ll_statement(BufferString* buffer_string){
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			return ll_identifier(buffer_string);
 
-		case TOKEN_KEYWORD_LET:		//<statement> -> let #identifier <assign_type> <assign>
-		case TOKEN_KEYWORD_VAR:		//<statement> -> let #identifier <assign_type> <assign>
+		case TOKEN_KEYWORD_LET:		//<statement> -> let #identifier <assign_type>
+		case TOKEN_KEYWORD_VAR:		//<statement> -> var #identifier <assign_type>
 		//case TOKEN_KEYWORD_NIL:		//not sure about that
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			if(CURRENT_TOKEN != TOKEN_IDENTIFIER)
@@ -520,7 +428,7 @@ Error ll_statements(BufferString* buffer_string){
 		case TOKEN_KEYWORD_FUNC:
 			return OK;
 
-		case TOKEN_EOL:
+		case TOKEN_EOL:		//<statements> -> EOL<statement><statements>
 			CURRENT_TOKEN = get_next_token(buffer_string);
 
 		default:				//<statements> -> <statement><statements>
