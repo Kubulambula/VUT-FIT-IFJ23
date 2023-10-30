@@ -6,6 +6,9 @@
 /src/test.exe
 /src/lexer_tester
 /src/lexer_tester.c
+/src/test-expression.c
+/src/test-expression.exe
+/src/expression
 
 
 # .zip file for submission

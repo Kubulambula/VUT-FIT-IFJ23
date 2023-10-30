@@ -101,6 +101,7 @@ int token2index(Token token){
         case TOKEN_BRACE_RIGHT:
         case PRECEDENT_END:
         case TOKEN_COMMA:
+        case TOKEN_ASSIGN:
             return 8;   // EOF EOL { } , $
 
         default:

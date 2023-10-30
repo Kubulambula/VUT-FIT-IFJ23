@@ -23,7 +23,7 @@ Error ll_while_head(BufferString* buffer_string){
 		return ERR_SYNTAX;
 
 	if(CURRENT_TOKEN == TOKEN_EOL)
-		CURRENT_TOKEN == get_next_token(buffer_string);
+		CURRENT_TOKEN = get_next_token(buffer_string);
 
 	return OK;
 }
@@ -34,26 +34,26 @@ Error ll_if(BufferString* buffer_string){
 		return ERR_SYNTAX;
 
 	if(CURRENT_TOKEN == TOKEN_EOL)	// EOL?
-		CURRENT_TOKEN == get_next_token(buffer_string);
+		CURRENT_TOKEN = get_next_token(buffer_string);
 
 	if(ll_statement_body(buffer_string))	// {<statement_body>}
 		return ERR_SYNTAX;
 
 	if(CURRENT_TOKEN == TOKEN_EOL)	// EOL?
-		CURRENT_TOKEN == get_next_token(buffer_string);
+		CURRENT_TOKEN = get_next_token(buffer_string);
 
 	if(CURRENT_TOKEN != TOKEN_KEYWORD_ELSE)	// else
 		return ERR_SYNTAX;
 
 	CURRENT_TOKEN = get_next_token(buffer_string);
 	if(CURRENT_TOKEN == TOKEN_EOL)			// EOL?
-		CURRENT_TOKEN == get_next_token(buffer_string);
+		CURRENT_TOKEN = get_next_token(buffer_string);
 
 	if(ll_statement_body(buffer_string))	// {<statement_body>}
 		return ERR_SYNTAX;
 
 	if(CURRENT_TOKEN == TOKEN_EOL)	// EOL?
-		CURRENT_TOKEN == get_next_token(buffer_string);
+		CURRENT_TOKEN = get_next_token(buffer_string);
 	
 	return OK;
 }
@@ -227,8 +227,10 @@ Error ll_func_args(BufferString* buffer_string){
 Error ll_func_arg(BufferString* buffer_string){
 	ll_log("ll_func_arg");
 	switch(CURRENT_TOKEN){
-		case TOKEN_PARENTHESIS_RIGHT:
 		case TOKEN_IDENTIFIER:
+			CURRENT_TOKEN = get_next_token(buffer_string);
+
+		case TOKEN_PARENTHESIS_RIGHT:
 			return OK;
 
 		default:
@@ -254,15 +256,15 @@ Error ll_func_more_arg(BufferString* buffer_string){
 }
 
 Error ll_type_guestion(BufferString* buffer_string){
-	ll_log("ll_type");
+	ll_log("ll_type_guestion");
 	switch(CURRENT_TOKEN){
-		case TOKEN_LITERAL_INT:
-		case TOKEN_LITERAL_DOUBLE:
-		case TOKEN_LITERAL_STRING:
+		case TOKEN_KEYWORD_INT:
+		case TOKEN_KEYWORD_DOUBLE:
+		case TOKEN_KEYWORD_STRING:
 			CURRENT_TOKEN = get_next_token(buffer_string);
-			if(CURRENT_TOKEN = TOKEN_QUESTION){
+			if(CURRENT_TOKEN == TOKEN_QUESTION)
 				CURRENT_TOKEN = get_next_token(buffer_string);
-			}
+
 			return OK;
 
 		default:
@@ -273,9 +275,9 @@ Error ll_type_guestion(BufferString* buffer_string){
 Error ll_type(BufferString* buffer_string){
 	ll_log("ll_type");
 	switch(CURRENT_TOKEN){
-		case TOKEN_LITERAL_INT:
-		case TOKEN_LITERAL_DOUBLE:
-		case TOKEN_LITERAL_STRING:
+		case TOKEN_KEYWORD_INT:
+		case TOKEN_KEYWORD_DOUBLE:
+		case TOKEN_KEYWORD_STRING:
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			return OK;
 
@@ -416,8 +418,8 @@ Error ll_assign_type(BufferString* buffer_string){
 	switch(CURRENT_TOKEN){
 		case TOKEN_COLON:
 			CURRENT_TOKEN = get_next_token(buffer_string);
-			if(ll_type_guestion(buffer_string)){
-				return ERR_SYNTAX;}
+			if(ll_type_guestion(buffer_string))
+				return ERR_SYNTAX;
 			
 		default:
 			return ll_assign(buffer_string);
@@ -433,9 +435,12 @@ Error ll_identifier(BufferString* buffer_string){
 
 			return OK;
 
-		default:
-			unget_token();
+		case TOKEN_ASSIGN:
+			CURRENT_TOKEN = get_next_token(buffer_string);
 			return precedent(buffer_string);
+
+		default:
+			return ERR_SYNTAX;
 	}
 }
 
@@ -456,6 +461,11 @@ Error ll_return(BufferString* buffer_string){
 Error ll_statement(BufferString* buffer_string){
 	ll_log("ll_statement");
 	switch(CURRENT_TOKEN){
+		case TOKEN_EOL:
+			CURRENT_TOKEN = get_next_token(buffer_string);
+		case TOKEN_BRACE_RIGHT:		//<statement> -> ɛ
+			return OK;
+
 		case TOKEN_KEYWORD_IF:		//<statement> -> <if>
 			CURRENT_TOKEN = get_next_token(buffer_string);
 			return ll_if(buffer_string);
@@ -496,7 +506,11 @@ Error ll_statements(BufferString* buffer_string){
 
 		case TOKEN_EOL:
 			CURRENT_TOKEN = get_next_token(buffer_string);
+
 		default:				//<statements> -> <statement><statements>
-			return ll_statement(buffer_string) || ll_statements(buffer_string);
+			if(ll_statement(buffer_string))
+				return ERR_SYNTAX;
+
+			return ll_statements(buffer_string);
 	}
 }
