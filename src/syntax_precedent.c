@@ -214,10 +214,6 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
     };
     return table[token2index(stack_top_token)][token2index(current_precedent_token)];
 }
-//TODO:
-//zprovoznit funkce ve vyrazech, prava zavorka dela problemy
-// netolerovat epsilon pravidla -> bude ekonomictejsi je kontrolovat pred precedencni analyzou
-
 
 /* funkce provede precedencni analyzu vyrazu.
 funkce počítá s epsilon pravidly, ale ve vlastním zájmu se raději ujistěte jestli tam nějáký výraz je než ji zavoláte */

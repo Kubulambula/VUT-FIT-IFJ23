@@ -2,6 +2,7 @@
 #include "lexer.h"
 #include <stdio.h>
 
+//pomocna funkce pro hledani chyb
 void ll_log(const char *function_name){
 	printf("%s : ", function_name);
 	print_token_as_string(CURRENT_TOKEN);
@@ -120,7 +121,7 @@ Error ll_func_params(BufferString* buffer_string){
 
 Error ll_func_param(BufferString* buffer_string){
 	ll_log("ll_func_param");
-	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)	
 		return ERR_SYNTAX;
 
 	CURRENT_TOKEN = get_next_token(buffer_string);
@@ -143,6 +144,7 @@ Error ll_func_more_params(BufferString* buffer_string){
 			return OK;
 
 		case TOKEN_COMMA:
+			CURRENT_TOKEN = get_next_token(buffer_string);
 			if(ll_func_param(buffer_string))
 				return ERR_SYNTAX;
 
@@ -218,6 +220,10 @@ Error ll_func_call(BufferString* buffer_string){
 
 Error ll_func_args(BufferString* buffer_string){
 	ll_log("ll_func_args");
+	if(CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT){
+		return OK;
+	}
+
 	if(ll_func_arg(buffer_string))
 		return ERR_SYNTAX;
 
@@ -229,9 +235,17 @@ Error ll_func_arg(BufferString* buffer_string){
 	switch(CURRENT_TOKEN){
 		case TOKEN_IDENTIFIER:
 			CURRENT_TOKEN = get_next_token(buffer_string);
+			if(CURRENT_TOKEN == TOKEN_COLON){
+				CURRENT_TOKEN = get_next_token(buffer_string);
+			}
+			else{
+				return OK;
+			}
 
-		case TOKEN_PARENTHESIS_RIGHT:
-			return OK;
+			if(CURRENT_TOKEN == TOKEN_IDENTIFIER){
+				CURRENT_TOKEN = get_next_token(buffer_string);
+				return OK;
+			}
 
 		default:
 			return ll_lit(buffer_string);
@@ -464,6 +478,7 @@ Error ll_statement(BufferString* buffer_string){
 		case TOKEN_EOL:
 			CURRENT_TOKEN = get_next_token(buffer_string);
 		case TOKEN_BRACE_RIGHT:		//<statement> -> ɛ
+		case TOKEN_KEYWORD_FUNC:
 			return OK;
 
 		case TOKEN_KEYWORD_IF:		//<statement> -> <if>
@@ -502,6 +517,7 @@ Error ll_statements(BufferString* buffer_string){
 	switch(CURRENT_TOKEN){
 		case TOKEN_BRACE_RIGHT:	//<statements> -> ɛ
 		case TOKEN_EOF:
+		case TOKEN_KEYWORD_FUNC:
 			return OK;
 
 		case TOKEN_EOL:
