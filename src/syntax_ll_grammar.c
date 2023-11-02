@@ -2,13 +2,12 @@
 #include "lexer.h"
 #include <stdio.h>
 
-//pomocná proměná pro přehlednost pře debugování
-int line = 1;
-
 //pomocna funkce pro hledani chyb
 void ll_log(const char *function_name){
-	printf("%d %s : ", line, function_name);
+#if !defined NDEBUG && defined VERBOSE
+	printf("%s : ", function_name);
 	print_token_as_string(CURRENT_TOKEN);
+#endif
 }
 
 
@@ -155,6 +154,9 @@ Error ll_func_more_params(BufferString* buffer_string){
 				return ERR_SYNTAX;
 
 			return ll_func_more_params(buffer_string);
+
+		default:
+			return ERR_SYNTAX;
 	}
 }
 
@@ -198,7 +200,6 @@ Error ll_program(BufferString* buffer_string){
 			if(ll_func_definition(buffer_string))
 				return ERR_SYNTAX;
 
-			CURRENT_TOKEN = get_next_token(buffer_string);
 			return ll_program(buffer_string);
 
 		default:	//<program> -> <statements>
