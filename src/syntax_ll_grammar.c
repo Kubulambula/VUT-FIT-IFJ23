@@ -2,9 +2,12 @@
 #include "lexer.h"
 #include <stdio.h>
 
+//pomocná proměná pro přehlednost pře debugování
+int line = 1;
+
 //pomocna funkce pro hledani chyb
 void ll_log(const char *function_name){
-	printf("%s : ", function_name);
+	printf("%d %s : ", line, function_name);
 	print_token_as_string(CURRENT_TOKEN);
 }
 

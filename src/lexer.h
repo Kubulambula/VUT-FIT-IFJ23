@@ -56,7 +56,7 @@ typedef enum{
     // Identifier
     TOKEN_IDENTIFIER, // variable / function identifier
 
-    //Precedence table tokens - not actual tokens from source file so dont worry about them ;-)  --Jimbo
+    //Precedent table tokens - not actual tokens from source file so dont worry about them ;-)  --Jimbo
     PRECEDENT_E,
     PRECEDENT_END,
     

@@ -20,6 +20,8 @@ bool Stack_IsFull( const Stack * );
 
 void Stack_Top( const Stack *, Token* );
 
+void Stack_Top_Token( const Stack *stack, Token* token );
+
 void Stack_Pop( Stack * );
 
 void Stack_Push( Stack *, Token token );

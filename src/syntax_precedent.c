@@ -102,9 +102,10 @@ int token2index(Token token){
         case PRECEDENT_END:
         case TOKEN_COMMA:
         case TOKEN_ASSIGN:
-            return 8;   // EOF EOL { } , $
+            return 8;   // EOF EOL { } , PRECEDENT_END
 
         default:
+            return TOKEN_ERR;
     }
 }
 
@@ -206,7 +207,7 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
     { 1, 1, 3, 1, 1, 1, 1, 1, 0},   // 0 -> error
     { 0, 0, 2, 2, 2, 2, 2, 2, 2},   // 2 -> >
     { 1, 1, 2, 2, 2, 2, 2, 2, 2},   // 3 -> =
-    { 1, 1, 2, 1, 2, 2, 2, 2, 2},
+    { 1, 1, 2, 1, 2, 2, 2, 2, 2},   // 4 -> func()
     { 1, 1, 2, 1, 1, 2, 2, 2, 2},
     { 1, 1, 2, 1, 1, 1, 2, 2, 2},
     { 1, 1, 2, 1, 1, 1, 1, 2, 2},
@@ -220,7 +221,6 @@ funkce počítá s epsilon pravidly, ale ve vlastním zájmu se raději ujistět
 Error precedent(BufferString* buffer_string){
     Stack stack;
     Token top;
-    //Token current;
     int state;
     Stack_Init(&stack);
     if(stack.array == NULL){
