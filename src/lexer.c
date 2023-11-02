@@ -29,7 +29,7 @@ char get_next_char(){
     printf("Read char: %c\n", Nextchar);
     return Nextchar;
 #else
-    return  getc(source_file);
+    return getc(source_file);
 #endif
 }
 
@@ -43,24 +43,49 @@ void skip_white_space(char whiteSpace){
 
 
 // Handle comments mutli line
-void skip_comments_ML(){
+// We have to handle inner multiline comments
+bool skip_comments_ML(){
+    int depth = 1; // we start already in side the comment
     char Char = '\0';
     char prevChar = '\0';
-    while(prevChar != '*' || Char != '/'){
+    do{
         prevChar = Char;
         Char = get_next_char();
-    }
+        // comment block start
+        if(prevChar == '/' && Char == '*'){
+            depth++;
+            Char = '\0'; // just so that /* /*/* */*/ */ works correctly
+            continue;
+        }
+        // comment block end
+        if(prevChar == '*' && Char == '/'){
+            if (--depth == 0)
+                // If we exited all the inner blocks, we know that the block comment is over
+                return true;
+            // We are still inside block comment
+            Char = '\0'; // just so that /* /**/* */ works correctly
+            continue;
+        }
+        // unexpected EOF inside block comment
+        if(Char == EOF)
+            return false;
+    }while(1);
 }
 
 
 // Handle comments single line
 void skip_comments_SL(){
-    char Char = get_next_char();
-    while(Char != '\n'){
+    char Char;
+    do{
         Char = get_next_char();
-    }
-    // The \n can be consumed. This way the comment line is effectively removed instead of replaced by a blank line.
-    //ungetc(Char, source_file); // to read '\n' again
+        if (Char == '\n')
+            return;
+        
+        if (Char == EOF){
+            ungetc(EOF, source_file);
+            return;
+        }
+    }while(1);
 }
 
 
@@ -91,12 +116,14 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
 
 
 // obal pro get_next_token(). Vraci dalsi token a pokud je pred volanim pouzito unget_token(), cte stejny token znovu.
-Token get_token(BufferString* buffer_string){
+Token get_token(BufferString* buffer_string, bool skip_eol){
     if (use_last_token){
         use_last_token = false;
         return last_token;
     }
-    last_token = get_next_token(buffer_string);
+    do{
+        last_token = get_next_token(buffer_string);// get next token
+    } while(skip_eol && last_token == TOKEN_EOL); // go to the next token, if the token is EOL
     return last_token;
 }
 
@@ -239,10 +266,13 @@ Token get_next_token(BufferString* buffer_string){
 
                 case LEXER_STATE_POSSIBLE_COMMENT:
                     if(nextChar == '*'){
-                        skip_comments_ML();
+                        if (!skip_comments_ML())
+                            return TOKEN_ERR;
+                        state = LEXER_STATE_START;
                     }   
                     else if(nextChar == '/'){
                         skip_comments_SL();
+                        state = LEXER_STATE_START;
                     }
                     else {
                         ungetc(nextChar,source_file);

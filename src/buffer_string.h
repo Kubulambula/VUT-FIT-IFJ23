@@ -51,6 +51,10 @@ bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str);
 // Returns the length of BufferString.
 unsigned buffer_string_get_length(BufferString* buffer_string_p);
 
+// Escapes the BufferString to the IFJ23 specifications
+// Returns 1 on success and 0 when there was an error in the escape sequence. If -1 is returned, it means an internal error.
+int buffer_string_escape(BufferString* buffer_string_p);
+
 // Reads the string from left to right and tries to convert it to int.
 // After encountering the first characher, that cannot be convertet, it stops and converts all the previous characters. Read the strtol() manual.
 // If nothing can be converted, returns 0 on non debug builds.
