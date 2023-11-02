@@ -1,7 +1,6 @@
 # === Project specific ignores ===
 .vscode/
 /src/prog
-/src/test.c
 /src/test
 /src/test.exe
 /src/lexer_tester
