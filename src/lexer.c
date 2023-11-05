@@ -8,7 +8,7 @@
 
 
 FILE* source_file = NULL;
-Token last_token = TOKEN_ERR;
+Token last_token = TOKEN_ERR_LEXICAL;
 bool use_last_token = false;
 
 
@@ -92,7 +92,7 @@ void skip_comments_SL(){
 // Handle keyword matching
 bool is_keyword(BufferString* buffer_string, Token* TokenType){
     // Offset of keywords in Token enum.
-    int offset = 3;
+    int offset = 4;
 
     // Array of IFJ23 keywords
     char *keywords[] = {
@@ -112,6 +112,58 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
     }
 
     return false;  // Not a keyword
+}
+
+
+// Helper pro escape_string()
+Error escape_string_hex(BufferString* buffer_string){
+    char hex_code[9] = {'\0'};
+    for (int i=0; i<8; i++){
+        hex_code[i] = get_next_char();
+        // check for code shorter than 8 chars
+        if (hex_code[i] == '}'){
+            hex_code[i] = '\0';
+            ungetc('}', source_file);
+            break;
+        }
+        // if the char was not valid hex char (0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,A,B,C,D,E,F), return error
+        if (!isxdigit(hex_code[i])) {
+            return ERR_LEXICAL;
+        }
+    }
+    // check if the escape code was terminated
+    if (get_next_char() != '}'){
+        return ERR_LEXICAL;
+    }
+    // check if the code has at least one hexadecimal num
+    if (hex_code[0] == '\0'){
+        return ERR_LEXICAL;
+    }
+    // convert the hex num to ascii char by casting the long code to char (idk how else to handle it)
+    // should we check the value for EOF, NULL or something line that???
+    buffer_string_append_char(buffer_string, (char)strtol(hex_code, NULL, 16));
+    return OK;
+}
+
+
+// Vraci OK, kdyz uspesne do buffer_stringu zapise escaped znak, nebo korespondujici chybu
+Error escape_string(BufferString* buffer_string){
+    char nextChar = get_next_char();
+    if (nextChar == '"')
+        buffer_string_append_char(buffer_string, '"');
+    else if (nextChar == 'n')
+        buffer_string_append_char(buffer_string, '\n');
+    else if (nextChar == 'r')
+        buffer_string_append_char(buffer_string, '\r');
+    else if (nextChar == 't')
+        buffer_string_append_char(buffer_string, '\t');
+    else if (nextChar == '\\')
+        buffer_string_append_char(buffer_string, '\\');
+    else if (nextChar == '{')
+        return escape_string_hex(buffer_string);
+    else
+        return ERR_LEXICAL;
+    return OK;
 }
 
 
@@ -138,6 +190,7 @@ void unget_token(){
 Token get_next_token(BufferString* buffer_string){
         char nextChar;
         State state = LEXER_STATE_START;
+        Error err;
         // Clear the BufferString from the junk accumulated from previous token
         buffer_string_clear(buffer_string);
 
@@ -257,7 +310,7 @@ Token get_next_token(BufferString* buffer_string){
                     else {
                         //Possible for white space to fall through start state
                         //Character cannot be processed
-                        return TOKEN_ERR;
+                        return TOKEN_ERR_LEXICAL;
                     }
 
                     break;
@@ -267,7 +320,7 @@ Token get_next_token(BufferString* buffer_string){
                 case LEXER_STATE_POSSIBLE_COMMENT:
                     if(nextChar == '*'){
                         if (!skip_comments_ML())
-                            return TOKEN_ERR;
+                            return TOKEN_ERR_LEXICAL;
                         state = LEXER_STATE_START;
                     }   
                     else if(nextChar == '/'){
@@ -302,7 +355,7 @@ Token get_next_token(BufferString* buffer_string){
                         break;
                     }
                     ungetc(nextChar, source_file);
-                    return TOKEN_ERR;
+                    return TOKEN_ERR_LEXICAL;
                
                 case LEXER_STATE_DOUBLE_AFTER_DOT:
                     if (isdigit(nextChar)){
@@ -327,7 +380,7 @@ Token get_next_token(BufferString* buffer_string){
                         break;
                     }
                     ungetc(nextChar, source_file);
-                    return TOKEN_ERR;
+                    return TOKEN_ERR_LEXICAL;
                 
                 case LEXER_STATE_DOUBLE_E_SIGN:
                     if (isdigit(nextChar)){
@@ -336,7 +389,7 @@ Token get_next_token(BufferString* buffer_string){
                         break;
                     }
                     ungetc(nextChar, source_file);
-                    return TOKEN_ERR;
+                    return TOKEN_ERR_LEXICAL;
                 
                 case LEXER_STATE_DOUBLE_AFTER_E:
                     if (isdigit(nextChar)){
@@ -352,60 +405,139 @@ Token get_next_token(BufferString* buffer_string){
                     if(isalnum(nextChar) || nextChar == '_'){
                         buffer_string_append_char(buffer_string, nextChar);
                         break;
-                    } else{
-                        ungetc(nextChar,source_file); // to read unknown char again for the start state
-                        Token tokenType;
-                        return is_keyword(buffer_string, &tokenType) ? tokenType : TOKEN_IDENTIFIER;
                     }
+                    ungetc(nextChar,source_file); // to read unknown char again for the start state
+                    Token tokenType;
+                    return is_keyword(buffer_string, &tokenType) ? tokenType : TOKEN_IDENTIFIER;
 
                 case LEXER_STATE_STRING_BEGIN:
-                    if (nextChar == '"'){ // this would be the 2nd "
+                    if (nextChar == '"'){ // this would be the 2nd " found
                         state = LEXER_STATE_POSSIBLE_MULTILINE_STRING;
                         break;
                     }
                     // The character after first " was not "
-                    buffer_string_append_char(buffer_string, nextChar);
+                    ungetc(nextChar, source_file);
+                    // buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_STRING;
                     break;
                 
                 case LEXER_STATE_STRING:
                     if (nextChar == '"'){
                         return TOKEN_LITERAL_STRING;
+                    } else if (nextChar == '\\'){ // string escape sequence
+                        state = LEXER_STATE_STRING_ESCAPE;
+                    } else if (nextChar == '\n'){
+                        return TOKEN_ERR_LEXICAL;
+                    } else if (nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
+                    } else{
+                        buffer_string_append_char(buffer_string, nextChar);
                     }
-                    buffer_string_append_char(buffer_string, nextChar);
+                    break;
+                
+                case LEXER_STATE_STRING_ESCAPE:
+                    ungetc(nextChar, source_file); // push the char back for escape_string()
+                    err = escape_string(buffer_string);
+                    if (err == ERR_INTERNAL)
+                        return TOKEN_ERR_INTERNAL;
+                    else if (err == ERR_LEXICAL)
+                        return TOKEN_ERR_LEXICAL;
+                    // it was ok, so return back to normal string
+                    state = LEXER_STATE_STRING;
                     break;
                 
                 case LEXER_STATE_POSSIBLE_MULTILINE_STRING:
                     if (nextChar == '"'){ // 3rd "
-                        state = LEXER_STATE_MULTILINE_STRING;
+                        state = LEXER_STATE_MULTILINE_STRING_OPENING;
                         break;
                     }
                     return TOKEN_LITERAL_STRING; // it was just an empty string
                 
-                case LEXER_STATE_MULTILINE_STRING:
-                    if (nextChar == '"'){ // 1st closing "
-                        state = LEXER_STATE_POSSIBLE_MULTILINE_STRING_END;
+                case LEXER_STATE_MULTILINE_STRING_OPENING:
+                    if (nextChar == '\n'){ // EOL at the end of """
+                        state = LEXER_STATE_MULTILINE_STRING;
                         break;
                     }
+                    // Go back to the second " and return an empty string
+                    ungetc('"', source_file);
+                    ungetc('\n', source_file);
+                    return TOKEN_LITERAL_STRING;
+                
+                case LEXER_STATE_MULTILINE_STRING:
+                    if (nextChar == '\n'){
+                        state = LEXER_STATE_MULTILINE_STRING_EOL;
+                    } else if (nextChar == '"'){ // 1st " that is not excaped or preceded with \n 
+                        state = LEXER_STATE_MULTILINE_STRING_FIRST_QUOTE;
+                    } else if (nextChar == '\\'){
+                        state = LEXER_STATE_MULTILINE_STRING_ESCAPE;
+                    } else if (nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
+                    } else {
+                        buffer_string_append_char(buffer_string, nextChar);
+                    }
+                    break;
+                
+                case LEXER_STATE_MULTILINE_STRING_ESCAPE:
+                    err = escape_string(buffer_string);
+                    if (err == ERR_INTERNAL)
+                        return TOKEN_ERR_INTERNAL;
+                    else if (err == ERR_LEXICAL)
+                        return TOKEN_ERR_LEXICAL;
+                    // sanity check
+                    assert(err == OK);
+                    // it was ok, so return back to normal string
+                    state = LEXER_STATE_MULTILINE_STRING;
+                    break;
+                
+                case LEXER_STATE_MULTILINE_STRING_FIRST_QUOTE:
+                    if (nextChar == '"'){ // 2nd " that is not excaped or preceded with \n 
+                        state = LEXER_STATE_MULTILINE_STRING_SECOND_QUOTE;
+                    } else {
+                        buffer_string_append_char(buffer_string, '"');
+                        buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_MULTILINE_STRING;
+                    }
+                    break;
+                
+                case LEXER_STATE_MULTILINE_STRING_SECOND_QUOTE:
+                    if (nextChar == '"'){ // 3rd " that is not excaped or preceded with \n
+                        // Three quotes in multiline string without preceeding EOL is forbidden
+                        // This should be a lexer error IMO, but can be handled as syntax in the future
+                        return TOKEN_ERR_LEXICAL;
+                    }
+                    buffer_string_append_char(buffer_string, '"');
+                    buffer_string_append_char(buffer_string, '"');
                     buffer_string_append_char(buffer_string, nextChar);
+                    state = LEXER_STATE_MULTILINE_STRING;
+                    break;
+                
+                case LEXER_STATE_MULTILINE_STRING_EOL:
+                    if (nextChar == '"'){ // 1st " after \n
+                        state = LEXER_STATE_POSSIBLE_MULTILINE_STRING_END;
+                    } else{
+                        buffer_string_append_char(buffer_string, '\n');
+                        buffer_string_append_char(buffer_string, nextChar);
+                    }
                     break;
                 
                 case LEXER_STATE_POSSIBLE_MULTILINE_STRING_END:
-                    if (nextChar == '"'){ // 2nd closing "
+                    if (nextChar == '"'){ // 2nd " after \n
                         state = LEXER_STATE_MULTILINE_STRING_END;
                         break;
                     }
-                    buffer_string_append_char(buffer_string, '"'); // make sure we append the " from last state
+                    buffer_string_append_char(buffer_string, '\n');
+                    buffer_string_append_char(buffer_string, '"');
                     buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_END:
-                    if (nextChar == '"'){ // 3rd closing "
+                    if (nextChar == '"'){ // 3rd " after \n
                         return TOKEN_LITERAL_STRING;
                     }
-                    buffer_string_append_char(buffer_string, '"'); // make sure we append the " from last state
-                    buffer_string_append_char(buffer_string, '"'); // make sure we append the " from last state
+                    buffer_string_append_char(buffer_string, '\n');
+                    buffer_string_append_char(buffer_string, '"');
+                    buffer_string_append_char(buffer_string, '"');
                     buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
