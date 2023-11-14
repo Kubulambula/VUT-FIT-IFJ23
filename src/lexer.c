@@ -117,6 +117,9 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
 
 // Helper pro escape_string()
 Error escape_string_hex(BufferString* buffer_string){
+    if (get_next_char() != '{')
+        return ERR_LEXICAL;
+    
     char hex_code[9] = {'\0'};
     for (int i=0; i<8; i++){
         hex_code[i] = get_next_char();
@@ -127,18 +130,15 @@ Error escape_string_hex(BufferString* buffer_string){
             break;
         }
         // if the char was not valid hex char (0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,A,B,C,D,E,F), return error
-        if (!isxdigit(hex_code[i])) {
+        if (!isxdigit(hex_code[i]))
             return ERR_LEXICAL;
-        }
     }
     // check if the escape code was terminated
-    if (get_next_char() != '}'){
+    if (get_next_char() != '}')
         return ERR_LEXICAL;
-    }
     // check if the code has at least one hexadecimal num
-    if (hex_code[0] == '\0'){
+    if (hex_code[0] == '\0')
         return ERR_LEXICAL;
-    }
     // convert the hex num to ascii char by casting the long code to char (idk how else to handle it)
     // should we check the value for EOF, NULL or something line that???
     buffer_string_append_char(buffer_string, (char)strtol(hex_code, NULL, 16));
@@ -159,7 +159,7 @@ Error escape_string(BufferString* buffer_string){
         buffer_string_append_char(buffer_string, '\t');
     else if (nextChar == '\\')
         buffer_string_append_char(buffer_string, '\\');
-    else if (nextChar == '{')
+    else if (nextChar == 'u')
         return escape_string_hex(buffer_string);
     else
         return ERR_LEXICAL;
@@ -478,6 +478,7 @@ Token get_next_token(BufferString* buffer_string){
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_ESCAPE:
+                    ungetc(nextChar, source_file); // push the char back for escape_string()
                     err = escape_string(buffer_string);
                     if (err == ERR_INTERNAL)
                         return TOKEN_ERR_INTERNAL;
@@ -494,7 +495,8 @@ Token get_next_token(BufferString* buffer_string){
                         state = LEXER_STATE_MULTILINE_STRING_SECOND_QUOTE;
                     } else {
                         buffer_string_append_char(buffer_string, '"');
-                        buffer_string_append_char(buffer_string, nextChar);
+                        ungetc(nextChar, source_file);
+                        //buffer_string_append_char(buffer_string, nextChar);
                         state = LEXER_STATE_MULTILINE_STRING;
                     }
                     break;
@@ -507,16 +509,21 @@ Token get_next_token(BufferString* buffer_string){
                     }
                     buffer_string_append_char(buffer_string, '"');
                     buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, nextChar);
+                    ungetc(nextChar, source_file);
+                    //buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_EOL:
                     if (nextChar == '"'){ // 1st " after \n
                         state = LEXER_STATE_POSSIBLE_MULTILINE_STRING_END;
+                    } else if(nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
                     } else{
                         buffer_string_append_char(buffer_string, '\n');
-                        buffer_string_append_char(buffer_string, nextChar);
+                        ungetc(nextChar, source_file);
+                        // buffer_string_append_char(buffer_string, nextChar);
+                        state = LEXER_STATE_MULTILINE_STRING;
                     }
                     break;
                 
@@ -524,21 +531,27 @@ Token get_next_token(BufferString* buffer_string){
                     if (nextChar == '"'){ // 2nd " after \n
                         state = LEXER_STATE_MULTILINE_STRING_END;
                         break;
+                    } else if(nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
                     }
                     buffer_string_append_char(buffer_string, '\n');
                     buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, nextChar);
+                    ungetc(nextChar, source_file);
+                    //buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_END:
                     if (nextChar == '"'){ // 3rd " after \n
                         return TOKEN_LITERAL_STRING;
+                    } else if(nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
                     }
                     buffer_string_append_char(buffer_string, '\n');
                     buffer_string_append_char(buffer_string, '"');
                     buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, nextChar);
+                    ungetc(nextChar, source_file);
+                    //buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
 
