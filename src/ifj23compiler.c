@@ -5,7 +5,7 @@
 
 int main(void) {
 	BufferString b;
-	buffer_string_init(&b);
+	BufferString_init(&b);
 
 	initLexer(stdin);
 	Token t = TOKEN_EOL;

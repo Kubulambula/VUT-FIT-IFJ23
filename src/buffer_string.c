@@ -6,7 +6,7 @@
 #include "buffer_string.h"
 
 
-bool buffer_string_init(BufferString* buffer_string_p){
+bool BufferString_init(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 	
 	buffer_string_p->string = malloc(sizeof(char) * BUFFER_STRING_LENGTH_MINIMAL);
@@ -21,7 +21,7 @@ bool buffer_string_init(BufferString* buffer_string_p){
 }
 
 
-bool buffer_string_init_from(BufferString* buffer_string_p, char* str){
+bool BufferString_init_from(BufferString* buffer_string_p, char* str){
 	assert(buffer_string_p != NULL);
 	assert(str != NULL);
 	
@@ -46,7 +46,7 @@ bool buffer_string_init_from(BufferString* buffer_string_p, char* str){
 }
 
 
-void buffer_string_free(BufferString* buffer_string_p){
+void BufferString_free(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 
 	if (buffer_string_p->string != NULL){
@@ -58,7 +58,7 @@ void buffer_string_free(BufferString* buffer_string_p){
 }
 
 
-void buffer_string_clear(BufferString* buffer_string_p){
+void BufferString_clear(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 
 	if (buffer_string_p->string != NULL){
@@ -68,18 +68,7 @@ void buffer_string_clear(BufferString* buffer_string_p){
 }
 
 
-char* buffer_string_to_string(BufferString* buffer_string_p){
-	assert(buffer_string_p != NULL);
-
-	char* str = malloc(sizeof(char) * (buffer_string_p->length + 1));
-	if (str != NULL){
-		memcpy(str, buffer_string_p->string, sizeof(char) * (buffer_string_p->length + 1));
-	}
-	return str;
-}
-
-
-bool buffer_string_append_char(BufferString* buffer_string_p, char c){
+bool BufferString_append_char(BufferString* buffer_string_p, char c){
 	assert(buffer_string_p != NULL);
 	assert(buffer_string_p->string != NULL);
 
@@ -98,7 +87,7 @@ bool buffer_string_append_char(BufferString* buffer_string_p, char c){
 }
 
 
-bool buffer_string_append_str(BufferString* buffer_string_p, char* str){
+bool BufferString_append_str(BufferString* buffer_string_p, char* str){
 	assert(buffer_string_p != NULL);
 	assert(str != NULL);
 	
@@ -121,16 +110,27 @@ bool buffer_string_append_str(BufferString* buffer_string_p, char* str){
 }
 
 
-bool buffer_string_cmp_str(BufferString* buffer_string_p, char* str){
+bool BufferString_cmp_str(BufferString* buffer_string_p, char* str){
 	assert(buffer_string_p != NULL);
 	assert(str != NULL);
 	return strcmp(buffer_string_p->string, str);
 }
 
 
-unsigned buffer_string_get_length(BufferString* buffer_string_p){
+unsigned BufferString_get_length(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 	return buffer_string_p->length;
+}
+
+
+char* BufferString_get_as_string(BufferString* buffer_string_p){
+	assert(buffer_string_p != NULL);
+
+	char* str = malloc(sizeof(char) * (buffer_string_p->length + 1));
+	if (str != NULL){
+		memcpy(str, buffer_string_p->string, sizeof(char) * (buffer_string_p->length + 1));
+	}
+	return str;
 }
 
 
@@ -144,25 +144,7 @@ static int clamp_long_to_int(long l){
 }
 
 
-int buffer_string_escape(BufferString* buffer_string_p){
-	assert(buffer_string_p != NULL);
-	// Setup temp BufferString
-	BufferString temp;
-	if(buffer_string_init(&temp))
-		return true;
-
-
-	// Copy temp to buffer_string_p
-	free(buffer_string_p->string);
-	buffer_string_p->alloc_length = temp.alloc_length;
-	buffer_string_p->length = temp.length;
-	buffer_string_p->string = temp.string;
-	// DO NOT FREE temp!!! It's on the stack so it is freed after return and the string is passed to buffer_string_p
-	return true;
-}
-
-
-int buffer_string_get_as_int(BufferString* buffer_string_p){
+int BufferString_get_as_int(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 #ifdef NDEBUG
 	// Just return without any checks if not debug - returns 0 on error
@@ -177,7 +159,7 @@ int buffer_string_get_as_int(BufferString* buffer_string_p){
 }
 
 
-double buffer_string_get_as_double(BufferString* buffer_string_p){
+double BufferString_get_as_double(BufferString* buffer_string_p){
 	assert(buffer_string_p != NULL);
 #ifdef NDEBUG
 	// Just return without any checks if not debug - returns 0.0 on error
