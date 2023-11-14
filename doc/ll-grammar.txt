@@ -39,13 +39,27 @@ Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
 <statement> -> <assign>
 // <statement> -> <func_call>
 <statement> -> <return>
-<statement> -> <var_let_definitnion>
+<statement> -> <let_var_definitnion>
 <statement> -> <expression>
 
 ===/statements===
+let id : typ = výraz
+let id := výraz
+let id : typ
+
+
+
+<var_definition> -> <let_var_definition>
+<let_definition> -> <let_var_definition>
+
+<let_var_definition> -> TOKEN_KEYWORD_VAR TOKEN_IDENTIFIER TOKEN_COLON <type>
+<let_var_definition> -> TOKEN_KEYWORD_VAR TOKEN_IDENTIFIER TOKEN_COLON TOKEN_ASSIGN <expression>
+<let_var_definition> -> TOKEN_KEYWORD_VAR TOKEN_IDENTIFIER TOKEN_COLON <type> TOKEN_ASSIGN <expression>
+
 
 
 ===assing===
+
 
 <assign> -> TOKEN_IDENTIFIER TOKEN_ASSING <expression>
 

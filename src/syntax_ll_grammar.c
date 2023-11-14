@@ -1,18 +1,7 @@
-#include "syntax_ll_grammar.h"
-
-
 #include <stdio.h>
 
+#include "syntax_ll_grammar.h"
 
-int x = 0;
-// delete after merging with lexer
-Token get_next_token(BufferString* b){
-	return TOKEN_ERR + x++;
-}
-
-void unget_token(){
-
-}
 
 
 
@@ -21,6 +10,50 @@ Error ll_while(BufferString* buffer_string){
 	if (err)
 		return err;
 	return ll_statement_body(buffer_string);
+}
+
+
+Error ll_let_var_definitnion(BufferString* buffer_string){
+	Token current_token = get_next_token(buffer_string);
+	if (current_token == TOKEN_KEYWORD_VAR){
+		return ll_var_definition(buffer_string);
+	} else if (current_token == TOKEN_KEYWORD_LET){
+		// TODO - replace with ll_let_definition once completed (after completing the AST stuff)
+		return ll_var_definition(buffer_string);
+	}
+	return ERR_SYNTAX;
+}
+
+
+Error ll_var_definition(BufferString* buffer_string){
+	Error err;
+	Token current_token = get_next_token(buffer_string);
+	// TOKEN_IDENTIFIER
+	if ((current_token = get_next_token(buffer_string)) != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+	// TOKEN_COLON
+	if ((current_token = get_next_token(buffer_string)) != TOKEN_COLON)
+		return ERR_SYNTAX;
+	// TOKEN_ASSIGN
+	if((current_token = get_next_token(buffer_string) == TOKEN_ASSIGN)){
+		err = ll_expression(buffer_string);
+		if (err)
+			return err;
+		return OK;
+	}
+	// <type>
+	unget_token();
+	err = ll_type(buffer_string);
+	if (err)
+		return err;
+	// TOKEN_ASSIGN
+	if((current_token = get_next_token(buffer_string) != TOKEN_ASSIGN)){
+		unget_token();
+		return OK;
+	}
+	err = ll_expression(buffer_string);
+	return err;
+	return ERR_SYNTAX;
 }
 
 
@@ -197,9 +230,9 @@ Error ll_type(BufferString* buffer_string){
 
 Error ll_literal(BufferString* buffer_string){
 	switch (get_next_token(buffer_string)){
-		case TOKEN_LITEREAL_INT:
-		case TOKEN_LITEREAL_DOUBLE:
-		case TOKEN_LITEREAL_STRING:
+		case TOKEN_LITERAL_INT:
+		case TOKEN_LITERAL_DOUBLE:
+		case TOKEN_LITERAL_STRING:
 			return OK;
 		default:
 			return ERR_SYNTAX;
@@ -269,9 +302,9 @@ Error ll_program(BufferString* buffer_string){
 //<lit>
 Error ll_lit(BufferString* buffer_string, Token t){
 	switch(t){
-		case TOKEN_LITEREAL_INT:	//<lit> -> #Int literal
-		case TOKEN_LITEREAL_DOUBLE:	//<lit> -> #Double literal
-		case TOKEN_LITEREAL_STRING:	//<lit> -> #String literal
+		case TOKEN_LITERAL_INT:	//<lit> -> #Int literal
+		case TOKEN_LITERAL_DOUBLE:	//<lit> -> #Double literal
+		case TOKEN_LITERAL_STRING:	//<lit> -> #String literal
 			return true;
 			break;
 		default:
