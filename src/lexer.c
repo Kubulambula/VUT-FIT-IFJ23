@@ -10,7 +10,7 @@
 FILE* source_file = NULL;
 Token last_token = TOKEN_ERR_LEXICAL;
 bool use_last_token = false;
-
+int line = 1;
 
 void initLexer(FILE* file){
     // sanity check
@@ -175,6 +175,9 @@ Token get_token(BufferString* buffer_string, bool skip_eol){
     }
     do{
         last_token = get_next_token(buffer_string);// get next token
+        if(last_token == TOKEN_EOL){    //pomocna vecicka pro debugovani
+            line++;
+        }
     } while(skip_eol && last_token == TOKEN_EOL); // go to the next token, if the token is EOL
     return last_token;
 }

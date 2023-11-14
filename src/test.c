@@ -25,7 +25,7 @@ int main(){
     initLexer(file);
     buffer_string_init(&buff);
 
-    CURRENT_TOKEN = get_next_token(&buff);
+    CURRENT_TOKEN = get_token(&buff, true);
     if(ll_program(&buff)){
         printf("SYNTAX ERROR FOUND\n");
         return 1;
