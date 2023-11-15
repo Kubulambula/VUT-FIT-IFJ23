@@ -28,15 +28,17 @@ typedef enum{
 typedef struct{
     char* name;
     Type type;
+    Arg* next;
 }Arg;
 
 typedef struct{
     char* name;
+    char* scope;    //scopes divided by ':' , global scope = "" , other = "foo:bar:func"
     SymbolType symbol_type;
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
-    LList *args;
+    Arg *args;  //list of arguments of function
     
 } Symbol;
 
@@ -65,13 +67,6 @@ bool SymTable_init(SymTable* symTable);
 void SymTable_free(SymTable* symTable);
 
 /**
- * Frees the symbol
- * 
- * @param symbol Pointer to initialized symbol
-*/
-void Symbol_free(Symbol* symbol);
-
-/**
  * Inserts new Symbol to SymTable, if item allready exists, just sets new value
  * 
  * @param symTable Pointer to initialized SymTable
@@ -88,26 +83,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
  * @returns Symbol* to the matching symbol or NULL if matching symbol was not found
 */
 //Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
-Symbol* Symtable_get(SymTable* symTable, char* name);
-
-/**
- * Sets value of Symbol if said Symbol exists in Symtable
- * 
- * @param symTable Pointer to initialized SymTable
- * @param name Pointer to name String (must end in \0)  
- * @param value value of Symbol
- * @returns true/false if Symbol exists
-*/
-// bool SymTable_set(SymTable* symTable,char* name, int value); REDUNDANT
-
-/**
- * Gets value of Symbol if said Symbol exists in Symtable
- * 
- * @param symTable Pointer to initialized SymTable
- * @param name Pointer to name String (must end in \0)  
- * @returns value of wanted Symbol -- must think of error handling
-*/
-// int SymTable_get(SymTable* symTable,char* name); // REDUNDANT
+Symbol* Symtable_get(SymTable* symTable, char* name,char *scope);
 
 
 #endif

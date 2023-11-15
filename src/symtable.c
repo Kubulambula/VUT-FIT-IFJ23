@@ -50,7 +50,7 @@ void SymTable_free(SymTable* symTable)
     free(symTable);
 }
 
-void Symbol_free(Symbol* symbol){
+static void Symbol_free(Symbol* symbol){
     if(symbol == NULL)
         return;
     
@@ -84,6 +84,12 @@ static bool SymTable_resize(SymTable* symTable)
 }
 
 
+static int countScopes(const char *str) {
+    int count = 0;
+    for (; *str; count += (*str++ == ':'));
+        return count + 1;  // Adding 1 to account for the last substring
+}
+
 //inserts new symbol
 Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 {
@@ -95,17 +101,29 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 
     int index = hash(symbol->name, symTable->size);
    
-    while(symTable->table[index] != NULL)
+    //INSERT FUNCTION
+    if(symbol->symbol_type == FUNCTION)
     {
-        if(strcmp(symTable->table[index]->name, symbol->name) == 0)
-        {   
-            free(symTable->table[index]);
-            symTable->table[index] = symbol;
-            return OK;
+        while(symTable->table[index] != NULL)
+        {
+            //var in main cannot have the same name as function, but vars in functions can 
+            if(strcmp(symTable->table[index]->name, symbol->name) == 0)
+                if(symTable->table[index]->scope == "")    
+                    return ERR_SEMATIC_REDEFINED_FUNC;
+            index = (index + 3) % symTable->size;        
         }
-        index = (index + 3) % symTable->size;
-    }
-     
+
+    }else
+    {
+        //INSERT VAR
+        while(symTable->table[index] != NULL)
+        {
+            if(strcmp(symTable->table[index]->name, symbol->name) == 0)
+                if(strcmp(symbol->scope, symTable->table[index]->scope) == 0)
+                    return ERR_SEMATIC_REDEFINED_VAR;    
+            index = (index + 3) % symTable->size; 
+        }
+    }     
     symTable->table[index] = symbol;
     symTable->count++;
     return OK;
@@ -114,7 +132,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 
 //returns symbol if said symbol exists
 //static Symbol* SymTable_lookup(SymTable* symTable, char* name) // renamed because it was more clear
-static Symbol* SymTable_get(SymTable* symTable, char* name)
+Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
 {
     if (symTable->count == 0)
         return NULL;
@@ -123,6 +141,8 @@ static Symbol* SymTable_get(SymTable* symTable, char* name)
    
     while(symTable->table[index] != NULL)
     {
+        
+
         if(strcmp(name, symTable->table[index]->name) != 0){
             index += 3;
             continue;
