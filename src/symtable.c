@@ -27,15 +27,22 @@ static bool SymTable_init_Spec(SymTable* symTable, int size)
     symTable->count=0;
     
     symTable->table = calloc(size, sizeof(Symbol*)); 
-    /*if(symTable->table == NULL)
-        return false;
-    return true;*/
+   
     return symTable->table != NULL;
 }
 
 bool SymTable_init(SymTable* symTable)
 {
     return SymTable_init_Spec(symTable, SYMTABLE_INIT_SIZE);
+}
+
+
+static void Symbol_free(Symbol* symbol){
+    if(symbol == NULL)
+        return;
+    
+    free(symbol->name);
+    free(symbol);
 }
 
 void SymTable_free(SymTable* symTable)
@@ -48,14 +55,6 @@ void SymTable_free(SymTable* symTable)
     
     free(symTable->table);
     free(symTable);
-}
-
-static void Symbol_free(Symbol* symbol){
-    if(symbol == NULL)
-        return;
-    
-    free(symbol->name);
-    free(symbol);
 }
 
 static bool SymTable_resize(SymTable* symTable)
@@ -84,11 +83,7 @@ static bool SymTable_resize(SymTable* symTable)
 }
 
 
-static int countScopes(const char *str) {
-    int count = 0;
-    for (; *str; count += (*str++ == ':'));
-        return count + 1;  // Adding 1 to account for the last substring
-}
+
 
 //inserts new symbol
 Error SymTable_insert(SymTable* symTable, Symbol* symbol)
@@ -135,7 +130,7 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
     {
         
         int difference = 0;
-        char separator = ":";
+        char separator = ':';
         while(strcmp(localScope,""))
         {
             if(strcmp(localScope,symTable->table[index]->scope) == 0 )

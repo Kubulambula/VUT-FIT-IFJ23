@@ -28,7 +28,7 @@ typedef enum{
 typedef struct{
     char* name;
     Type type;
-    Arg* next;
+    struct Arg* next;
 }Arg;
 
 typedef struct{
@@ -83,7 +83,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
  * @returns Symbol* to the matching symbol or NULL if matching symbol was not found
 */
 //Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
-Symbol* Symtable_get(SymTable* symTable, char* name,char *scope);
+Symbol* SymTable_get(SymTable* symTable, char* name,char *scope);
 
 
 #endif
