@@ -131,22 +131,14 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
     {
         if (strcmp(symTable->table[index]->name,name) == 0)
         {
-
+            //same name, checking scopes
             int difference = 0;
             char separator = ':';
             while(strcmp(localScope,""))
             {
-                printf("1:%s\n2:%s\n",localScope,symTable->table[index]->scope);
                 if(strcmp(localScope,symTable->table[index]->scope) == 0 )
-                {
-                    if(specific >difference)
-                    {
-                        target = symTable->table[index];
-                        specific = difference;
-                        break;
-                    }
-                    
-                }
+                    break;
+                
                 difference--;
                 char *upperScope = strrchr(localScope,separator);
                 if(upperScope !=NULL)
@@ -154,12 +146,22 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
                 else
                     localScope[0]='\0';
             }
+            if(strcmp(localScope,symTable->table[index]->scope) == 0 )
+            {
+                if(specific >difference)
+                {
+                    target = symTable->table[index];
+                    specific = difference;
+                    break;
+                }
+                
+            }
+            strncpy(localScope, scope, strlen(scope));
         }
 
 
 
         index += 3;
-        strncpy(localScope, scope, strlen(scope));
     }
     
 
