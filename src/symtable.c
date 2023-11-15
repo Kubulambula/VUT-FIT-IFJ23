@@ -118,7 +118,6 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 
 
 //returns symbol if said symbol exists
-//static Symbol* SymTable_lookup(SymTable* symTable, char* name) // renamed because it was more clear
 Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
 {
     if (symTable->count == 0)
@@ -126,16 +125,43 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
 
     int index = hash(name, symTable->size);
    
-    while(symTable->table[index] != NULL)
+    char *localScope = (char *)malloc(strlen(scope)+1);
+    strncpy(localScope, scope, strlen(scope));
+
+    Symbol* target = NULL;
+    int specific=0; //how many scopes up from the most concrete is it
+
+    while(symTable->table[index] != NULL && strcmp(symTable->table[index]->name,name) == 0)
     {
         
-
-        if(strcmp(name, symTable->table[index]->name) != 0){
-            index += 3;
-            continue;
+        int difference = 0;
+        char separator = ":";
+        while(strcmp(localScope,""))
+        {
+            if(strcmp(localScope,symTable->table[index]->scope) == 0 )
+            {
+                if(specific >difference)
+                {
+                    target = symTable->table[index];
+                    specific = difference;
+                    break;
+                }
+                
+            }
+            difference--;
+            char *upperScope = strrchr(localScope,separator);
+            if(upperScope !=NULL)
+                *upperScope = '\0';
+            else
+                localScope[0]='\0';
         }
-                return symTable->table[index];
-    }
 
-    return NULL;
+
+
+        index += 3;
+        strncpy(localScope, scope, strlen(scope));
+    }
+    
+
+    return target;
 }
