@@ -6,7 +6,7 @@ typedef enum{
 	ERR_OK = 0, // no error
 	ERR_LEXICAL = 1, // lexical error
 	ERR_SYNTAX = 2, // syntax error
-	ERR_SEMATIC_UNDEFINED_FUNC = 3, // sematic error - undefined function called
+	ERR_SEMATIC_UNDEFINED_FUNC = 3, // sematic error - undefined function called / variable redefinition
 	ERR_SEMATIC_BAD_FUNC_ARG_COUNT = 4, // sematic error - function called with a wrong amount of arguments
 	ERR_SEMATIC_BAD_FUNC_ARG_TYPE = 4, // sematic error - function called with a wrond argument type
 	ERR_SEMATIC_BAD_FUNC_RETURN_TYPE = 4, // sematic error - function return statement is not compatible with function return type

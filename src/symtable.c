@@ -85,12 +85,12 @@ static bool SymTable_resize(SymTable* symTable)
 
 
 //inserts new symbol
-bool SymTable_insert(SymTable* symTable, Symbol* symbol)
+Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 {
     if(symTable->count == symTable->size-1 )
     {
         if(!SymTable_resize(symTable))
-            return false;
+            return ERR_INTERNAL;
     }
 
     int index = hash(symbol->name, symTable->size);
@@ -101,14 +101,14 @@ bool SymTable_insert(SymTable* symTable, Symbol* symbol)
         {   
             free(symTable->table[index]);
             symTable->table[index] = symbol;
-            return true;
+            return OK;
         }
         index = (index + 3) % symTable->size;
     }
      
     symTable->table[index] = symbol;
     symTable->count++;
-    return true;
+    return OK;
 }
 
 

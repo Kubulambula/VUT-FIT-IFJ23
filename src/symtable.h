@@ -2,6 +2,7 @@
 #define SYMTABLE_H
 
 #include <stdbool.h>
+#include "error.h"
 
 
 #define SYMTABLE_INIT_SIZE 32
@@ -26,10 +27,17 @@ typedef enum{
 
 typedef struct{
     char* name;
+    Type type;
+}Arg;
+
+typedef struct{
+    char* name;
     SymbolType symbol_type;
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
+    LList *args;
+    
 } Symbol;
 
 
@@ -70,7 +78,7 @@ void Symbol_free(Symbol* symbol);
  * @param symbol Pointer to symbol 
  * @returns true/false if the insertion and allocation was successfull
 */
-bool SymTable_insert(SymTable* symTable, Symbol* symbol);
+Error SymTable_insert(SymTable* symTable, Symbol* symbol);
 
 /**
  * Returns a pointer to a matching symbol with a given name
