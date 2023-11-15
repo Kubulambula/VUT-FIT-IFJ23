@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "symtable.h"
+#include <stdio.h>
 
 
 static unsigned hash(char* name,int size)
@@ -124,31 +125,35 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
     strncpy(localScope, scope, strlen(scope));
 
     Symbol* target = NULL;
-    int specific=0; //how many scopes up from the most concrete is it
+    int specific=1; //how many scopes up from the most concrete is it
 
-    while(symTable->table[index] != NULL && strcmp(symTable->table[index]->name,name) == 0)
+    while(symTable->table[index] != NULL)
     {
-        
-        int difference = 0;
-        char separator = ':';
-        while(strcmp(localScope,""))
+        if (strcmp(symTable->table[index]->name,name) == 0)
         {
-            if(strcmp(localScope,symTable->table[index]->scope) == 0 )
+
+            int difference = 0;
+            char separator = ':';
+            while(strcmp(localScope,""))
             {
-                if(specific >difference)
+                printf("1:%s\n2:%s\n",localScope,symTable->table[index]->scope);
+                if(strcmp(localScope,symTable->table[index]->scope) == 0 )
                 {
-                    target = symTable->table[index];
-                    specific = difference;
-                    break;
+                    if(specific >difference)
+                    {
+                        target = symTable->table[index];
+                        specific = difference;
+                        break;
+                    }
+                    
                 }
-                
+                difference--;
+                char *upperScope = strrchr(localScope,separator);
+                if(upperScope !=NULL)
+                    *upperScope = '\0';
+                else
+                    localScope[0]='\0';
             }
-            difference--;
-            char *upperScope = strrchr(localScope,separator);
-            if(upperScope !=NULL)
-                *upperScope = '\0';
-            else
-                localScope[0]='\0';
         }
 
 
