@@ -132,27 +132,3 @@ static Symbol* SymTable_get(SymTable* symTable, char* name)
 
     return NULL;
 }
-
-
-//sets value of symbol
-// redundant by SymTable_insert
-/*bool SymTable_set(SymTable* symTable, char* name, int value)
-{
-    Symbol* symbol = SymTable_lookup(symTable,name);
-    if (symbol == NULL)
-        return false;
-
-    symbol->value = value;
-    
-    return true;
-}*/
-
-//returns value of said symbol
-// redundant by Symtable_lookup
-/*int SymTable_get(SymTable* symTable, char* name)
-{
-    Symbol* symbol = SymTable_lookup(symTable,name);
-    if (symbol == NULL)
-        return 666;
-    return symbol->value;
-}*/
