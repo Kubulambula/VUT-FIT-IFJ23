@@ -1,14 +1,15 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <stdio.h>
 #include <stdbool.h>
 #include "buffer_string.h"
 #include "error.h"
 
 typedef enum{
     // Error token
-    TOKEN_ERR_LEXICAL, // token indicating lexical error (ERR_LEXICAL)
     TOKEN_ERR_INTERNAL, // token indicating internal error (ERR_INTERNAL)
+    TOKEN_ERR_LEXICAL, // token indicating lexical error (ERR_LEXICAL)
     // Control tokens
     TOKEN_EOL, // ned of line / new line / linefeed / whatever you call it
     TOKEN_EOF, // end of file
@@ -157,6 +158,10 @@ typedef enum {
 
 
 void initLexer(FILE* file);
+
+Error save_current_file_offset();
+
+Error rollback_to_saved_file_offset();
 
 Token get_token(BufferString* buffer_string, bool skip_eol);
 

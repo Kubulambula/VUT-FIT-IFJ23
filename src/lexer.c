@@ -8,8 +8,11 @@
 
 
 FILE* source_file = NULL;
-Token last_token = TOKEN_ERR_LEXICAL;
+
+Token last_token = TOKEN_ERR_INTERNAL;
 bool use_last_token = false;
+
+long saved_file_offset = -1;
 
 
 void initLexer(FILE* file){
@@ -172,6 +175,25 @@ Error escape_string(BufferString* buffer_string){
         return escape_string_hex(buffer_string);
     else
         return ERR_LEXICAL;
+    return OK;
+}
+
+
+Error save_current_file_offset(){
+    saved_file_offset = ftell(source_file);
+    return (saved_file_offset != -1) ? OK : ERR_INTERNAL;
+}
+
+
+Error rollback_to_saved_file_offset(){
+    if (saved_file_offset == -1)
+        return ERR_INTERNAL;
+    
+    int err = fseek(source_file, saved_file_offset, SEEK_SET);
+    if (err != 0)
+        return ERR_INTERNAL;
+    
+    last_token = TOKEN_ERR_INTERNAL;
     return OK;
 }
 
