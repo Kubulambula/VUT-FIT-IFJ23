@@ -101,29 +101,16 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 
     int index = hash(symbol->name, symTable->size);
    
-    //INSERT FUNCTION
-    if(symbol->symbol_type == FUNCTION)
-    {
-        while(symTable->table[index] != NULL)
-        {
-            //var in main cannot have the same name as function, but vars in functions can 
-            if(strcmp(symTable->table[index]->name, symbol->name) == 0)
-                if(symTable->table[index]->scope == "")    
-                    return ERR_SEMATIC_REDEFINED_FUNC;
-            index = (index + 3) % symTable->size;        
-        }
+  
 
-    }else
+    while(symTable->table[index] != NULL)
     {
-        //INSERT VAR
-        while(symTable->table[index] != NULL)
-        {
-            if(strcmp(symTable->table[index]->name, symbol->name) == 0)
-                if(strcmp(symbol->scope, symTable->table[index]->scope) == 0)
-                    return ERR_SEMATIC_REDEFINED_VAR;    
-            index = (index + 3) % symTable->size; 
-        }
-    }     
+        if(strcmp(symTable->table[index]->name, symbol->name) == 0)
+            if(strcmp(symbol->scope, symTable->table[index]->scope) == 0)
+                return ERR_SEMATIC_REDEFINED;    
+        index = (index + 3) % symTable->size; 
+    }
+        
     symTable->table[index] = symbol;
     symTable->count++;
     return OK;
@@ -147,7 +134,7 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
             index += 3;
             continue;
         }
-        return symTable->table[index];
+                return symTable->table[index];
     }
 
     return NULL;
