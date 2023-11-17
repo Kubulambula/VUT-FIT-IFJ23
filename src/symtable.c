@@ -127,6 +127,18 @@ static bool SymTable_resize(SymTable* symTable)
     return true;
 }
 
+
+static bool cmpScope(char *string1,char *string2)
+{
+    if (string1 == NULL && string2 == NULL)
+        return true;
+    else if(string1 == NULL || string2 == NULL)
+        return false;
+    else
+        return (strcmp(string1,string2) == 0);
+};
+
+
 //inserts new symbol
 Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 {
@@ -143,7 +155,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
     while(symTable->table[index] != NULL)
     {
         if(strcmp(symTable->table[index]->name, symbol->name) == 0)
-            if(strcmp(symbol->scope, symTable->table[index]->scope) == 0)
+            if(cmpScope(symbol.scope,symTable->table[index]->scope))
                 return ERR_SEMATIC_REDEFINED;    
         index = (index + 3) % symTable->size; 
     }
@@ -162,9 +174,12 @@ Symbol* SymTable_get(SymTable* symTable, char* name, char* scope)
 
     int index = hash(name, symTable->size);
    
-    char *localScope = (char *)malloc(strlen(scope)+1);
-    strncpy(localScope, scope, strlen(scope));
-
+    if(scope =! NULL)
+    {
+        char *localScope = (char *)malloc(strlen(scope)+1);
+        strncpy(localScope, scope, strlen(scope));
+    }
+    
     Symbol* target = NULL;
     int specific=1; //how many scopes up from the most concrete is it
 
@@ -175,11 +190,10 @@ Symbol* SymTable_get(SymTable* symTable, char* name, char* scope)
             //same name, checking scopes
             int difference = 0;
             char separator = ':';
-            while(strcmp(localScope,""))
+            while(localScope =! NULL)
             {
-                if(strcmp(localScope,symTable->table[index]->scope) == 0 )
+                if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symtable->table[index]->scope))
                     break;
-                
                 difference--;
                 char *upperScope = strrchr(localScope,separator);
                 if(upperScope !=NULL)
@@ -187,7 +201,7 @@ Symbol* SymTable_get(SymTable* symTable, char* name, char* scope)
                 else
                     localScope[0]='\0';
             }
-            if(strcmp(localScope,symTable->table[index]->scope) == 0 )
+            if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symtable->table[index]->scope))
             {
                 if(specific >difference)
                 {
