@@ -109,7 +109,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
     while(symTable->table[index] != NULL)
     {
         if(strcmp(symTable->table[index]->name, symbol->name) == 0)
-            if(cmpScope(symbol.scope,symTable->table[index]->scope))
+            if(cmpScope(symbol->scope,symTable->table[index]->scope))
                 return ERR_SEMATIC_REDEFINED;    
         index = (index + 3) % symTable->size; 
     }
@@ -128,10 +128,15 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
 
     int index = hash(name, symTable->size);
    
-    if(scope =! NULL)
+    char *localScope=NULL;
+    if(scope != NULL)
     {
-        char *localScope = (char *)malloc(strlen(scope)+1);
+        localScope = malloc(strlen(scope)+1);
         strncpy(localScope, scope, strlen(scope));
+    }else
+    {
+        localScope = malloc(strlen(" "));
+        localScope[0]='\0';
     }
     
     Symbol* target = NULL;
@@ -139,38 +144,48 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
 
     while(symTable->table[index] != NULL)
     {
-        if (strcmp(symTable->table[index]->name,name) == 0)
+        
+        if(strcmp(symTable->table[index]->name,name) == 0)
         {
             //same name, checking scopes
             int difference = 0;
             char separator = ':';
-            while(localScope =! NULL)
+            while(strcmp(localScope,"") !=0)
             {
-                if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symtable->table[index]->scope))
+                
+                if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symTable->table[index]->scope))
+                {
+                    difference++;
                     break;
-                difference--;
+                }
+                difference++;
                 char *upperScope = strrchr(localScope,separator);
                 if(upperScope !=NULL)
                     *upperScope = '\0';
                 else
                     localScope[0]='\0';
             }
-            if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symtable->table[index]->scope))
+            if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symTable->table[index]->scope))
             {
-                if(specific >difference)
+                if(strcmp(localScope,"") == 0)
+                    difference++;
+                if((specific > difference) || specific ==1)
                 {
                     target = symTable->table[index];
                     specific = difference;
-                    break;
                 }
                 
             }
-            strncpy(localScope, scope, strlen(scope));
+            if(scope != NULL)
+                strncpy(localScope, scope, strlen(scope));
+        
+
         }
 
 
+            index = (index + 3) % symTable->size;
+            
 
-        index += 3;
     }
     
 
