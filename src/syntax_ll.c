@@ -5,7 +5,6 @@ Token CURRENT_TOKEN;
 Error ERR;
 
 
-
 Error ll_program(BufferString* buffer_string, SymTable* table, ASTNode** tree){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
@@ -40,7 +39,7 @@ Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode**
 	
 	tree = (ASTNode**)&((*tree)->b); // tree is now FUNC_DEF
 
-	ERR = ll_func_definition_head(buffer_string, table, (ASTNode**)&((*tree)->a));
+	ERR = ll_func_definition_head(buffer_string, table, (char**)&((*tree)->a));
 	if (ERR)
 		return ERR;
 	
@@ -48,7 +47,7 @@ Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode**
 }
 
 
-Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, ASTNode** tree){	
+Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char** func_name){	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_FUNC)
 		return ERR_SYNTAX;
@@ -58,14 +57,14 @@ Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, ASTN
 		return ERR_SYNTAX;
 	
 	// FUNC_DEF->a is name in symtable
-	*tree = (void*)BufferString_get_as_string(buffer_string);
-	if (*tree == NULL)
+	*func_name = BufferString_get_as_string(buffer_string);
+	if (*func_name == NULL)
 		return ERR_INTERNAL;
 	// Write it to symtable
 	Symbol* symbol = Symbol_new();
 	if (symbol == NULL)
 		return ERR_INTERNAL;
-	symbol->name = (char*)*tree; // assign name to symbol
+	symbol->name = *func_name; // assign name to symbol
 	ERR = SymTable_insert(table, symbol); // insert symbol into table
 	if (ERR)
 		return ERR;
@@ -74,7 +73,7 @@ Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, ASTN
 	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
 		return ERR_SYNTAX;
 	
-	ERR = ll_func_definition_head_args(buffer_string, table, tree);
+	ERR = ll_func_definition_head_args(buffer_string, table, *func_name);
 	if (ERR)
 		return ERR;
 
@@ -109,7 +108,7 @@ Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, ASTN
 }
 
 
-Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, char* func_name){
 	GET_TOKEN(true);
 	unget_token();
 
@@ -118,7 +117,7 @@ Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table,
 
 	do {
 		// check arg
-		ERR = ll_func_definition_head_arg(buffer_string, table, tree);
+		ERR = ll_func_definition_head_arg(buffer_string, table, func_name);
 		if (ERR)
 			return ERR;
 
@@ -134,7 +133,7 @@ Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table,
 	return ERR_SYNTAX;
 }
 
-Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, char* func_name){
 	Arg* arg = Arg_new();
 	if (arg == NULL)
 		return ERR_INTERNAL;
@@ -187,12 +186,12 @@ Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, 
 	// TODO waiting for SymTable rework so it accepts NULL as scope
 
 	// now add the arg to the function symbol;
-	// Symbol* symbol = SymTable_get(table, (char*)*tree, NULL); // segfault
-	// if (symbol == NULL)
-	// 	return ERR_INTERNAL;
+	Symbol* symbol = SymTable_get(table, func_name, NULL); // segfault
+	if (symbol == NULL)
+		return ERR_INTERNAL;
 	
-	// Arg** free_arg_p = Symbol_get_free_arg_p(symbol);
-	// *free_arg_p = arg;
+	Arg** free_arg_p = Symbol_get_free_arg_p(symbol);
+	*free_arg_p = arg;
 	return OK;
 }
 
