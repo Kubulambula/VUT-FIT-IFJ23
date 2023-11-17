@@ -6,6 +6,7 @@
 //#include "syntax_precedent.h"
 #include "error.h"
 #include "lexer.h"
+#include "ast.h"
 
 
 #define GET_TOKEN(skip_eol) \
@@ -14,64 +15,42 @@
 		return (CURRENT_TOKEN == TOKEN_ERR_INTERNAL ? ERR_INTERNAL : ERR_LEXICAL); \
 
 
-Error ahoj(BufferString* buffer_string, void* tree);
+Error ll_program(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-/*Token CURRENT_TOKEN;
+Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-Error ll_while(BufferString* buffer_string);
+Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-Error ll_while_head(BufferString* buffer_string);
+Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-Error ll_if(BufferString* buffer_string);
+Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-Error ll_if_head(BufferString* buffer_string);
+Error ll_func_definition_body(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-Error ll_func_definition(BufferString* buffer_string);
+Error ll_func_statements(BufferString* buffer_string, void* tree);
 
-Error ll_func_head(BufferString* buffer_string);
+Error ll_statements(BufferString* buffer_string, void* tree);
 
-Error ll_func_params(BufferString* buffer_string);
+Error ll_func_call(BufferString* buffer_string, void* tree);
 
-Error ll_func_param(BufferString* buffer_string);
+Error ll_func_call_args(BufferString* buffer_string, void* tree);
 
-Error ll_func_more_params(BufferString* buffer_string);
+Error ll_func_call_arg(BufferString* buffer_string, void* tree);
 
-Error ll_func_type(BufferString* buffer_string);
+Error ll_func_call_arg_with_name(BufferString* buffer_string, void* tree);
 
-Error ll_statement_body(BufferString* buffer_string);
+Error ll_func_call_arg_without_name(BufferString* buffer_string, void* tree);
 
-Error ll_program(BufferString* buffer_string);
+Error ll_assign(BufferString* buffer_string, void* tree);
 
-Error ll_func_call(BufferString* buffer_string);
+Error ll_var_declaration(BufferString* buffer_string, void* tree);
 
-Error ll_func_args(BufferString* buffer_string);
+Error ll_let_declaration(BufferString* buffer_string, void* tree);
 
-Error ll_func_arg(BufferString* buffer_string);
+Error ll_while(BufferString* buffer_string, void* tree);
 
-Error ll_func_more_arg(BufferString* buffer_string);
+Error ll_return(BufferString* buffer_string, void* tree);
 
-Error ll_type(BufferString* buffer_string);
+Error ll_if(BufferString* buffer_string, void* tree);
 
-Error ll_lit(BufferString* buffer_string);
-
-
-
-//these are obsolete:
-
-Error ll_val(BufferString* buffer_string);
-
-Error ll_more_val(BufferString* buffer_string);
-
-Error ll_exp(BufferString* buffer_string);
-
-Error ll_more_exp(BufferString* buffer_string);
-
-Error ll_expressions(BufferString* buffer_string);
-
-
-
-
-Error ll_statement(BufferString* buffer_string);
-
-Error ll_statements(BufferString* buffer_string);*/
 #endif

@@ -10,6 +10,7 @@
 
 
 typedef enum{
+    UNKNOWN,
     FUNCTION, // func foo()
     VAR_MUTABLE, // var foo
     VAR_IMMUTABLE, // let foo
@@ -25,11 +26,15 @@ typedef enum{
 } Type;
 
 
-typedef struct{
+
+
+typedef struct Arg{
     char* name;
+    char* identifier;
     Type type;
     struct Arg* next;
 }Arg;
+
 
 typedef struct{
     char* name;
@@ -39,8 +44,18 @@ typedef struct{
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
     Arg *args;  //list of arguments of function
-    
 } Symbol;
+
+
+Arg* Arg_new();
+
+Symbol* Symbol_new();
+
+void Symbol_free(Symbol* symbol);
+
+Arg** Symbol_get_free_arg_p(Symbol* symbol);
+
+
 
 
 typedef struct{
@@ -83,7 +98,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
  * @returns Symbol* to the matching symbol or NULL if matching symbol was not found
 */
 //Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
-Symbol* SymTable_get(SymTable* symTable, char* name,char *scope);
+Symbol* SymTable_get(SymTable* symTable, char* name, char* scope);
 
 
 #endif

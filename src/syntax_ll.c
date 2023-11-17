@@ -5,39 +5,220 @@ Token CURRENT_TOKEN;
 Error ERR;
 
 
-Error ahoj(BufferString* buffer_string, void* tree){
-	return ll_program(buffer_string, tree);
-}
 
-
-
-Error ll_program(BufferString* buffer_string, void* tree){
+Error ll_program(BufferString* buffer_string, SymTable* table, ASTNode** tree){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 		// This will be skipped for simplicity
 		case TOKEN_EOL: // <program> -> TOKEN_EOL <program>
-			return ll_program(buffer_string, tree);
+			return ll_program(buffer_string, table, tree);
 
 		case TOKEN_EOF: // <program> -> TOKEN_EOF
 			return OK;
 
 		case TOKEN_KEYWORD_FUNC: // <program> -> <func_def> <program>
 			unget_token();
-			ERR = ll_func_definition(buffer_string, tree);
-			return ERR ? ERR : ll_program(buffer_string, tree);
+			ERR = ll_func_definition(buffer_string, table, (ASTNode**)&(ASTNode_find_leftmost_node(*tree)->a));
+			return ERR ? ERR : ll_program(buffer_string, table, tree);
 
 		default:	//<program> -> <statements> <program>
 			unget_token();
 			ERR = ll_statements(buffer_string, tree);
-			return ERR ? ERR : ll_program(buffer_string, tree);
+			return ERR ? ERR : ll_program(buffer_string, table, tree);
 	}
+}
+
+
+Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+	*tree = ASTNode_new(FUNC_DEFS);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+	
+	(*tree)->b = ASTNode_new(FUNC_DEF);
+	if ((*tree)->b == NULL)
+		return ERR_INTERNAL;
+	
+	tree = (ASTNode**)&((*tree)->b); // tree is now FUNC_DEF
+
+	ERR = ll_func_definition_head(buffer_string, table, (ASTNode**)&((*tree)->a));
+	if (ERR)
+		return ERR;
+	
+	return ll_func_definition_body(buffer_string, table, (ASTNode**)&((*tree)->b));
+}
+
+
+Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, ASTNode** tree){	
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_KEYWORD_FUNC)
+		return ERR_SYNTAX;
+	
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+	
+	// FUNC_DEF->a is name in symtable
+	*tree = (void*)BufferString_get_as_string(buffer_string);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+	// Write it to symtable
+	Symbol* symbol = Symbol_new();
+	if (symbol == NULL)
+		return ERR_INTERNAL;
+	symbol->name = (char*)*tree; // assign name to symbol
+	ERR = SymTable_insert(table, symbol); // insert symbol into table
+	if (ERR)
+		return ERR;
+	
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
+		return ERR_SYNTAX;
+	
+	ERR = ll_func_definition_head_args(buffer_string, table, tree);
+	if (ERR)
+		return ERR;
+
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
+		return ERR_SYNTAX;
+	
+
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_ARROW){ // no return type specified. void function
+		unget_token();
+		return OK;
+	}
+
+	GET_TOKEN(true);
+	switch (CURRENT_TOKEN){
+	case TOKEN_KEYWORD_INT:
+		symbol->type = INT;
+		break;
+	case TOKEN_KEYWORD_DOUBLE:
+		symbol->type = DOUBLE;
+		break;
+	case TOKEN_KEYWORD_STRING:
+		symbol->type = STRING;
+		break;
+	// case (more types here)
+	default:
+		return ERR_SYNTAX;
+	}
+
+	return OK;
+}
+
+
+Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+	GET_TOKEN(true);
+	unget_token();
+
+	if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT)
+		return OK;
+
+	do {
+		// check arg
+		ERR = ll_func_definition_head_arg(buffer_string, table, tree);
+		if (ERR)
+			return ERR;
+
+		// check arg closing
+		GET_TOKEN(true);
+		if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT){
+			unget_token();
+			return OK;
+		}
+
+	} while(CURRENT_TOKEN == TOKEN_COMMA); // if comma is found, next must be next arg
+	// anything else is error
+	return ERR_SYNTAX;
+}
+
+Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+	Arg* arg = Arg_new();
+	if (arg == NULL)
+		return ERR_INTERNAL;
+	
+	// arg name
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)	
+		return ERR_SYNTAX;
+	
+	arg->name = BufferString_get_as_string(buffer_string);
+	if (arg->name == NULL)
+		return ERR_INTERNAL;
+	// name can be _ meaning without name
+	if (arg->name[0] == '_' && arg->name[1] == '\0')
+		arg->name = NULL;
+	
+	// arg identifier
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+
+	arg->identifier = BufferString_get_as_string(buffer_string);
+	if (arg->identifier == NULL)
+		return ERR_INTERNAL;
+	// identifier cannot be just _ (__ if fine tho)
+	if (arg->identifier[0] == '_' && arg->identifier[1] == '\0')
+		return ERR_SYNTAX;
+
+	// arg type
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_COLON)
+		return ERR_SYNTAX;
+
+	GET_TOKEN(true);
+	switch (CURRENT_TOKEN){
+	case TOKEN_KEYWORD_INT:
+		arg->type = INT;
+		break;
+	case TOKEN_KEYWORD_DOUBLE:
+		arg->type = DOUBLE;
+		break;
+	case TOKEN_KEYWORD_STRING:
+		arg->type = STRING;
+		break;
+	// case (more types here)
+	default:
+		return ERR_SYNTAX;
+	}
+
+	// TODO waiting for SymTable rework so it accepts NULL as scope
+
+	// now add the arg to the function symbol;
+	// Symbol* symbol = SymTable_get(table, (char*)*tree, NULL); // segfault
+	// if (symbol == NULL)
+	// 	return ERR_INTERNAL;
+	
+	// Arg** free_arg_p = Symbol_get_free_arg_p(symbol);
+	// *free_arg_p = arg;
+	return OK;
+}
+
+
+Error ll_func_definition_body(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
+		return ERR_SYNTAX;
+	
+	printf("function body syntax not implemented\n");
+	return ERR_INTERNAL;
+  
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_BRACE_RIGHT)
+		return ERR_SYNTAX;
+	
+	return OK;
 }
 
 
 Error ll_func_statements(BufferString* buffer_string, void* tree){
 	GET_TOKEN(true);
-	if (CURRENT_TOKEN == TOKEN_KEYWORD_RETURN) // <func_statements> -> <return> <func_statements>
+	if (CURRENT_TOKEN == TOKEN_KEYWORD_RETURN){ // <func_statements> -> <return> <func_statements>
+		unget_token();
 		return ll_return(buffer_string, tree);
+	}
 	
 	return ll_statements(buffer_string, tree); // <func_statements> -> <statements> <func_statements>
 }
@@ -143,44 +324,6 @@ Error ll_func_call_args(BufferString* buffer_string, void* tree){
 	
 	unget_token();
 	return OK;
-	
-
-
-
-	char* arg_name; // name of the argument - specified at func definition
-	char* var_name; // identifier of variable passed in as argument
-
-	if (CURRENT_TOKEN == TOKEN_IDENTIFIER){ // either variable as arg or arg name
-		arg_name = BufferString_get_as_string(buffer_string);
-
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN == TOKEN_COLON){ // next is either var_vame or expression
-			GET_TOKEN(true);
-			if (CURRENT_TOKEN == TOKEN_IDENTIFIER){ // var_name
-				var_name = BufferString_get_as_string(buffer_string);
-			} else {
-
-			}
-		
-
-		} else {
-
-		}
-	
-		// TODO add to tree
-	} else {
-		// TODO with precedence
-		// TODO add to tree
-	}
-
-
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN == TOKEN_COMMA) // next argument
-		return ll_func_call_arg(buffer_string, tree);
-	else if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT) // no more arguments
-		return OK;
-	else // something else
-		return ERR_SYNTAX;
 }
 
 
@@ -240,6 +383,27 @@ Error ll_assign(BufferString* buffer_string, void* tree){
 
 	// TODO with precedence
 
+	return OK;
+}
+
+
+Error ll_var_declaration(BufferString* buffer_string, void* tree){
+	return OK;
+}
+
+Error ll_let_declaration(BufferString* buffer_string, void* tree){
+	return OK;
+}
+
+Error ll_while(BufferString* buffer_string, void* tree){
+	return OK;
+}
+
+Error ll_return(BufferString* buffer_string, void* tree){
+	return OK;
+}
+
+Error ll_if(BufferString* buffer_string, void* tree){
 	return OK;
 }
 

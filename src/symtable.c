@@ -4,6 +4,59 @@
 #include <stdio.h>
 
 
+Arg* Arg_new(){
+    Arg* arg = (Arg*)malloc(sizeof(Arg));
+    if (arg != NULL){
+        arg->name = NULL;
+        arg->identifier = NULL;
+        arg->type = NIL;
+        arg->next = NULL;
+    }
+
+    return arg;
+}
+
+
+Symbol* Symbol_new(){
+    Symbol* symbol = (Symbol*)malloc(sizeof(Symbol));
+    if(symbol != NULL){
+        symbol->symbol_type = UNKNOWN,
+        symbol->type = NIL;
+        symbol->name = NULL;
+        symbol->scope = NULL;
+        symbol->nilable = false;
+        symbol->initialized = false;
+        symbol->args = NULL;
+    }
+    return symbol;
+}
+
+
+void Symbol_free(Symbol* symbol){
+    if(symbol == NULL)
+        return;
+    
+    if (symbol->name != NULL)
+        free(symbol->name);
+    if (symbol->scope != NULL)
+        free(symbol->scope);
+    
+    free(symbol);
+}
+
+
+Arg** Symbol_get_free_arg_p(Symbol* symbol){
+    Arg** free_arg_p = &(symbol->args);
+    if (*free_arg_p == NULL)
+        return free_arg_p;
+    
+    while((*free_arg_p)->next != NULL)
+        free_arg_p = &((*free_arg_p)->next);
+    
+    return free_arg_p;
+}
+
+
 static unsigned hash(char* name,int size)
 {
     unsigned long long hash = 1;
@@ -35,15 +88,6 @@ static bool SymTable_init_Spec(SymTable* symTable, int size)
 bool SymTable_init(SymTable* symTable)
 {
     return SymTable_init_Spec(symTable, SYMTABLE_INIT_SIZE);
-}
-
-
-static void Symbol_free(Symbol* symbol){
-    if(symbol == NULL)
-        return;
-    
-    free(symbol->name);
-    free(symbol);
 }
 
 void SymTable_free(SymTable* symTable)
@@ -83,9 +127,6 @@ static bool SymTable_resize(SymTable* symTable)
     return true;
 }
 
-
-
-
 //inserts new symbol
 Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 {
@@ -114,7 +155,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 
 
 //returns symbol if said symbol exists
-Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
+Symbol* SymTable_get(SymTable* symTable, char* name, char* scope)
 {
     if (symTable->count == 0)
         return NULL;
@@ -154,16 +195,12 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
                     specific = difference;
                     break;
                 }
-                
             }
             strncpy(localScope, scope, strlen(scope));
         }
 
-
-
         index += 3;
     }
     
-
     return target;
 }
