@@ -155,7 +155,7 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
             while(strcmp(localScope,"") !=0)
             {
                 
-                if(cmpScope((strcmp(localScope,"") == 0) ? NULL : localScope,symTable->table[index]->scope))
+                if(cmpScope(localScope,symTable->table[index]->scope))
                 {
                     difference++;
                     break;
