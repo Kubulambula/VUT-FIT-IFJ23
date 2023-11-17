@@ -43,6 +43,8 @@ static void Symbol_free(Symbol* symbol){
         return;
     
     free(symbol->name);
+    if(symbol->scope!= NULL)
+        free(symbol->scope);
     free(symbol);
 }
 
@@ -187,7 +189,7 @@ Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
             
 
     }
-    
+    free(localScope);
 
     return target;
 }
