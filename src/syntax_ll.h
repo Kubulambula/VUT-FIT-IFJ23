@@ -19,15 +19,15 @@ Error ll_program(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
 Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode** tree);
 
-Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char** func_name);
+Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, Symbol** func_symbol);
 
-Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, char* func_name);
+Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, Symbol* func_symbol);
 
-Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, char* func_name);
+Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, Symbol* func_symbol);
 
 Error ll_func_definition_body(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope);
 
-Error ll_statements(BufferString* buffer_string, void* tree, char* scope);
+Error ll_statements(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope);
 
 // Error ll_func_call(BufferString* buffer_string, void* tree);
 
@@ -43,9 +43,9 @@ Error ll_assign(BufferString* buffer_string, void* tree);
 
 Error ll_let_var_declaration(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope, SymbolType symbol_type, ASTNodeType node_type);
 
-Error ll_var_declaration(BufferString* buffer_string, ASTNode** tree, char* scope);
+Error ll_var_declaration(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope);
 
-Error ll_let_declaration(BufferString* buffer_string, ASTNode** tree, char* scope);
+Error ll_let_declaration(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope);
 
 Error ll_while(BufferString* buffer_string, void* tree);
 
