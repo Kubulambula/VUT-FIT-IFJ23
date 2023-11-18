@@ -9,10 +9,13 @@ typedef enum {
     // EXPRESSION = If it's a literal, the expression has the value of the literal.
     // If it's an operator, the value must be computed first from arguments. (true expression)
     ROOT, // The main big boy node. a is LList with FUNC_DEFs & b is LList of main statements
+    STATEMENT, // a is the statement & b is next statement or NULL if this is the last statement
     FUNC_DEFS, // a is FUNC_DEF & b is FUNC_DEFS or NULL if no more functions are defined
-    FUNC_DEF, // a is function name & b is LList of function statements
-    VAR_DEF, // a is variable name & b is OPTIONAL value
-    VAR_ASSIGN, // a is variable name & b is EXPRESSION
+    FUNC_DEF, // a is function symbol & b is LList of function statements
+    VAR_DEF, // a is variable symbol & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
+    LET_DEF, // a is variable symbol & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
+    
+    ASSIGN, // a is variable name & b is EXPRESSION
 
 
     //EXPRESSION, // based on type, the a and b are operands or another expression subtree
@@ -44,7 +47,7 @@ typedef struct LList{
 
 
 
-ASTNode* ASTNode_new();
+ASTNode* ASTNode_new(ASTNodeType type);
 
 ASTNode* ASTNode_find_leftmost_node(ASTNode* node);
 

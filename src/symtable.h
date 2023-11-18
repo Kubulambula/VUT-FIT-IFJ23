@@ -12,8 +12,8 @@
 typedef enum{
     UNKNOWN,
     FUNCTION, // func foo()
-    VAR_MUTABLE, // var foo
-    VAR_IMMUTABLE, // let foo
+    VAR, // var foo
+    LET, // let foo
 } SymbolType;
 
 
@@ -48,6 +48,8 @@ typedef struct{
 
 
 Arg* Arg_new();
+
+void Arg_free(Arg* arg);
 
 Symbol* Symbol_new();
 
