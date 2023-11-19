@@ -28,12 +28,12 @@ typedef enum{
 
 
 
-typedef struct Arg{
+typedef struct FuncDefArg{
     char* name;
     char* identifier;
     Type type;
-    struct Arg* next;
-}Arg;
+    struct FuncDefArg* next;
+}FuncDefArg;
 
 
 typedef struct{
@@ -43,19 +43,19 @@ typedef struct{
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
-    Arg *args;  //list of arguments of function
+    FuncDefArg *args;  //list of arguments of function
 } Symbol;
 
 
-Arg* Arg_new();
+FuncDefArg* FuncDefArg_new();
 
-void Arg_free(Arg* arg);
+void FuncDefArg_free(FuncDefArg* arg);
 
 Symbol* Symbol_new();
 
 void Symbol_free(Symbol* symbol);
 
-Arg** Symbol_get_free_arg_p(Symbol* symbol);
+FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
 
 
 

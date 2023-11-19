@@ -11,9 +11,9 @@ typedef enum {
     ROOT, // The main big boy node. a is LList with FUNC_DEFs & b is LList of main statements
     STATEMENT, // a is the statement & b is next statement or NULL if this is the last statement
     FUNC_DEFS, // a is FUNC_DEF & b is FUNC_DEFS or NULL if no more functions are defined
-    FUNC_DEF, // a is function symbol & b is LList of function statements
-    VAR_DEF, // a is variable symbol & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
-    LET_DEF, // a is variable symbol & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
+    FUNC_DEF, // a is function name & b is LList of function statements
+    VAR_DEF, // a is variable name & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
+    LET_DEF, // a is variable name & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
     
     ASSIGN, // a is variable name & b is EXPRESSION
 

@@ -4,8 +4,8 @@
 #include <stdio.h>
 
 
-Arg* Arg_new(){
-    Arg* arg = (Arg*)malloc(sizeof(Arg));
+FuncDefArg* Arg_new(){
+    FuncDefArg* arg = (FuncDefArg*)malloc(sizeof(FuncDefArg));
     if (arg != NULL){
         arg->name = NULL;
         arg->identifier = NULL;
@@ -17,7 +17,7 @@ Arg* Arg_new(){
 }
 
 
-void Arg_free(Arg* arg){
+void FuncDefArg_free(FuncDefArg* arg){
     if (arg == NULL)
         return;
     
@@ -26,7 +26,7 @@ void Arg_free(Arg* arg){
     if (arg->identifier != NULL)
         free(arg->identifier);
     if (arg->next != NULL)
-        Arg_free(arg->next);
+        FuncDefArg_free(arg->next);
     free(arg);
 }
 
@@ -59,8 +59,8 @@ void Symbol_free(Symbol* symbol){
 }
 
 
-Arg** Symbol_get_free_arg_p(Symbol* symbol){
-    Arg** free_arg_p = &(symbol->args);
+FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol){
+    FuncDefArg** free_arg_p = &(symbol->args);
     if (*free_arg_p == NULL)
         return free_arg_p;
     
