@@ -194,9 +194,9 @@ Error ll_program(BufferString* buffer_string){
 		case TOKEN_EOF:		//<program> -> ɛ
 			return OK;
 
-		// case TOKEN_EOL:		//<program> -> EOL<program>
-		// 	CURRENT_TOKEN = get_token(buffer_string, true);
-		// 	return	ll_program(buffer_string);
+		case TOKEN_EOL:		//<program> -> EOL<program>
+			CURRENT_TOKEN = get_token(buffer_string, true);
+			return	ll_program(buffer_string);
 
 		case TOKEN_KEYWORD_FUNC:	//<program> -> <func_def>
 			CURRENT_TOKEN = get_token(buffer_string, true);
@@ -355,6 +355,9 @@ Error ll_identifier(BufferString* buffer_string){
 		case TOKEN_PARENTHESIS_LEFT:	// <identifier> -> #identifier <func_call>
 			if(ll_func_call(buffer_string))
 				return ERR_SYNTAX;
+            if(CURRENT_TOKEN != TOKEN_EOL)
+                return ERR_SYNTAX;
+            CURRENT_TOKEN = get_token(buffer_string, true);
 			return OK;
 
 		case TOKEN_ASSIGN:		// <identifier> -> #identifier = <expression>
