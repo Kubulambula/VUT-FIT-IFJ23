@@ -12,7 +12,7 @@ typedef struct {
     int size;
 } Stack;
 
-void Stack_Init( Stack * );
+bool Stack_Init(Stack* stack);
 
 bool Stack_IsEmpty( const Stack * );
 

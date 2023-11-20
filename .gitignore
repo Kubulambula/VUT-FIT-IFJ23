@@ -3,11 +3,9 @@
 /src/prog
 /src/test
 /src/test.exe
-/src/lexer_tester
-/src/lexer_tester.c
-/src/test-expression.c
-/src/test-expression.exe
 /src/expression
+/src/test-expression
+/src/test-expression.exe
 
 
 # .zip file for submission

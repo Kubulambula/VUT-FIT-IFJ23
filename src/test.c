@@ -13,11 +13,16 @@
 #include "syntax_precedent.h"
 #include "syntax_precedent.c"
 
+#ifdef _WIN64
+    #define PATH "C:\\Users\\jenik\\Documents\\GitHub\\VUT-FIT-IFJ23\\src\\prog"
+#endif
+#ifdef __linux__
+    #define PATH "prog"
+#endif
 
 int main(){
     BufferString buff;
-    FILE* file = fopen("C:\\Users\\jenik\\Documents\\GitHub\\VUT-FIT-IFJ23\\src\\prog", "r");
-    //FILE* file = fopen("prog", "r");
+    FILE* file = fopen(PATH, "r");
     if(file == NULL){
         printf("file not open\n");
         return 1;
@@ -26,8 +31,9 @@ int main(){
     buffer_string_init(&buff);
 
     CURRENT_TOKEN = get_token(&buff, true);
-    if(ll_program(&buff)){
-        printf("SYNTAX ERROR FOUND\n");
+    Error err = ll_program(&buff);
+    if(err){
+        printf("ERROR FOUND %d\n", err);
         return 1;
     }
     printf("SYNTAX CORRECT\n");
