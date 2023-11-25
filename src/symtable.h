@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "error.h"
+#include "ast.h"
 
 
 #define SYMTABLE_INIT_SIZE 32
@@ -28,12 +29,12 @@ typedef enum{
 
 
 
-typedef struct FuncDefArg{
-    char* name;
-    char* identifier;
-    Type type;
-    struct FuncDefArg* next;
-}FuncDefArg;
+// typedef struct FuncDefArg{
+//     char* name;
+//     char* identifier;
+//     Type type;
+//     struct FuncDefArg* next;
+// }FuncDefArg;
 
 
 typedef struct{
