@@ -44,6 +44,22 @@ typedef struct{
     void* b;  
 } ASTNode;
 
+// Union literálů
+union literalValue{
+    int i;
+    double d;
+    char* s;
+    Token t;
+};
+
+// Struktura uzlu výrazu
+typedef struct{
+    Token type;                 // typ uzlu
+    union literalValue value;   // hodnota uzlu, v případě že jde o literál
+    exp_node* left;             // levý potomek
+    exp_node* right;            // pravý potomek
+} exp_node;
+
 
 FuncDefArg* FuncDefArg_new();
 
