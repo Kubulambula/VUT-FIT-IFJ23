@@ -39,7 +39,6 @@ typedef enum{
 
 typedef struct{
     char* name;
-    char* scope;    //scopes divided by ':' , global scope = "" , other = "foo:bar:func"
     SymbolType symbol_type;
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
@@ -98,7 +97,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
  * @returns Symbol* to the matching symbol or NULL if matching symbol was not found
 */
 //Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
-Symbol* SymTable_get(SymTable* symTable, char* name, char* scope);
+Symbol* SymTable_get(SymTable* symTable, char* name);
 
 
 #endif
