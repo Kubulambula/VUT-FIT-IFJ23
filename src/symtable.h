@@ -61,6 +61,7 @@ typedef struct{
     Symbol** table;  // pointer to symbol table
     int size;   //table size
     int count;  //count of symbols inserted
+    SymTable* previous;
 } SymTable;
 
 
