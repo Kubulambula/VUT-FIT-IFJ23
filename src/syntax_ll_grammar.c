@@ -390,6 +390,7 @@ Error ll_statement(BufferString* buffer_string){
 
 		case TOKEN_BRACE_RIGHT:		//<statement> -> ɛ
 		case TOKEN_KEYWORD_FUNC:
+        case TOKEN_EOF:
 			return OK;
 
 		case TOKEN_KEYWORD_IF:		//<statement> -> <if>

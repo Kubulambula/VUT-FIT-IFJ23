@@ -2,10 +2,10 @@
 .vscode/
 /src/prog
 /src/test
-/src/test.exe
 /src/expression
 /src/test-expression
-/src/test-expression.exe
+/src/lexer-tester
+/src/lexer-tester.c
 
 
 # .zip file for submission

@@ -227,9 +227,6 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
     return table[token2index(stack_top_token)][token2index(current_precedent_token)];
 }
 
-/* funkce provede precedenční analýzu výrazu a sestaví podle něj btree.
-* funkce nepočítá s epsilon pravidly (prázdný výraz NENÍ validní výraz)
- */
 Error precedent(BufferString* buffer_string){
     Stack stack;
     Token top;
@@ -252,8 +249,7 @@ Error precedent(BufferString* buffer_string){
             case 1: case 3:
                 Stack_Push(&stack, CURRENT_TOKEN);
                 Stack_Top_Token(&stack, &top);
-                //if(token2index(CURRENT_TOKEN) < 8)            // nevím proč jsem to sem dával ale mám strach to smazat
-                     CURRENT_TOKEN = get_token(buffer_string, true);
+                CURRENT_TOKEN = get_token(buffer_string, true);
                 break;
 
             case 5:
