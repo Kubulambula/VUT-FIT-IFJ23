@@ -2,23 +2,67 @@
 #define SYMTABLE_H
 
 #include <stdbool.h>
+#include "error.h"
+#include "ast.h"
 
 
-#define SYMTABLE_INIT_SIZE 5
-#define SYMTABLE_EXPAND_SIZE 20
+#define SYMTABLE_INIT_SIZE 32
+#define SYMTABLE_EXPAND_SIZE 16
+
+
+typedef enum{
+    UNKNOWN,
+    FUNCTION, // func foo()
+    VAR, // var foo
+    LET, // let foo
+} SymbolType;
+
+
+typedef enum{
+    NIL, // void funkce
+    INT,
+    //BOOL,
+    DOUBLE,
+    STRING,
+} Type;
+
+
+
+
+// typedef struct FuncDefArg{
+//     char* name;
+//     char* identifier;
+//     Type type;
+//     struct FuncDefArg* next;
+// }FuncDefArg;
 
 
 typedef struct{
     char* name;
-    int value;
+    SymbolType symbol_type;
+    Type type; // type of variable or return type of a function
+    bool nilable; // if true, nil is allowed for this type
+    bool initialized; // if true, the variable was assigned a value at least once
+    FuncDefArg *args;  //list of arguments of function
 } Symbol;
 
 
+Symbol* Symbol_new();
+
+void Symbol_free(Symbol* symbol);
+
+FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
+
+
+
+
 typedef struct{
-    Symbol** table;  //pointer to symbol table
+    Symbol** table;  // pointer to symbol table
     int size;   //table size
     int count;  //count of symbols inserted
+    SymTable* previous;
 } SymTable;
+
 
 /**
  * Allocates space for array of pointers to symbols to default size of INIT_SIZE (30) 
@@ -30,7 +74,7 @@ typedef struct{
 bool SymTable_init(SymTable* symTable);
 
 /**
- * Deletes all symbol in table and frees the memory 
+ * Deletes all symbols in table and frees the memory 
  * 
  * @param symTable Pointer to initialized SymTable
 */
@@ -40,31 +84,20 @@ void SymTable_free(SymTable* symTable);
  * Inserts new Symbol to SymTable, if item allready exists, just sets new value
  * 
  * @param symTable Pointer to initialized SymTable
- * @param name Pointer to name String (must end in \0)  
- * @param value value of Symbol
+ * @param symbol Pointer to symbol 
  * @returns true/false if the insertion and allocation was successfull
 */
-bool SymTable_insert(SymTable* symTable,char* name, int value);
-
-
-/**
- * Sets value of Symbol if said Symbol exists in Symtable
- * 
- * @param symTable Pointer to initialized SymTable
- * @param name Pointer to name String (must end in \0)  
- * @param value value of Symbol
- * @returns true/false if Symbol exists
-*/
-bool SymTable_set(SymTable* symTable,char* name, int value);
+Error SymTable_insert(SymTable* symTable, Symbol* symbol);
 
 /**
- * Gets value of Symbol if said Symbol exists in Symtable
+ * Returns a pointer to a matching symbol with a given name
  * 
  * @param symTable Pointer to initialized SymTable
- * @param name Pointer to name String (must end in \0)  
- * @returns value of wanted Symbol -- must think of error handling
+ * @param name string with the name of searched symbol
+ * @returns Symbol* to the matching symbol or NULL if matching symbol was not found
 */
-int SymTable_get(SymTable* symTable,char* name);
+//Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
+Symbol* SymTable_get(SymTable* symTable, char* name);
 
 
 #endif

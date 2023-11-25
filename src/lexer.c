@@ -6,11 +6,16 @@
 
 #include "lexer.h"
 
+// Token CURRENT_TOKEN;
+
 
 FILE* source_file = NULL;
-Token last_token = TOKEN_ERR_LEXICAL;
+
+Token last_token = TOKEN_ERR_INTERNAL;
 bool use_last_token = false;
-int line = 1;
+
+long saved_file_offset = -1;
+
 
 void initLexer(FILE* file){
     // sanity check
@@ -105,7 +110,7 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
 
     // Check if the input string matches any keyword
     for (size_t i = 0; i < numKeywords; ++i) {
-        if (buffer_string_cmp_str(buffer_string, keywords[i]) == 0) {
+        if (BufferString_cmp_str(buffer_string, keywords[i]) == 0) {
             *TokenType = i + offset;
             return true;  // Its a keyword
         }
@@ -117,6 +122,9 @@ bool is_keyword(BufferString* buffer_string, Token* TokenType){
 
 // Helper pro escape_string()
 Error escape_string_hex(BufferString* buffer_string){
+    if (get_next_char() != '{')
+        return ERR_LEXICAL;
+    
     char hex_code[9] = {'\0'};
     for (int i=0; i<8; i++){
         hex_code[i] = get_next_char();
@@ -127,42 +135,67 @@ Error escape_string_hex(BufferString* buffer_string){
             break;
         }
         // if the char was not valid hex char (0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,A,B,C,D,E,F), return error
-        if (!isxdigit(hex_code[i])) {
+        if (!isxdigit(hex_code[i]))
             return ERR_LEXICAL;
-        }
     }
     // check if the escape code was terminated
-    if (get_next_char() != '}'){
+    if (get_next_char() != '}')
         return ERR_LEXICAL;
-    }
     // check if the code has at least one hexadecimal num
-    if (hex_code[0] == '\0'){
+    if (hex_code[0] == '\0')
         return ERR_LEXICAL;
-    }
     // convert the hex num to ascii char by casting the long code to char (idk how else to handle it)
     // should we check the value for EOF, NULL or something line that???
-    buffer_string_append_char(buffer_string, (char)strtol(hex_code, NULL, 16));
-    return OK;
+    return BufferString_append_char(buffer_string, (char)strtol(hex_code, NULL, 16)) ? OK : TOKEN_ERR_INTERNAL;
 }
 
 
 // Vraci OK, kdyz uspesne do buffer_stringu zapise escaped znak, nebo korespondujici chybu
 Error escape_string(BufferString* buffer_string){
     char nextChar = get_next_char();
-    if (nextChar == '"')
-        buffer_string_append_char(buffer_string, '"');
-    else if (nextChar == 'n')
-        buffer_string_append_char(buffer_string, '\n');
-    else if (nextChar == 'r')
-        buffer_string_append_char(buffer_string, '\r');
-    else if (nextChar == 't')
-        buffer_string_append_char(buffer_string, '\t');
-    else if (nextChar == '\\')
-        buffer_string_append_char(buffer_string, '\\');
-    else if (nextChar == '{')
+    if (nextChar == '"'){
+        if (!BufferString_append_char(buffer_string, '"'))
+            return ERR_INTERNAL;
+    }
+    else if (nextChar == 'n'){
+        if (!BufferString_append_char(buffer_string, '\n'))
+            return ERR_INTERNAL;
+    }
+    else if (nextChar == 'r'){
+        if (!BufferString_append_char(buffer_string, '\r'))
+            return ERR_INTERNAL;
+    }
+    else if (nextChar == 't'){
+        if (!BufferString_append_char(buffer_string, '\t'))
+            return ERR_INTERNAL;
+    }
+    else if (nextChar == '\\'){
+        if (!BufferString_append_char(buffer_string, '\\'))
+            return ERR_INTERNAL;
+    }
+    else if (nextChar == 'u')
         return escape_string_hex(buffer_string);
     else
         return ERR_LEXICAL;
+    return OK;
+}
+
+
+Error save_current_file_offset(){
+    saved_file_offset = ftell(source_file);
+    return (saved_file_offset != -1) ? OK : ERR_INTERNAL;
+}
+
+
+Error rollback_to_saved_file_offset(){
+    if (saved_file_offset == -1)
+        return ERR_INTERNAL;
+    
+    int err = fseek(source_file, saved_file_offset, SEEK_SET);
+    if (err != 0)
+        return ERR_INTERNAL;
+    
+    last_token = TOKEN_ERR_INTERNAL;
     return OK;
 }
 
@@ -175,9 +208,6 @@ Token get_token(BufferString* buffer_string, bool skip_eol){
     }
     do{
         last_token = get_next_token(buffer_string);// get next token
-        if(last_token == TOKEN_EOL){    //pomocna vecicka pro debugovani
-            line++;
-        }
     } while(skip_eol && last_token == TOKEN_EOL); // go to the next token, if the token is EOL
     return last_token;
 }
@@ -195,7 +225,7 @@ Token get_next_token(BufferString* buffer_string){
         State state = LEXER_STATE_START;
         Error err;
         // Clear the BufferString from the junk accumulated from previous token
-        buffer_string_clear(buffer_string);
+        BufferString_clear(buffer_string);
 
         while(1){
             nextChar = get_next_char();
@@ -222,7 +252,6 @@ Token get_next_token(BufferString* buffer_string){
                         return TOKEN_EOL;
                     }
 
-                    //Should append here or use ungetc?
                     //token is int or double
                     else if(isdigit(nextChar)){
                         state = LEXER_STATE_NUMBER;
@@ -338,12 +367,15 @@ Token get_next_token(BufferString* buffer_string){
                 
                 case LEXER_STATE_NUMBER:
                     if (isdigit(nextChar)){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                     } else if(nextChar == '.'){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_DOT;
                     } else if(nextChar == 'e' || nextChar == 'E'){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_E;
                     } else{
                         ungetc(nextChar, source_file);
@@ -353,7 +385,8 @@ Token get_next_token(BufferString* buffer_string){
                 
                 case LEXER_STATE_DOUBLE_DOT:
                     if (isdigit(nextChar)){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_AFTER_DOT;
                         break;
                     }
@@ -362,9 +395,11 @@ Token get_next_token(BufferString* buffer_string){
                
                 case LEXER_STATE_DOUBLE_AFTER_DOT:
                     if (isdigit(nextChar)){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                     } else if(nextChar == 'e' || nextChar == 'E'){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_E;
                     } else{
                         ungetc(nextChar, source_file);
@@ -374,11 +409,13 @@ Token get_next_token(BufferString* buffer_string){
                     
                 case LEXER_STATE_DOUBLE_E:
                     if (isdigit(nextChar)){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_AFTER_E;
                         break;
                     } else if (nextChar == '-' || nextChar == '+'){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_E_SIGN;
                         break;
                     }
@@ -387,7 +424,8 @@ Token get_next_token(BufferString* buffer_string){
                 
                 case LEXER_STATE_DOUBLE_E_SIGN:
                     if (isdigit(nextChar)){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         state = LEXER_STATE_DOUBLE_AFTER_E;
                         break;
                     }
@@ -396,7 +434,8 @@ Token get_next_token(BufferString* buffer_string){
                 
                 case LEXER_STATE_DOUBLE_AFTER_E:
                     if (isdigit(nextChar)){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         break;
                     }
                     ungetc(nextChar, source_file);
@@ -406,7 +445,8 @@ Token get_next_token(BufferString* buffer_string){
                     // This matches both alpha AND numerical, but we can get to this state only from alpha.
                     // Meaning we don't need to check if the first char is numerical. Good job Kunikus
                     if(isalnum(nextChar) || nextChar == '_'){
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                         break;
                     }
                     ungetc(nextChar,source_file); // to read unknown char again for the start state
@@ -420,7 +460,6 @@ Token get_next_token(BufferString* buffer_string){
                     }
                     // The character after first " was not "
                     ungetc(nextChar, source_file);
-                    // buffer_string_append_char(buffer_string, nextChar);
                     state = LEXER_STATE_STRING;
                     break;
                 
@@ -434,7 +473,8 @@ Token get_next_token(BufferString* buffer_string){
                     } else if (nextChar == EOF){
                         return TOKEN_ERR_LEXICAL;
                     } else{
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                     }
                     break;
                 
@@ -445,6 +485,8 @@ Token get_next_token(BufferString* buffer_string){
                         return TOKEN_ERR_INTERNAL;
                     else if (err == ERR_LEXICAL)
                         return TOKEN_ERR_LEXICAL;
+                    // sanity check
+                    assert(err == OK);
                     // it was ok, so return back to normal string
                     state = LEXER_STATE_STRING;
                     break;
@@ -476,11 +518,13 @@ Token get_next_token(BufferString* buffer_string){
                     } else if (nextChar == EOF){
                         return TOKEN_ERR_LEXICAL;
                     } else {
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, nextChar))
+                            return TOKEN_ERR_INTERNAL;
                     }
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_ESCAPE:
+                    ungetc(nextChar, source_file); // push the char back for escape_string()
                     err = escape_string(buffer_string);
                     if (err == ERR_INTERNAL)
                         return TOKEN_ERR_INTERNAL;
@@ -496,8 +540,9 @@ Token get_next_token(BufferString* buffer_string){
                     if (nextChar == '"'){ // 2nd " that is not excaped or preceded with \n 
                         state = LEXER_STATE_MULTILINE_STRING_SECOND_QUOTE;
                     } else {
-                        buffer_string_append_char(buffer_string, '"');
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, '"'))
+                            return TOKEN_ERR_INTERNAL;
+                        ungetc(nextChar, source_file);
                         state = LEXER_STATE_MULTILINE_STRING;
                     }
                     break;
@@ -508,18 +553,24 @@ Token get_next_token(BufferString* buffer_string){
                         // This should be a lexer error IMO, but can be handled as syntax in the future
                         return TOKEN_ERR_LEXICAL;
                     }
-                    buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, nextChar);
+                    if (!BufferString_append_char(buffer_string, '"'))
+                        return TOKEN_ERR_INTERNAL;
+                    if (!BufferString_append_char(buffer_string, '"'))
+                        return TOKEN_ERR_INTERNAL;
+                    ungetc(nextChar, source_file);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_EOL:
                     if (nextChar == '"'){ // 1st " after \n
                         state = LEXER_STATE_POSSIBLE_MULTILINE_STRING_END;
+                    } else if(nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
                     } else{
-                        buffer_string_append_char(buffer_string, '\n');
-                        buffer_string_append_char(buffer_string, nextChar);
+                        if (!BufferString_append_char(buffer_string, '\n'))
+                            return TOKEN_ERR_INTERNAL;
+                        ungetc(nextChar, source_file);
+                        state = LEXER_STATE_MULTILINE_STRING;
                     }
                     break;
                 
@@ -527,21 +578,30 @@ Token get_next_token(BufferString* buffer_string){
                     if (nextChar == '"'){ // 2nd " after \n
                         state = LEXER_STATE_MULTILINE_STRING_END;
                         break;
+                    } else if(nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
                     }
-                    buffer_string_append_char(buffer_string, '\n');
-                    buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, nextChar);
+                    if (!BufferString_append_char(buffer_string, '\n'))
+                        return TOKEN_ERR_INTERNAL;
+                    if (!BufferString_append_char(buffer_string, '"'))
+                        return TOKEN_ERR_INTERNAL;
+                    ungetc(nextChar, source_file);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
                 
                 case LEXER_STATE_MULTILINE_STRING_END:
                     if (nextChar == '"'){ // 3rd " after \n
                         return TOKEN_LITERAL_STRING;
+                    } else if(nextChar == EOF){
+                        return TOKEN_ERR_LEXICAL;
                     }
-                    buffer_string_append_char(buffer_string, '\n');
-                    buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, '"');
-                    buffer_string_append_char(buffer_string, nextChar);
+                    if (!BufferString_append_char(buffer_string, '\n'))
+                        return TOKEN_ERR_INTERNAL;
+                    if (!BufferString_append_char(buffer_string, '"'))
+                        return TOKEN_ERR_INTERNAL;
+                    if (!BufferString_append_char(buffer_string, '"'))
+                        return TOKEN_ERR_INTERNAL;
+                    ungetc(nextChar, source_file);
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;
 

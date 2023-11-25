@@ -1,1 +1,7 @@
-1e-3.3
+func foo() {
+	let x: String
+	x = "ahoj"
+	let y: String
+	let z: Int
+	z = nibba()
+}

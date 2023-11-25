@@ -1,25 +1,28 @@
 #include <stdio.h>
+
 #include "error.h"
 #include "lexer.h"
 #include "buffer_string.h"
+#include "syntax_ll.h"
+#include "ast.h"
 
 int main(void) {
-	BufferString b;
-	buffer_string_init(&b);
-
+	
 	initLexer(stdin);
-	Token t = TOKEN_EOL;
-	while(t != TOKEN_EOF){
-		t = get_next_token(&b);
-		print_token_as_string(t);
-		if (t == TOKEN_IDENTIFIER){
-			printf("Indetifier >>> %s <<<\n", b.string);
-		}
-		if (t == TOKEN_ERR)
-			return 1;
-	}
 
+	BufferString buffer_string;
+	if (!BufferString_init(&buffer_string))
+		return ERR_INTERNAL;
+	
+	SymTable table;
+	if (!SymTable_init(&table))
+		return ERR_INTERNAL;
 
+	ASTNode* ast = ASTNode_new(ROOT);
+	if (ast == NULL)
+		return ERR_INTERNAL;
 
-	return OK;
+	Error err = ll_program(&buffer_string, &table, &ast);
+	printf("ERR: %d\n", err);
+	return err;
 }

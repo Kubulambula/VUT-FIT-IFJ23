@@ -18,6 +18,9 @@ ifj23compiler
 # Testdir for is_it_ok.sh
 .testdir
 
+# Generated code from tests
+*.ifjcode
+
 
 
 # === C ignores ===
