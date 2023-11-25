@@ -10,7 +10,6 @@ Symbol* Symbol_new(){
         symbol->symbol_type = UNKNOWN,
         symbol->type = NIL;
         symbol->name = NULL;
-        symbol->scope = NULL;
         symbol->nilable = false;
         symbol->initialized = false;
         symbol->args = NULL;
@@ -19,29 +18,7 @@ Symbol* Symbol_new(){
 }
 
 
-void Symbol_free(Symbol* symbol){
-    if(symbol == NULL)
-        return;
-    
-    if (symbol->name != NULL)
-        free(symbol->name);
-    if (symbol->scope != NULL)
-        free(symbol->scope);
-    
-    free(symbol);
-}
 
-
-FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol){
-    FuncDefArg** free_arg_p = &(symbol->args);
-    if (*free_arg_p == NULL)
-        return free_arg_p;
-    
-    while((*free_arg_p)->next != NULL)
-        free_arg_p = &((*free_arg_p)->next);
-    
-    return free_arg_p;
-}
 
 
 static unsigned hash(char* name,int size)
@@ -84,7 +61,7 @@ void SymTable_free(SymTable* symTable)
         return;
  
     for(int i=0; i<symTable->size; i++)
-        Symbol_free(symTable->table[i]);
+        free(symTable->table[i]);
     
     free(symTable->table);
     free(symTable);
@@ -116,16 +93,6 @@ static bool SymTable_resize(SymTable* symTable)
 }
 
 
-static bool cmpScope(char *string1,char *string2)
-{
-    if (string1 == NULL && string2 == NULL)
-        return true;
-    else if(string1 == NULL || string2 == NULL)
-        return false;
-    else
-        return (strcmp(string1,string2) == 0);
-}
-
 
 //inserts new symbol
 Error SymTable_insert(SymTable* symTable, Symbol* symbol)
@@ -143,8 +110,7 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
     while(symTable->table[index] != NULL)
     {
         if(strcmp(symTable->table[index]->name, symbol->name) == 0)
-            if(cmpScope(symbol->scope,symTable->table[index]->scope))
-                return ERR_SEMATIC_REDEFINED;    
+            return ERR_SEMATIC_REDEFINED;    
         index = (index + 3) % symTable->size; 
     }
         
@@ -155,54 +121,23 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol)
 
 
 //returns symbol if said symbol exists
-Symbol* SymTable_get(SymTable* symTable, char* name,char* scope)
+Symbol* SymTable_get(SymTable* symTable, char* name)
 {
     if (symTable->count == 0)
         return NULL;
 
     int index = hash(name, symTable->size);
    
-    char* localScope;
-    if(scope != NULL)
-    {
-        localScope = malloc(sizeof(char) * (strlen(scope) + 1));
-        strcpy(localScope, scope);
-    }else
-    {
-        localScope = malloc(sizeof(char));
-        localScope[0] = '\0';
-    }
     
-    Symbol* target = NULL;
-
+    
     while(symTable->table[index] != NULL)
     {
-        
         if(strcmp(symTable->table[index]->name, name) == 0)
-        {
-            //same name, checking scopes
-            while(strcmp(localScope, "") != 0)
-            {
-                if(cmpScope(localScope, symTable->table[index]->scope))
-                    break;
-                
-                char *upperScope = strrchr(localScope, ':');
-                if(upperScope !=NULL)
-                    *upperScope = '\0';
-                else
-                    localScope[0] = '\0';
-            }
-
-            if(cmpScope((strcmp(localScope, "") == 0) ? NULL : localScope, symTable->table[index]->scope))
-                target = symTable->table[index];
-
-            if(scope != NULL)
-                strncpy(localScope, scope, strlen(scope));
-        }
-
+            return symTable->table[index];
+        
         index = (index + 3) % symTable->size;
     }
 
-    free(localScope);
-    return target;
+   
+    return NULL;
 }
