@@ -14,12 +14,12 @@ union literalValue{
     Token t;
 };
 
-// Struktura uzlu
+// Struktura uzlu výrazu
 typedef struct{
-    Token type;
-    union literalValue value;
-    exp_node* left;
-    exp_node* right;
+    Token type;                 // typ uzlu
+    union literalValue value;   // hodnota uzlu, v případě že jde o literál
+    exp_node* left;             // levý potomek
+    exp_node* right;            // pravý potomek
 } exp_node;
 
 // Struktura zásobníku používaná při precedenční anylýze
