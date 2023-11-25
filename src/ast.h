@@ -40,11 +40,22 @@ typedef struct{
 } ASTNode;
 
 
-typedef struct LList{
-    void* value;
-    struct LList* next;
-} LList;
+FuncDefArg* FuncDefArg_new();
 
+void FuncDefArg_free(FuncDefArg* arg);
+
+// typedef struct LList{
+//     void* value;
+//     struct LList* next;
+// } LList;
+
+
+typedef struct FuncDefArg{
+    char* name;
+    char* identifier;
+    Type type;
+    struct FuncDefArg* next;
+}FuncDefArg;
 
 
 ASTNode* ASTNode_new(ASTNodeType type);

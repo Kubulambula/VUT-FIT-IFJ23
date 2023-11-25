@@ -24,3 +24,32 @@ ASTNode* ASTNode_find_leftmost_node(ASTNode* node){
 
 	return node;
 }
+
+
+
+
+FuncDefArg* FuncDefArg_new(){
+    FuncDefArg* arg = (FuncDefArg*)malloc(sizeof(FuncDefArg));
+    if (arg != NULL){
+        arg->name = NULL;
+        arg->identifier = NULL;
+        arg->type = NIL;
+        arg->next = NULL;
+    }
+
+    return arg;
+}
+
+
+void FuncDefArg_free(FuncDefArg* arg){
+    if (arg == NULL)
+        return;
+    
+    if (arg->name != NULL)
+        free(arg->name);
+    if (arg->identifier != NULL)
+        free(arg->identifier);
+    if (arg->next != NULL)
+        FuncDefArg_free(arg->next);
+    free(arg);
+}

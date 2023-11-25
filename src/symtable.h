@@ -48,10 +48,6 @@ typedef struct{
 } Symbol;
 
 
-FuncDefArg* FuncDefArg_new();
-
-void FuncDefArg_free(FuncDefArg* arg);
-
 Symbol* Symbol_new();
 
 void Symbol_free(Symbol* symbol);
