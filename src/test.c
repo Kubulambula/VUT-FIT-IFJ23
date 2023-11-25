@@ -31,7 +31,7 @@ int main(){
     buffer_string_init(&buff);
 
     CURRENT_TOKEN = get_token(&buff, true);
-    Error err = ll_program(&buff);
+    Error err = precedent(&buff);
     if(err){
         printf("ERROR FOUND %d\n", err);
         return 1;
