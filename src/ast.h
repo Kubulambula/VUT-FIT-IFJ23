@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "symtable.h"
+#include "lexer.h"
 
 typedef struct FuncDefArg{
     char* name;
