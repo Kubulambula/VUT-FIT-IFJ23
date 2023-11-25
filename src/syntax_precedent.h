@@ -6,11 +6,28 @@
 #include "lexer.h"
 #include "syntax_ll_grammar.h"
 
+// Union literálů
+union literalValue{
+    int i;
+    double d;
+    char* s;
+    Token t;
+};
+
+// Struktura uzlu
+typedef struct{
+    Token type;
+    union literalValue value;
+    exp_node* left;
+    exp_node* right;
+} exp_node;
+
 // Struktura zásobníku používaná při precedenční anylýze
 typedef struct {
-	Token *array;   // Ukazatel na pole tokenů
-	int topIndex;   // Počet tokenů v zásobníku
-    int size;       // Velikost alokovaného prostoru
+	exp_node *nodeStack;            // Ukazatel na pole uzlů
+    union literalValue *valueStack;  // Ukazatel na pole hodnot
+	int topIndex;               // Počet uzlů v zásobníku
+    int size;                   // Velikost alokovaného prostoru
 } Stack;
 
 // Inicializuje zásobník, alokuje prostor pro zásobník, nastaví topIndex na 0 
@@ -21,6 +38,11 @@ bool Stack_IsEmpty( const Stack * );
 
 // Vrátí true pokud je zásobník plný a už na něj nelze přidávat další tokeny, jinak vrátí false
 bool Stack_IsFull( const Stack * );
+
+void Stack_Top_node();
+
+void Stack_Top_value();
+
 
 // Vrátí token na vrcholu zásobníku
 void Stack_Top( const Stack *, Token* );

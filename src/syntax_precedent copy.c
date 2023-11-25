@@ -7,17 +7,10 @@ Token TEMP_TOKEN;
 
 bool Stack_Init(Stack* stack){
     assert(stack != NULL);
-	stack->nodeStack = (exp_node*)malloc(sizeof(exp_node)*STACK_SIZE);
-    if(stack->nodeStack == NULL)
-        return false;
-    stack->valueStack = (union literalValue*)malloc(sizeof(union literalValue)*STACK_SIZE);
-    if(stack->valueStack == NULL){
-        free(stack->nodeStack);
-        return false;
-    }
+	stack->array = (Token*)malloc(sizeof(Token)*STACK_SIZE);
 	stack->topIndex = 0;
     stack->size = STACK_SIZE;
-    return true;
+    return stack->array == NULL ? false : true;
 }
 
 bool Stack_IsEmpty(const Stack *stack){
@@ -71,13 +64,9 @@ void Stack_Push(Stack *stack, Token token){
 
 void Stack_Dispose(Stack *stack) {
 	assert(stack != NULL);
-    assert(stack->nodeStack != NULL && stack->valueStack != NULL);
-	free(stack->nodeStack);
-    free(stack->valueStack);
-	stack->nodeStack = NULL;
-    stack->valueStack = NULL;
-    stack->size = 0;
-    stack->topIndex = 0;
+    assert(stack->array != NULL);
+	free(stack->array);
+	stack->array = NULL;
     stack = NULL;
 }
 
