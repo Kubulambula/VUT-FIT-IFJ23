@@ -1,6 +1,6 @@
 #include "syntax_precedent.h"
 #include <stdlib.h>
-/*
+
 #define STACK_SIZE 50
 
 void Stack_Init( Stack *stack ) {
@@ -26,7 +26,7 @@ bool Stack_IsFull( const Stack *stack ) {
 
 void Stack_Top( const Stack *stack, Token* token ) {
     if(stack->array == NULL){
-        *token = TOKEN_ERR;
+        *token = TOKEN_ERR_LEXICAL;
     }
 	*token = stack->array[stack->topIndex];
 }
@@ -34,7 +34,7 @@ void Stack_Top( const Stack *stack, Token* token ) {
 void Stack_Top_Token( const Stack *stack, Token* token ) {
     int i = 0;
     if(stack->array == NULL || Stack_IsEmpty(stack)){
-		*token = TOKEN_ERR;		
+		*token = TOKEN_ERR_LEXICAL;		
 	}
     while((stack->array[stack->topIndex - i] == PRECEDENT_E)){
         i++;
@@ -105,7 +105,7 @@ int token2index(Token token){
             return 8;   // EOF EOL { } , PRECEDENT_END
 
         default:
-            return TOKEN_ERR;
+            return TOKEN_ERR_LEXICAL;
     }
 }
 
@@ -214,11 +214,12 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
     { 1, 1, 0, 1, 1, 1, 1, 1, 0},
     };
     return table[token2index(stack_top_token)][token2index(current_precedent_token)];
-}*/
+}
 
 /* funkce provede precedencni analyzu vyrazu.
 funkce počítá s epsilon pravidly, ale ve vlastním zájmu se raději ujistěte jestli tam nějáký výraz je než ji zavoláte */
-/*Error precedent(BufferString* buffer_string){
+Error precedent(BufferString* buffer_string, SymTable* table, ASTNode* tree){
+    Token CURRENT_TOKEN = get_next_token(buffer_string);
     Stack stack;
     Token top;
     int state;
@@ -257,7 +258,7 @@ funkce počítá s epsilon pravidly, ale ve vlastním zájmu se raději ujistět
                 break;
 
             case 4:
-                if(ll_func_call(buffer_string)){
+                if(ll_func_call(buffer_string, table, &tree, "")){
                     Stack_Dispose(&stack);
                     return ERR_SYNTAX;
                 }
@@ -270,4 +271,4 @@ funkce počítá s epsilon pravidly, ale ve vlastním zájmu se raději ujistět
     }
     Stack_Dispose(&stack);
     return OK;
-}*/
+}

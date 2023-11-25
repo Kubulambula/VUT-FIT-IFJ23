@@ -58,7 +58,13 @@ typedef enum{
     TOKEN_ARROW, // ->
     // Identifier
     TOKEN_IDENTIFIER, // variable / function identifier
+
+    //Precedent table tokens - not actual tokens from source file so dont worry about them ;-)  --Jimbo
+    PRECEDENT_E,
+    PRECEDENT_END,
 } Token;
+
+// Token CURRENT_TOKEN;
 
 
 #ifndef NDEBUG

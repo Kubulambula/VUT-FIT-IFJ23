@@ -6,6 +6,8 @@
 
 #include "lexer.h"
 
+// Token CURRENT_TOKEN;
+
 
 FILE* source_file = NULL;
 

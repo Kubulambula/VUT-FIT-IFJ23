@@ -7,6 +7,7 @@
 #include "error.h"
 #include "lexer.h"
 #include "ast.h"
+#include "syntax_precedent.h"
 
 
 #define GET_TOKEN(skip_eol) \
@@ -39,13 +40,13 @@ Error ll_assign(BufferString* buffer_string, SymTable* table, ASTNode** tree, ch
 
 Error ll_func_call(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* func_name);
 
-Error ll_func_call_args(BufferString* buffer_string, void* tree);
+Error ll_func_call_args(BufferString* buffer_string, SymTable* table, ASTNode* tree);
 
-// Error ll_func_call_arg(BufferString* buffer_string, void* tree);
+Error ll_func_call_arg(BufferString* buffer_string, SymTable* table, ASTNode* tree);
 
-// Error ll_func_call_arg_with_name(BufferString* buffer_string, void* tree);
+Error ll_func_call_arg_with_name(BufferString* buffer_string, SymTable* table, ASTNode* tree);
 
-// Error ll_func_call_arg_without_name(BufferString* buffer_string, void* tree);
+Error ll_func_call_arg_without_name(BufferString* buffer_string, SymTable* table, ASTNode* tree);
 
 Error ll_while(BufferString* buffer_string, void* tree);
 

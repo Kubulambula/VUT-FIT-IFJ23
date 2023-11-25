@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-FuncDefArg* Arg_new(){
+FuncDefArg* FuncDefArg_new(){
     FuncDefArg* arg = (FuncDefArg*)malloc(sizeof(FuncDefArg));
     if (arg != NULL){
         arg->name = NULL;

@@ -1,6 +1,8 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+// Error ERR;
+
 typedef enum{
 	OK = 0, // no error
 	ERR_OK = 0, // no error
