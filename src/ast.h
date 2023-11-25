@@ -17,7 +17,8 @@ typedef enum {
     STATEMENT, // a is the statement & b is next statement or NULL if this is the last statement
     FUNC_DEFS, // a is FUNC_DEFS or NULL , b FUNC_DEF
     FUNC_DEF, // a is FUNC_HEAD & b is STATEMENT
-    FUNC_HEAD,// a is func name & b is *FuncDefArg
+    FUNC_HEAD,// a is FUNC_HEAD_SIGNATURE & b is type
+    FUNC_HEAD_SIGNATURE, // a is function name & b is *FuncDefArg
 
     VAR_DEF, // a is variable name & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
     LET_DEF, // a is variable name & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
@@ -47,6 +48,9 @@ typedef struct{
 FuncDefArg* FuncDefArg_new();
 
 void FuncDefArg_free(FuncDefArg* arg);
+
+FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
+
 
 // typedef struct LList{
 //     void* value;
