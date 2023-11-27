@@ -19,9 +19,8 @@ typedef enum{
 
 
 typedef enum{
-    NIL, // void funkce
-    INT,
-    BOOL,
+        NIL, // void funkce
+    //BOOL,
     DOUBLE,
     STRING,
 } Type;
