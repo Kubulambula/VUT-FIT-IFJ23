@@ -21,8 +21,10 @@ typedef enum {
     FUNC_HEAD,// a is FUNC_HEAD_SIGNATURE & b is type
     FUNC_HEAD_SIGNATURE, // a is function name & b is *FuncDefArg
 
-    VAR_DEF, // a is variable name & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
-    LET_DEF, // a is variable name & b is OPTIONAL value. If Symbol.type is NIL then it must be inferred
+    VAR_DEF, // a VAR_TYPE ,b VAR_HEAD
+    VAR_TYPE, // a Symbol_type , b bool nilable
+    VAR_HEAD, // a name, b, EXPRESSION
+    LET_DEF, // a VAR_TYPE, b VAR_HEAD
     ASSIGN, // a is variable name & b is EXPRESSION
     FUNC_CALL, // a is funcion name and b is FUNC_ARG list
         FUNC_CALL_ARG, // a is name b is expression with value
