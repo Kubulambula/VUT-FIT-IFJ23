@@ -239,20 +239,27 @@ Error sematic(ASTNode *code_tree)
 //typy u operátorů, (int op double ? )
 //string operátory
 
-//kontroluje se jestli fce má tělo?
-//stránka 6, wtf nelze měnit hodnotu?
 
-//funkce void nemusí mít return, 
+//stránka 6, wtf nelze měnit hodnotu?
+//parametry jsou neměnné
+//můžou se předefinovat
+
+
+//funkce void nemusí mít return,
+
+
 //definice typu proměnné, not defined, a odvození typu při not defined
+
 // když při definici nelze odvodit, chyba 8 (např. hondnota nil.)
 //když nechybý typ, nemusí být = výraz
 //chyba 7, špatný typ výrazu při přiřazení // expression v if () není typu bool
+
 // v if () může být let id !!!
-//jak zjistím nillable
+// musím checknout jestli proměnná id existuje
+
 //VOID FCE NESMÍ MÍT RETURN, JINAK ERR 4 (ERR 4 TAKY KDYŽ TYP RETURN NESEDÍ)
 //CHYBÍ LI RETURN V NOT VOID FCI, ERR 6
 //VESTAVĚNÉ FCE DO SYMTABLE
-//odstavec 5.1 operátory
 /*
     INT + INT = INT
     INT + DOUBLE = DOUBLE
@@ -269,5 +276,5 @@ Error sematic(ASTNode *code_tree)
     chyby v expech se hlásí jako semantic err
 */
 
-//kontrolujete správnou strukturu ?? atd?
-//var def, data typ?
+
+//BOOL NESMÍ BÝT V UVNITŘ EXPU
