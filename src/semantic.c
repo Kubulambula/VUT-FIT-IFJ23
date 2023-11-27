@@ -230,11 +230,44 @@ Error sematic(ASTNode *code_tree)
 }
 
 //funkce musí mít aspoň jeden statement? (return ?)
+//zařídít fce body null
 
-//VAR_DEF rozdělit na VAR_DEF - VAR_ASIGN
-//return v globalu?
+//return v globalu? NESMÍ BÝT
 
 // odvozeni typu?
 
 //typy u operátorů, (int op double ? )
 //string operátory
+
+//kontroluje se jestli fce má tělo?
+//stránka 6, wtf nelze měnit hodnotu?
+
+//funkce void nemusí mít return, 
+//definice typu proměnné, not defined, a odvození typu při not defined
+// když při definici nelze odvodit, chyba 8 (např. hondnota nil.)
+//když nechybý typ, nemusí být = výraz
+//chyba 7, špatný typ výrazu při přiřazení // expression v if () není typu bool
+// v if () může být let id !!!
+//jak zjistím nillable
+//VOID FCE NESMÍ MÍT RETURN, JINAK ERR 4 (ERR 4 TAKY KDYŽ TYP RETURN NESEDÍ)
+//CHYBÍ LI RETURN V NOT VOID FCI, ERR 6
+//VESTAVĚNÉ FCE DO SYMTABLE
+//odstavec 5.1 operátory
+/*
+    INT + INT = INT
+    INT + DOUBLE = DOUBLE
+    STRING + STRING = STRING
+    EXP1 ?? EXP2 (EXP1 = Nil) = EXP2
+                  EXP1 != NIL = EXP1
+    typ EXP1,2 musí být stejný,(bez nil)
+    EXP1 == EXP2
+    if (typ exp1 != type exp2) ==> err 7
+    literály se potřebně přetypují (int>double) ale var a let NE!!!
+
+    ostatní porovnání:
+        nesmí být expy nil, nesmí se porovnávat des. číslo s celým  
+    chyby v expech se hlásí jako semantic err
+*/
+
+//kontrolujete správnou strukturu ?? atd?
+//var def, data typ?
