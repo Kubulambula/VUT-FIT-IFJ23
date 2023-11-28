@@ -11,7 +11,6 @@
 
 
 typedef enum{
-    UNKNOWN,
     FUNCTION, // func foo()
     VAR, // var foo
     LET, // let foo
@@ -19,10 +18,9 @@ typedef enum{
 
 
 typedef enum{
-    NONE, // for no return check
     NIL, // void funkce
     INT,
-    //BOOL,
+    BOOL,   //need for expression return check
     DOUBLE,
     STRING,
 } Type;
