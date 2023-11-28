@@ -15,23 +15,29 @@ typedef enum {
     // EXPRESSION = If it's a literal, the expression has the value of the literal.
     // If it's an operator, the value must be computed first from arguments. (true expression)
     ROOT, // The main big boy node. a is FUNC_DEFs & b is STATEMENT of main
+    
     STATEMENT, // a is the statement & b is next statement or NULL if this is the last statement
+    
     FUNC_DEFS, // a is FUNC_DEFS or NULL , b FUNC_DEF
-    FUNC_DEF, // a is FUNC_HEAD & b is STATEMENT
-    FUNC_HEAD,// a is FUNC_HEAD_SIGNATURE & b is type
-    FUNC_HEAD_SIGNATURE, // a is function name & b is *FuncDefArg
+        FUNC_DEF, // a is FUNC_HEAD & b is STATEMENT
+            FUNC_HEAD,// a is FUNC_HEAD_SIGNATURE & b is type
+                FUNC_HEAD_SIGNATURE, // a is function name & b is *FuncDefArg
 
-    VAR_DEF, // a VAR_TYPE ,b VAR_HEAD
-    VAR_TYPE, // a Symbol_type , b bool nilable
-    VAR_HEAD, // a name, b, EXPRESSION
+    VAR_DEF, // a VAR_TYPE, b VAR_HEAD
     LET_DEF, // a VAR_TYPE, b VAR_HEAD
+        VAR_TYPE, // a Symbol_type , b bool nilable
+        VAR_HEAD, // a name, b, EXPRESSION
+    
     ASSIGN, // a is variable name & b is EXPRESSION
+    
     FUNC_CALL, // a is funcion name and b is FUNC_ARGS
         FUNC_CALL_ARGS, // a is FUNC_ARG & b is FUNC_ARGS or NULL if this was the last arg
             FUNC_CALL_ARG, // a is name b is expression with value
+    
     IFELSE, // a is expression condition, b IFELSE_BODIES
         IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are STATEMENTs
     WHILE, // a is expression condition and b is STATEMENT
+    
     RETURN, // a is expression - some operator
 
 

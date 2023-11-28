@@ -6,30 +6,30 @@ Token CURRENT_TOKEN;
 Error ERR;
 
 
-Error ll_program(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+Error ll_program(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
-		// This will be skipped for simplicity
+		// This will be skipped for simplicity, because GET_TOKEN() skips EOL
 		case TOKEN_EOL: // <program> -> TOKEN_EOL <program>
-			return ll_program(buffer_string, table, tree);
+			return ll_program(buffer_string, tree);
 
 		case TOKEN_EOF: // <program> -> TOKEN_EOF
 			return OK;
 
 		case TOKEN_KEYWORD_FUNC: // <program> -> <func_def> <program>
 			unget_token();
-			ERR = ll_func_definition(buffer_string, table, (ASTNode**)&(ASTNode_find_leftmost_node(*tree)->a));
-			return ERR ? ERR : ll_program(buffer_string, table, tree);
+			ERR = ll_func_definition(buffer_string, (ASTNode**)&(ASTNode_find_leftmost_node(*tree)->a));
+			return ERR ? ERR : ll_program(buffer_string, tree);
 
-		default:	//<program> -> <statements> <program>
+		default: //<program> -> <statements> <program>
 			unget_token();
-			ERR = ll_statements(buffer_string, table, tree, NULL);
-			return ERR ? ERR : ll_program(buffer_string, table, tree);
+			ERR = ll_statements(buffer_string, tree, NULL);
+			return ERR ? ERR : ll_program(buffer_string, tree);
 	}
 }
 
 
-Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode** tree){
+Error ll_func_definition(BufferString* buffer_string, ASTNode** tree){
 	*tree = ASTNode_new(FUNC_DEFS);
 	if (*tree == NULL)
 		return ERR_INTERNAL;
@@ -40,16 +40,16 @@ Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode**
 	
 	tree = (ASTNode**)&((*tree)->b); // tree is now FUNC_DEF
 
-	ERR = ll_func_definition_head(buffer_string, table, (char**)&((*tree)->a));
+	ERR = ll_func_definition_head(buffer_string, (ASTNode**)&((*tree)->a));
 	if (ERR)
 		return ERR;	
 	
 	// TODO change scope to function scope
-	return ll_func_definition_body(buffer_string, table, (ASTNode**)&((*tree)->b), NULL);
+	return ll_func_definition_body(buffer_string, (ASTNode**)&((*tree)->b));
 }
 
 
-Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char** func_name){	
+Error ll_func_definition_head(BufferString* buffer_string, ASTNode** func_head){	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_FUNC)
 		return ERR_SYNTAX;
@@ -57,34 +57,28 @@ Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
 		return ERR_SYNTAX;
-	// create symbol
-	Symbol* func_symbol = Symbol_new();
-	if (func_symbol == NULL)
-		return ERR_INTERNAL;
-	// setup symbol
-	func_symbol->symbol_type = FUNCTION;
-	func_symbol->name = BufferString_get_as_string(buffer_string);
-	if (func_symbol->name == NULL){
-		Symbol_free(func_symbol);
-		return ERR_INTERNAL;
-	}
-	// insert symbol
-	ERR = SymTable_insert(table, func_symbol);
-	if (ERR){
-		free(func_symbol);
-		return ERR;
-	}
 
-	// call BufferString_get_as_string() again to get a NEW string to avoid double free in the future
-	*func_name = BufferString_get_as_string(buffer_string);
-	if (*func_name == NULL)
+	// create FUNC_HEAD
+	*func_head = ASTNode_new(FUNC_HEAD);
+	if (func_head == NULL)
 		return ERR_INTERNAL;
-	
+	// create FUNC_HEAD_SIGNATURE
+	ASTNode* func_signature = ASTNode_new(FUNC_HEAD_SIGNATURE);
+	if (func_signature == NULL)
+		return ERR_INTERNAL;
+	(*func_head)->a = (void*)func_signature;
+
+	// assing func name
+	func_signature->a = (void*)BufferString_get_as_string(buffer_string);
+	if (func_signature->a == NULL)
+		return ERR_INTERNAL;
+
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
 		return ERR_SYNTAX;
 	
-	ERR = ll_func_definition_head_args(buffer_string, table, func_symbol);
+	// assign func args
+	ERR = ll_func_definition_head_args(buffer_string, (FuncDefArg**)(&(func_signature->b)));
 	if (ERR)
 		return ERR;
 	
@@ -101,13 +95,13 @@ Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 	case TOKEN_KEYWORD_INT:
-		func_symbol->type = INT;
+		func_signature->b = INT;
 		break;
 	case TOKEN_KEYWORD_DOUBLE:
-		func_symbol->type = DOUBLE;
+		func_signature->b = DOUBLE;
 		break;
 	case TOKEN_KEYWORD_STRING:
-		func_symbol->type = STRING;
+		func_signature->b = STRING;
 		break;
 	// case (more types here)
 	default:
@@ -118,7 +112,7 @@ Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char
 }
 
 
-Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, Symbol* func_symbol){
+Error ll_func_definition_head_args(BufferString* buffer_string, FuncDefArg** func_args){
 	GET_TOKEN(true);
 	unget_token();
 
@@ -127,7 +121,7 @@ Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table,
 
 	do {
 		// check arg
-		ERR = ll_func_definition_head_arg(buffer_string, table, func_symbol);
+		ERR = ll_func_definition_head_arg(buffer_string, FuncDefArg_get_last_arg(func_args));
 		if (ERR)
 			return ERR;
 
@@ -144,87 +138,74 @@ Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table,
 }
 
 
-Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, Symbol* func_symbol){
-	FuncDefArg* arg = FuncDefArg_new();
-	if (arg == NULL)
+Error ll_func_definition_head_arg(BufferString* buffer_string, FuncDefArg** func_arg){
+	*func_arg = FuncDefArg_new();
+	if (*func_arg == NULL)
 		return ERR_INTERNAL;
 	
 	// arg name
 	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_IDENTIFIER){
-		FuncDefArg_free(arg);
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
 		return ERR_SYNTAX;
-	}
 	
-	arg->name = BufferString_get_as_string(buffer_string);
-	if (arg->name == NULL){
-		FuncDefArg_free(arg);
+	// assing arg name
+	(*func_arg)->name = BufferString_get_as_string(buffer_string);
+	if ((*func_arg)->name == NULL)
 		return ERR_INTERNAL;
-	}
-	// name can be _ meaning without name
-	if (arg->name[0] == '_' && arg->name[1] == '\0')
-		arg->name = NULL;
+	
+	// name can be "_" meaning without name
+	if ((*func_arg)->name[0] == '_' && (*func_arg)->name[1] == '\0')
+		(*func_arg)->name = NULL;
 	
 	// arg identifier
 	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_IDENTIFIER){
-		FuncDefArg_free(arg);
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
 		return ERR_SYNTAX;
-	}
-
-	arg->identifier = BufferString_get_as_string(buffer_string);
-	if (arg->identifier == NULL){
-		FuncDefArg_free(arg);
+	
+	// assing arg identifier
+	(*func_arg)->identifier = BufferString_get_as_string(buffer_string);
+	if ((*func_arg)->identifier == NULL)
 		return ERR_INTERNAL;
-	}
-	// identifier cannot be just _ (__ if fine tho)
-	if (arg->identifier[0] == '_' && arg->identifier[1] == '\0'){
-		FuncDefArg_free(arg);
+	
+	// identifier cannot be just "_" ("__" if fine tho)
+	if ((*func_arg)->identifier[0] == '_' && (*func_arg)->identifier[1] == '\0')
 		return ERR_SYNTAX;
-	}
 
 	// arg type
 	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_COLON){
-		FuncDefArg_free(arg);
+	if (CURRENT_TOKEN != TOKEN_COLON)
 		return ERR_SYNTAX;
-	}
 
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 	case TOKEN_KEYWORD_INT:
-		arg->type = INT;
+		(*func_arg)->type = INT;
 		break;
 	case TOKEN_KEYWORD_DOUBLE:
-		arg->type = DOUBLE;
+		(*func_arg)->type = DOUBLE;
 		break;
 	case TOKEN_KEYWORD_STRING:
-		arg->type = STRING;
+		(*func_arg)->type = STRING;
 		break;
 	// case (more types here)
 	default:
 		return ERR_SYNTAX;
 	}
 
-	// now add the arg to the function symbol;
-	FuncDefArg** free_arg_p = Symbol_get_free_arg_p(func_symbol);
-	*free_arg_p = arg;
 	return OK;
 }
 
 
-Error ll_func_definition_body(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope){
+Error ll_func_definition_body(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
 		return ERR_SYNTAX;
 	
-	ERR = ll_statements(buffer_string, table, tree, scope);
+	ERR = ll_statements(buffer_string, tree);
 	if (ERR)
 		return ERR;
-	
   
 	GET_TOKEN(true);
-	print_token_as_string(CURRENT_TOKEN);
 	if (CURRENT_TOKEN != TOKEN_BRACE_RIGHT)
 		return ERR_SYNTAX;
 	
@@ -232,29 +213,39 @@ Error ll_func_definition_body(BufferString* buffer_string, SymTable* table, ASTN
 }
 
 
-Error ll_statements(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope){
+Error ll_statements(BufferString* buffer_string, ASTNode** tree){
+	char* name; // helper variable to store TOKEN_IDENTIFIER contents
+
+	*tree = ASTNode_new(STATEMENT);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+
 	GET_TOKEN(true);
-	char* name;
 	switch (CURRENT_TOKEN){
 		case TOKEN_KEYWORD_VAR: // <statements> -> <var_declaration> <statements>
 			unget_token();
-			ERR = ll_var_declaration(buffer_string, table, tree, scope);
-			return ERR ? ERR : ll_statements(buffer_string, table, tree, scope);
+			ERR = ll_var_declaration(buffer_string, (ASTNode**)(&((*tree)->a)));
+			return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 		
 		case TOKEN_KEYWORD_LET: // <statements> -> <let_declaration> <statements>
 			unget_token();
-			ERR = ll_let_declaration(buffer_string, table, tree, scope);
-			return ERR ? ERR : ll_statements(buffer_string, table, tree, scope);
-		
+			ERR = ll_let_declaration(buffer_string, (ASTNode**)(&((*tree)->a)));
+			return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
+
 		case TOKEN_KEYWORD_IF: // <statements> -> <if> <statements>
 			unget_token();
-			ERR = ll_if(buffer_string, tree);
-			return ERR ? ERR : ll_statements(buffer_string, table, tree, scope);
+			ERR = ll_if(buffer_string, (ASTNode**)(&((*tree)->a)));
+			return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 		
 		case TOKEN_KEYWORD_WHILE: // <statements> -> <while> <statements>
 			unget_token();
-			ERR = ll_while(buffer_string, tree);
-			return ERR ? ERR : ll_statements(buffer_string, table, tree, scope);
+			ERR = ll_while(buffer_string, (ASTNode**)(&((*tree)->a)));
+			return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
+		
+		case TOKEN_KEYWORD_RETURN: // <statements> -> <return> <statements>
+			unget_token();
+			ERR = ll_return(buffer_string, (ASTNode**)(&((*tree)->a)));
+			return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 		
 		case TOKEN_IDENTIFIER: // <statements> -> <assing> <statements> || <statements> -> <func_call> <statements>
 			// as we can't go back, we need to store the identifier now
@@ -265,13 +256,13 @@ Error ll_statements(BufferString* buffer_string, SymTable* table, ASTNode** tree
 			GET_TOKEN(true); // either TOKEN_ASSING or TOKEN_PARENTHESIS_LEFT
 			unget_token();
 			if (CURRENT_TOKEN == TOKEN_ASSIGN){
-				ERR = ll_assign(buffer_string, table, tree, name);			
-				return ERR ? ERR : ll_statements(buffer_string, table, tree, scope);
+				ERR = ll_assign(buffer_string, (ASTNode**)(&((*tree)->a)), name);
+				return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 			}
 
 			else if (CURRENT_TOKEN == TOKEN_PARENTHESIS_LEFT){
-				ERR = ll_func_call(buffer_string, table, tree, name);
-				return ERR ? ERR : ll_statements(buffer_string, table, tree, scope);
+				ERR = ll_func_call(buffer_string, (ASTNode**)(&((*tree)->a)), name);
+				return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 			}
 
 			else
@@ -284,22 +275,20 @@ Error ll_statements(BufferString* buffer_string, SymTable* table, ASTNode** tree
 }
 
 
-Error ll_func_call(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* func_name){
-	ASTNode* node = ASTNode_new(FUNC_CALL);
-	if (node == NULL)
+Error ll_func_call(BufferString* buffer_string, ASTNode** tree, char* func_name){
+	*tree = ASTNode_new(FUNC_CALL);
+	if (*tree == NULL)
 		return ERR_INTERNAL;
-	*tree = node;
+	
+	// assign func name
+	(*tree)->a = (void*)func_name;
 
-	node->a = func_name;
-
-	// we cannot start from the identifier
+	// we cannot start from the identifier as it was unreversibly consumed before
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
 		return ERR_SYNTAX;
 	
-	// add name to tree here so that args can be passed next to it
-
-	ERR = ll_func_call_args(buffer_string, table, *tree);
+	ERR = ll_func_call_args(buffer_string, (ASTNode**)((*tree)->b));
 	if (ERR)
 		return ERR;
 	
@@ -314,20 +303,23 @@ Error ll_func_call(BufferString* buffer_string, SymTable* table, ASTNode** tree,
 // // foo(with: x, y)
 // // foo(x, y)
 // // foo()
-Error ll_func_call_args(BufferString* buffer_string, SymTable* table, ASTNode* tree){
-	// ERR = save_current_file_offset();
-	// if (ERR)
-	// 	return ERR;
-
+Error ll_func_call_args(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	unget_token();
 	if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT) // no args
 		return OK;
 
+	// Look mom! I am using a do-while loop!
 	do{
-		ERR = ll_func_call_arg(buffer_string, table, tree);
+		*tree = ASTNode_new(FUNC_CALL_ARGS);
+		if (*tree == NULL)
+			return ERR_INTERNAL;
+		
+		ERR = ll_func_call_arg(buffer_string, (ASTNode**)(&((*tree)->a)));
 		if (ERR)
 			return ERR;
+		
+		tree = (ASTNode**)(&((*tree)->b)); // tree is now the last FUNC_CALL_ARGS pointer
 		
 		GET_TOKEN(true);
 	} while(CURRENT_TOKEN == TOKEN_COMMA);
@@ -339,150 +331,160 @@ Error ll_func_call_args(BufferString* buffer_string, SymTable* table, ASTNode* t
 
 // // foo(x: val,)
 // // foo(val,)
-Error ll_func_call_arg(BufferString* buffer_string, SymTable* table, ASTNode* tree){
-	ERR = save_current_file_offset();
+Error ll_func_call_arg(BufferString* buffer_string, ASTNode** tree){
+	ERR = save_current_file_offset(); // save our position at the start of the current arg
 	if (ERR)
 		return ERR;
 
+	// call GET_TOKEN() 2x because we want to look two tokens ahead to decide how to process the arg
 	GET_TOKEN(true);
 	GET_TOKEN(true);
+	// immediately go back to the first token of the arg
 	ERR = rollback_to_saved_file_offset();
 	if (ERR)
 		return ERR;
-
-	if (CURRENT_TOKEN == TOKEN_COLON)
-		return ll_func_call_arg_with_name(buffer_string, table, tree);
 	
-	return ll_func_call_arg_without_name(buffer_string, table, tree);
+	*tree = ASTNode_new(FUNC_CALL_ARG);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+
+	// CURRENT_TOKEN is still the value from the second calling of GET_TOKEN()
+	if (CURRENT_TOKEN == TOKEN_COLON) // arg with name
+		return ll_func_call_arg_with_name(buffer_string, *tree);
+	else // arg without name
+		return ll_func_call_arg_without_name(buffer_string, *tree);
 }
 
 
-Error ll_func_call_arg_with_name(BufferString* buffer_string, SymTable* table, ASTNode* tree){
+Error ll_func_call_arg_with_name(BufferString* buffer_string, ASTNode* tree){
 	GET_TOKEN(true);
-
-	char* name = BufferString_get_as_string(buffer_string);
-	if (name == NULL)
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+	
+	tree->a = (void*)BufferString_get_as_string(buffer_string);
+	if (tree->a == NULL)
 		return ERR_INTERNAL;
 	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_COLON)
 		return ERR_SYNTAX;
 	
-	// unget_token();
-	return precedent(buffer_string, table, tree);
 	// TODO precedence get value
 	return OK;
 }
 
-Error ll_func_call_arg_without_name(BufferString* buffer_string, SymTable* table, ASTNode* tree){
+Error ll_func_call_arg_without_name(BufferString* buffer_string, ASTNode* tree){
 	// TODO precedence get value
 	return OK;
 }
 
 
-Error ll_assign(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* var_name){
-	ASTNode* node = ASTNode_new(ASSIGN);
-	if (node == NULL)
+Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
+	*tree = ASTNode_new(ASSIGN);
+	if (*tree == NULL)
 		return ERR_INTERNAL;
-	*tree = node;
 
-	node->a = var_name;
+	(*tree)->a = var_name;
 
 	// we cannot start from identifier
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_ASSIGN)
 		return ERR_SYNTAX;
 
-	// TODO with precedence
-	// node->b = expression
-	// unget_token();
-	return precedent(buffer_string, table, *tree);
+	// TODO precendence get value
 
 	return OK;
 }
 
-
-Error ll_let_var_declaration(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope, SymbolType symbol_type, ASTNodeType node_type){
+// var id: type = exp
+// var id: = exp
+// var id: type
+Error ll_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
 		return ERR_SYNTAX;
-	// create symbol
-	Symbol* symbol = Symbol_new();
-	if (symbol == NULL)
+	// create subtrees
+	tree->a = (void*)ASTNode_new(VAR_TYPE);
+	if (tree->a == NULL)
 		return ERR_INTERNAL;
-	// setup symbol	
-	symbol->symbol_type = symbol_type;
-	symbol->scope = scope;
-	symbol->name = BufferString_get_as_string(buffer_string);
-	if (symbol->name == NULL){
-		Symbol_free(symbol);
+	tree->b = (void*)ASTNode_new(VAR_HEAD);
+	if (tree->b == NULL)
 		return ERR_INTERNAL;
-	}
-	// insert symbol
-	ERR = SymTable_insert(table, symbol);
-	if (ERR){
-		Symbol_free(symbol);
-		return ERR;
-	}
+	// assign name
+	((ASTNode*)(tree->b))->a = (void*)BufferString_get_as_string(buffer_string);
+	if (((ASTNode*)(tree->b))->a == NULL)
+		return ERR_INTERNAL;
 	
-	ASTNode* node = ASTNode_new(node_type);
-	if (node == NULL)
-		return ERR_INTERNAL;
-	*tree = node;
-	node->a = BufferString_get_as_string(buffer_string);
-	if (node->a == NULL)
-		return ERR_INTERNAL;
-
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_COLON)
 		return ERR_SYNTAX;
-
-
+	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_ASSIGN){
-		// TODO expression to node->b
+		((ASTNode*)(tree->a))->a = (void*)NIL; // assign type
+		((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
+		// TODO precedence
+		// assign expression
+		//((ASTNode*)(tree->b))->b = ;	
+		return OK;
+	}
 
-	} else if (CURRENT_TOKEN == TOKEN_KEYWORD_INT || CURRENT_TOKEN == TOKEN_KEYWORD_DOUBLE || CURRENT_TOKEN == TOKEN_KEYWORD_STRING) {
-		if (CURRENT_TOKEN == TOKEN_KEYWORD_INT)
-			symbol->type = INT;
-		else if (CURRENT_TOKEN == TOKEN_KEYWORD_DOUBLE)
-			symbol->type = DOUBLE;
-		else if (CURRENT_TOKEN == TOKEN_KEYWORD_STRING)
-			symbol->type = STRING;
-		
+	// assign type
+	switch (CURRENT_TOKEN){
+		case TOKEN_KEYWORD_INT:
+			((ASTNode*)(tree->a))->a = (void*)INT;
+			break;
+		case TOKEN_KEYWORD_DOUBLE:
+			((ASTNode*)(tree->a))->a = (void*)DOUBLE;
+			break;
+		case TOKEN_KEYWORD_STRING:
+			((ASTNode*)(tree->a))->a = (void*)STRING;
+			break;
+		default:
+			return ERR_SYNTAX;
+	}
+
+
+	((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN == TOKEN_QUESTION){
+		((ASTNode*)(tree->a))->b = (void*)true; // assign nilable override
 		GET_TOKEN(true);
-		if (CURRENT_TOKEN == TOKEN_QUESTION){
-			symbol->nilable = true;
-			GET_TOKEN(true);
-		}
+	}
 
-		if (CURRENT_TOKEN == TOKEN_ASSIGN){
-			// TODO expression to node->b
-		} else {
-			unget_token();
-		}
-		
-	} else
+	if (CURRENT_TOKEN != TOKEN_ASSIGN)
 		return ERR_SYNTAX;
+	
+	// TODO precedence
+	// assign expression
+	//((ASTNode*)(tree->b))->b = ;
 
 	return OK;
 }
 
 
-Error ll_var_declaration(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope){
+Error ll_var_declaration(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_VAR)
 		return ERR_SYNTAX;
 
-	return ll_let_var_declaration(buffer_string, table, tree, scope, VAR, VAR_DEF);
+	*tree = ASTNode_new(VAR_DEF);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+
+	return ll_var_declaration(buffer_string, *tree);
 }
 
-Error ll_let_declaration(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope){
+Error ll_let_declaration(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_LET)
 		return ERR_SYNTAX;
 
-	return ll_let_var_declaration(buffer_string, table, tree, scope, LET, LET_DEF);
+	*tree = ASTNode_new(LET_DEF);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+
+	return ll_var_declaration(buffer_string, *tree);
 }
 
 Error ll_while(BufferString* buffer_string, void* tree){

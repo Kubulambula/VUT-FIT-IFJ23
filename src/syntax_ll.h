@@ -16,17 +16,17 @@
 		return (CURRENT_TOKEN == TOKEN_ERR_INTERNAL ? ERR_INTERNAL : ERR_LEXICAL); \
 
 
-Error ll_program(BufferString* buffer_string, SymTable* table, ASTNode** tree);
+Error ll_program(BufferString* buffer_string, ASTNode** tree);
 
-Error ll_func_definition(BufferString* buffer_string, SymTable* table, ASTNode** tree);
+Error ll_func_definition(BufferString* buffer_string, ASTNode** tree);
 
-Error ll_func_definition_head(BufferString* buffer_string, SymTable* table, char** func_name);
+Error ll_func_definition_head(BufferString* buffer_string, char** func_name);
 
 Error ll_func_definition_head_args(BufferString* buffer_string, SymTable* table, Symbol* func_symbol);
 
 Error ll_func_definition_head_arg(BufferString* buffer_string, SymTable* table, Symbol* func_symbol);
 
-Error ll_func_definition_body(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope);
+Error ll_func_definition_body(BufferString* buffer_string, ASTNode** tree);
 
 Error ll_statements(BufferString* buffer_string, SymTable* table, ASTNode** tree, char* scope);
 
