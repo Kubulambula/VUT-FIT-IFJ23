@@ -19,6 +19,7 @@ typedef enum{
 
 
 typedef enum{
+    NONE, // for no return check
     NIL, // void funkce
     INT,
     //BOOL,
