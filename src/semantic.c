@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "symtable.h"
 #include <stdlib.h>
+#include "lexer.h"
 
 
 Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
@@ -39,12 +40,13 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
         //VARIABLES
     case TOKEN_IDENTIFIER: //var/let
         Symbol* target = SymTable_get_recurse(tables,node->value.s);
-        if(target == NULL || target->symbol_type == FUNCTION || target->symbol_type == UNKNOWN)
+        if(target == NULL || target->symbol_type == FUNCTION)
             return ERR_SEMATIC_UNDEFINED_VAR;
         *returnType = target->type;
         return OK;
         break;
-   
+    case TOKEN_KEYWORD_FUNC:
+        break;
         //OPERATORS
     case TOKEN_OPERATOR_MINUS: // - 
         break;
@@ -53,8 +55,11 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
     case TOKEN_OPERATOR_DIVISION: // /
         break;
 
-    //can handle int,double,string    
+    
     case TOKEN_OPERATOR_PLUS:   // +
+        break;
+    
+    //LOGICAL
     case TOKEN_OPERATOR_LESS_THAN: // <
     case TOKEN_OPERATOR_GREATER_THAN:  // >
     case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
@@ -70,8 +75,13 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
             return bEr;
         if (a != b)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        if(a == BOOL)
+            return ERR_SYNTAX;
         *returnType = a;
         return OK;
+        break;
+
+    case TOKEN_NIL_COALESCING:
         break;
     }
 }
@@ -95,18 +105,70 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
             return error;
         }
         // AMIDIATE VAR ASIGN
+        if (((ASTNode*)statement->b)->b == NULL)
+        {
+            if (var->type == NIL || var->nilable ==false)
+                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+            else
+                return OK;
+        }
+
+        Type expReturnType;
+        Error error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType);
+        if (error != OK )
+            return error;
+        if(!var->nilable && expReturnType == NIL)
+            return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+        
+        //type infering
+        if(var->type == NIL)
+        {
+            var->type = expReturnType;    
+        }else if (var->type != expReturnType)
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        var->initialized=true;
+
+
     case LET_DEF:
         Symbol* let = Symbol_new();
         let->symbol_type=LET;
-        let->name=statement->a;
-        let->type=statement->b;
-        //let->nilable=;
+        let->name=((ASTNode*)statement->b)->a;
+        let->type=((ASTNode*)statement->a)->a;
+        let->nilable=((ASTNode*)statement->a)->b;
         Error error = SymTable_insert(tables,let);
         if(error != OK)
         {
             free(let);
             return error;
         }
+        // AMIDIATE LET ASIGN
+        if (((ASTNode*)statement->b)->b == NULL)
+        {
+            if (let->type == NIL || let->nilable ==false)
+                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+            else
+                return OK;
+        }
+
+        Type expReturnType;
+        Error error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType);
+        if (error != OK )
+            return error;
+        if(!let->nilable && expReturnType == NIL)
+            return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+        
+        //type infering
+        if(let->type == NIL)
+        {
+            let->type = expReturnType;    
+        }else if (let->type != expReturnType)
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        let->initialized=true;
+        
+
+
+
+
         break;
     case ASSIGN:
         Symbol* target = SymTable_get_recurse(tables,statement->a);
@@ -123,7 +185,7 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
         if (error != OK)
             return error;
 
-        if(target->type != returnType)
+        if(target->type != expReturnType)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         
         break;
