@@ -52,7 +52,6 @@ Symbol* Symbol_new();
 
 void Symbol_free(Symbol* symbol);
 
-FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
 
 
 

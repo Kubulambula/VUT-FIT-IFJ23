@@ -55,12 +55,12 @@ void FuncDefArg_free(FuncDefArg* arg){
 }
 
 
-FuncDefArg* FuncDefArg_get_last_arg(FuncDefArg* arg){
-    if (arg->next == NULL)
+FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg){
+    if (*arg == NULL)
         return arg;
     
-    while(arg->next != NULL)
-        arg = arg->next;
+    while((*arg)->next != NULL)
+        arg = &((*arg)->next);
     
     return arg;
 }
