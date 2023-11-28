@@ -26,11 +26,12 @@ typedef enum {
     VAR_HEAD, // a name, b, EXPRESSION
     LET_DEF, // a VAR_TYPE, b VAR_HEAD
     ASSIGN, // a is variable name & b is EXPRESSION
-    FUNC_CALL, // a is funcion name and b is FUNC_ARG list
-        FUNC_CALL_ARG, // a is name b is expression with value
+    FUNC_CALL, // a is funcion name and b is FUNC_ARGS
+        FUNC_CALL_ARGS, // a is FUNC_ARG & b is FUNC_ARGS or NULL if this was the last arg
+            FUNC_CALL_ARG, // a is name b is expression with value
     IFELSE, // a is expression condition, b IFELSE_BODIES
-        IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are statement arrays
-    WHILE, // a is expression condition and b is brach (statement list)
+        IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are STATEMENTs
+    WHILE, // a is expression condition and b is STATEMENT
     RETURN, // a is expression - some operator
 
 
