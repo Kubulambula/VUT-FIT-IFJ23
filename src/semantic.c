@@ -78,72 +78,72 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
 
 Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
 {
-    while(statement != NULL)
-    {   switch (statement->type)
+
+    switch (statement->type)
+    {
+    case VAR_DEF:
+        //VAR DEF
+        Symbol* var = Symbol_new();
+        var->symbol_type=VAR;
+        var->name=((ASTNode*)statement->b)->a;
+        var->type=((ASTNode*)statement->a)->a;
+        var->nilable=((ASTNode*)statement->a)->b;
+        Error error = SymTable_insert(tables,var);
+        if(error != OK)
         {
-        case VAR_DEF:
-            Symbol* var = Symbol_new();
-            var->symbol_type=VAR;
-            var->name=statement->a;
-            var->type=statement->b;
-            //var->nilable=;
-            Error error = SymTable_insert(tables,var);
-            if(error != OK)
-            {
-                free(var);
-                return error;
-            }
-            break;
-        case LET_DEF:
-            Symbol* let = Symbol_new();
-            let->symbol_type=LET;
-            let->name=statement->a;
-            let->type=statement->b;
-            //let->nilable=;
-            Error error = SymTable_insert(tables,let);
-            if(error != OK)
-            {
-                free(let);
-                return error;
-            }
-            break;
-        case ASSIGN:
-            Symbol* target = SymTable_get_recurse(tables,statement->a);
-            if(target == NULL || target->symbol_type == FUNCTION)
-                return ERR_SEMATIC_UNDEFINED_VAR;
-            
-            if(target->symbol_type == LET && target->initialized)
-                return ERR_SEMATIC_REDEFINED;
-            
-            target->initialized=true;
-
-            Type returnType;
-            Error error = handle_expression(statement->b,tables,&returnType);
-            if (error != OK)
-                return error;
-
-            if(target->type != returnType)
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            
-            break;
-        case FUNC_CALL:
-
-            break;
-        case IFELSE:
-
-            break;
-        case WHILE:
-
-            break;
-        case RETURN:
-
-            break;
-
+            free(var);
+            return error;
         }
-        statement = statement->b;
+        // AMIDIATE VAR ASIGN
+    case LET_DEF:
+        Symbol* let = Symbol_new();
+        let->symbol_type=LET;
+        let->name=statement->a;
+        let->type=statement->b;
+        //let->nilable=;
+        Error error = SymTable_insert(tables,let);
+        if(error != OK)
+        {
+            free(let);
+            return error;
+        }
+        break;
+    case ASSIGN:
+        Symbol* target = SymTable_get_recurse(tables,statement->a);
+        if(target == NULL || target->symbol_type == FUNCTION)   //var/let exists check
+            return ERR_SEMATIC_UNDEFINED_VAR;
+        
+        if(target->symbol_type == LET && target->initialized)  
+            return ERR_SEMATIC_REDEFINED;
+        
+        target->initialized=true;
+
+        Type expReturnType;
+        Error error = handle_expression(statement->b,tables,&expReturnType);
+        if (error != OK)
+            return error;
+
+        if(target->type != returnType)
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        
+        break;
+    case FUNC_CALL:
+
+        break;
+    case IFELSE:
+
+        break;
+    case WHILE:
+
+        break;
+    case RETURN:
+
+        break;
 
     }
-    return OK;
+
+    statement = statement->b;
+
 }
 
 void error_free_all(SymTable* tables)
