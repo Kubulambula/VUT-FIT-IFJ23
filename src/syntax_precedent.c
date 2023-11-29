@@ -242,6 +242,7 @@ bool shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token shi
         //     if(token != PRECEDENT_END)
         //         return false;
         //     return true;
+        
         // nevim proc to tady bylo
 
 
@@ -402,4 +403,21 @@ Error precedent(exp_node **node, BufferString* buffer_string){
         CURRENT_TOKEN = TEMP_TOKEN;
     ENDING_IDENTIFIER_FLAG = false;
     return OK;
+}
+
+bool let_nil(exp_node **node, char* identifier){
+    exp_node *left = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier);
+    exp_node *right = new_leaf(TOKEN_KEYWORD_NIL, (union literalValue)0);
+    if(left == NULL || right == NULL){
+        free(left);
+        free(right);
+        return false;
+    }
+    *node = new_node(left, right, TOKEN_OPERATOR_NOT_EQUALS);
+    if(*node == NULL){
+        free(left);
+        free(right);
+        return false;
+    }
+    return true;
 }
