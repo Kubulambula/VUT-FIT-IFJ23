@@ -47,6 +47,7 @@ typedef enum{
     TOKEN_LITERAL_INT, // an int literal
     TOKEN_LITERAL_DOUBLE, // a double literal
     TOKEN_LITERAL_STRING, // a string literal
+    TOKEN_LITERAL_NIL,    // a nil literal
     //TOKEN_LITERAL_MULTILINE_STRING, // a multiline string literal // this can be passed as a regular string
     // Miscellaneous 
     TOKEN_ASSIGN, // =
@@ -112,6 +113,7 @@ static inline void print_token_as_string(Token t){
         "TOKEN_IDENTIFIER",
     };
     printf("%s\n", tokens_as_string[t]);
+    //printf("%s", tokens_as_string[t]);
 }
 #else
 #pragma GCC diagnostic ignored "-Wunused-parameter"

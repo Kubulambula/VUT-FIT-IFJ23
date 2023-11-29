@@ -86,7 +86,7 @@ exp_node* new_node(exp_node* left, exp_node* right, Token type);
 int token2index(Token token);
 
 // Provádí ukončovací shift operace na zásobníku
-bool shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token shift_type);
+Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token shift_type);
 
 // Implementace precedenční tabulky, vrací číslo operace kterou má precedenční analýza provést
 int precedent_table(Token stack_top_token, Token current_token);
