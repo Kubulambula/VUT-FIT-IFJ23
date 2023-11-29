@@ -1,0 +1,123 @@
+
+Tenhle soubor je k inspiraci pro funkce v syntax_ll_grammar.c a dokumentaci
+===program===
+
+<program> -> TOKEN_EOL <program>
+<program> -> <statements>
+<program> -> <func_definition> <program>
+<program> -> TOKEN_EOF
+
+===/program===
+
+
+===types===
+<type> -> TOKEN_KEYWORD_INT
+<type> -> TOKEN_KEYWORD_DOUBLE
+<type> -> TOKEN_KEYWORD_STRING
+===/types===
+
+===literals===
+<literal> -> TOKEN_LITEREAL_INT
+<literal> -> TOKEN_LITEREAL_DOUBLE
+<literal> -> TOKEN_LITEREAL_STRING
+===/literals===
+
+
+
+
+===statements===
+
+
+<statement_body> -> TOKEN_BRACKET_LEFT <statements> TOKEN_BRACKET_RIGHT
+
+<statements> -> ɛ
+<statements> -> <statement> <statements>
+
+<statement> -> EOL
+<statement> -> <condition>
+<statement> -> <while>
+<statement> -> <assign>
+<statement> -> <func_call>
+<statement> -> <return>
+<statement> -> <var_let_definition>
+<statement> -> <expression>
+
+===/statements===
+
+
+===assing===
+
+<assign> -> TOKEN_IDENTIFIER TOKEN_ASSING <expression>
+
+<assign> -> TOKEN_IDENTIFIER TOKEN_ASSING <func_call>
+
+===/assing===
+
+
+===func_call===
+
+<func_call> -> TOKEN_IDENTIFIER TOKEN_PARENTHESIS_LEFT <func_args> TOKEN_PARENTHESIS_RIGHT
+
+<func_args> -> <func_arg> <func_nth_arg>
+
+<func_arg> -> TOKEN_IDENTIFIER
+<func_arg> -> <literal>
+
+<func_arg> -> TOKEN_IDENTIFIER TOKEN_COLON TOKEN_IDENTIFIER
+<func_arg> -> TOKEN_IDENTIFIER TOKEN_COLON <literal>
+
+<func_nth_arg> -> TOKEN_COMMA <func_arg>
+
+===/func_call===
+
+
+
+===func_definition===
+
+<func_definition> -> <func_head> <func_body>
+
+<func_head> -> TOKEN_KEYWORD_FUNC TOKEN_IDENTIFIER TOKEN_PARENTHESIS_LEFT <func_params> TOKEN_PARENTHESIS_RIGHT <func_type>
+
+<func_params> -> ɛ
+<func_params> -> <func_param> <func_more_params>
+<func_param> -> TOKEN_IDENTIFIER TOKEN_IDENTIFIER TOKEN_COLON <type>
+<func_more_params> -> ɛ
+<func_more_params> -> TOKEN_COMMA <func_param> <func_more_params>
+
+<func_type> -> ɛ
+<func_type> -> TOKEN_ARROW <type>
+
+<func_body> -> TOKEN_BRACKET_LEFT <statements> TOKEN_BRACKET_RIGHT
+
+
+<return> -> TOKEN_KEYWORD_RETURN
+<return> -> TOKEN_KEYWORD_RETURN <expression>
+
+===/func_definition==
+
+
+
+<expression> -> IDK shomehow else
+
+
+===condition===
+
+<if> -> <if_head> <statement_body> TOKEN_KEYWORD_ELSE <statement_body>
+
+<if_head> -> TOKEN_KEYWORD_IF TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
+<if_head> -> TOKEN_KEYWORD_IF TOKEN_KEYWORD_LET TOKEN_IDENTIFIER
+
+
+===/condition===
+
+
+
+===while===
+
+<while> -> <while_head> <while_body>
+
+<while_head> -> TOKEN_KEYWORD_WHILE TOKEN_PARENTHESIS_LEFT <expression> TOKEN_PARENTHESIS_RIGHT
+
+<while_body> -> TOKEN_BRACKET_LEFT <statements> TOKEN_BRACKET_RIGHT
+
+===/while===
