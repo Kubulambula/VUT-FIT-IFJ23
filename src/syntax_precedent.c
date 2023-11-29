@@ -99,19 +99,27 @@ void Stack_Purge(exp_node *node){
 }
 
 void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *buffer_string){
-    Stack_Push(tokenStack, (union data)token);
+    union literalValue value;
+    union data data;
+    data.token = token;
+    Stack_Push(tokenStack, data);
     switch(token){
         case TOKEN_IDENTIFIER: case TOKEN_LITERAL_STRING:
-            Stack_Push(valueStack, (union data)(union literalValue)BufferString_get_as_string(buffer_string));
+            value.s = BufferString_get_as_string(buffer_string);
+            data.value = value;
+            Stack_Push(valueStack, data);
             break;
         case TOKEN_LITERAL_INT:
-            Stack_Push(valueStack, (union data)(union literalValue)BufferString_get_as_int(buffer_string));
+            value.i = BufferString_get_as_int(buffer_string);
+            data.value = value;
+            Stack_Push(valueStack, data);
             break;
         case TOKEN_LITERAL_DOUBLE:
-            Stack_Push(valueStack, (union data)(union literalValue)BufferString_get_as_double(buffer_string));
+            value.d = BufferString_get_as_double(buffer_string);
+            data.value = value;
+            Stack_Push(valueStack, data);
             break;
         default:
-            // Should report an error???
             break;
     }
 }
@@ -122,7 +130,7 @@ exp_node *new_leaf(Token type, union literalValue value){
         leaf->left = NULL;
         leaf->right = NULL;
         leaf->type = type;
-        leaf->value = (union literalValue)value;
+        leaf->value = value;
     }
     return leaf;
 }
@@ -144,6 +152,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
     exp_node *left;
     exp_node *right;
     union literalValue value;
+    union data data;
     Stack_Top_Token(tokenStack, &token);
     switch(token2index(shift_type)){
 
@@ -155,9 +164,11 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             node = new_leaf(token, value);
             if(node == NULL)
                 return ERR_INTERNAL;
-            Stack_Push(nodeStack, (union data)node); // sussy
+            data.node = node;
+            Stack_Push(nodeStack, data);
             Stack_Pop(tokenStack);
-            Stack_Push(tokenStack, (union data)(Token)PRECEDENT_E);
+            data.token = PRECEDENT_E;
+            Stack_Push(tokenStack, data);
             return OK;
 
         case 2: // )
@@ -172,7 +183,8 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             if(token != TOKEN_PARENTHESIS_LEFT)
                 return ERR_SYNTAX;
             Stack_Pop(tokenStack);
-            Stack_Push(tokenStack, (union data)(Token)PRECEDENT_E);
+            data.token = PRECEDENT_E;
+            Stack_Push(tokenStack, data);
             return OK;
 
         case 3: // !
@@ -189,7 +201,8 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             node = new_node(left, NULL, TOKEN_EXCLAMATION);
             if(node == NULL)
                 return ERR_INTERNAL;
-            Stack_Push(nodeStack, (union data)node);
+            data.node = node;
+            Stack_Push(nodeStack, data);
             return OK;
 
         case 4: case 5: case 6: case 7: // + - * / == <= >= < > ??
@@ -222,6 +235,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             Stack_Top_Token(tokenStack, &token);
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
+
             Stack_Top_Node(nodeStack, &right);
             Stack_Pop(nodeStack);
             Stack_Top_Node(nodeStack, &left);
@@ -234,20 +248,11 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             node = new_node(left, right, temp_token);
             if(node == NULL)
                 return ERR_INTERNAL;
-            Stack_Push(nodeStack, (union data)node);
+            data.node = node;
+            Stack_Push(nodeStack, data);
             return OK;
 
         case 8: //$
-        // if(token != PRECEDENT_E)
-        //         return false;  
-        //     Stack_Pop(stack);
-        //     Stack_Top(stack, &token);
-        //     if(token != PRECEDENT_END)
-        //         return false;
-        //     return true;
-
-        // nevim proc to tady bylo
-
         case 9:
         default:
             return ERR_SYNTAX;
@@ -330,6 +335,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
     Stack valueStack;
     Error err;
     int state;
+    union data data;
     if(token2index(CURRENT_TOKEN) > 7) //checks for empty expression
         return ERR_SYNTAX;
     if(!Stack_Init(&tokenStack, TOKEN) || !Stack_Init(&nodeStack, NODE) || !Stack_Init(&valueStack, VALUE)){
@@ -337,7 +343,8 @@ Error precedent(BufferString* buffer_string, exp_node **node){
         Stack_Dispose(&nodeStack);
         Stack_Dispose(&valueStack);
     }
-    Stack_Push(&tokenStack, (union data)(Token)PRECEDENT_END);
+    data.token = PRECEDENT_E;
+    Stack_Push(&tokenStack, data);
     Stack_Top_Token_Literal(&tokenStack, &top);
 
 
@@ -400,9 +407,11 @@ Error precedent(BufferString* buffer_string, exp_node **node){
                     Stack_Dispose(&valueStack);
                     return ERR_INTERNAL;
                 }
-                Stack_Push(&nodeStack, (union data)node);
+                data.node = node;
+                Stack_Push(&nodeStack, data);
                 Stack_Pop(&tokenStack);
-                Stack_Push(&tokenStack, (union data)(Token)PRECEDENT_E);
+                data.token = PRECEDENT_E;
+                Stack_Push(&tokenStack, data);
                 Stack_Top_Token_Literal(&tokenStack, &top);
                 CURRENT_TOKEN = get_token(buffer_string, true);
         }
@@ -418,10 +427,14 @@ Error precedent(BufferString* buffer_string, exp_node **node){
 }
 
 Error let_nil(exp_node **node, char* identifier_name){
-    exp_node *left = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier_name);
+    union literalValue name;        // Uvidíme jestli tohle pomůže
+    name.s = identifier_name;       
+    exp_node *left = new_leaf(TOKEN_IDENTIFIER, name);
     if (left == NULL)
         return ERR_INTERNAL;
-    exp_node *right = new_leaf(TOKEN_LITERAL_NIL, (union literalValue)0);
+    union literalValue nil_value;
+    nil_value.i = 0;
+    exp_node *right = new_leaf(TOKEN_LITERAL_NIL, nil_value);
     if (right == NULL){
         free(left);
         return ERR_INTERNAL;
@@ -438,7 +451,9 @@ Error let_nil(exp_node **node, char* identifier_name){
 }
 
 Error variable_expression(exp_node **node, char* identifier_name){
-    *node = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier_name);
+    union literalValue name;
+    name.s = identifier_name;
+    *node = new_leaf(TOKEN_IDENTIFIER, name);
     if(*node == NULL)
         return ERR_INTERNAL;
     

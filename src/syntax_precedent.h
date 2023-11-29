@@ -19,7 +19,6 @@ union literalValue{
     int i;
     double d;
     char* s;
-    Token t;
 };
 
 
