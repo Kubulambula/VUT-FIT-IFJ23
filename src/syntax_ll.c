@@ -4,6 +4,7 @@
 #include "lexer.h"
 
 
+// declaration from error.h
 Error ERR;
 
 
@@ -269,6 +270,10 @@ Error ll_statements(BufferString* buffer_string, ASTNode** tree){
 				return ERR_SYNTAX;
 		
 		default: // <statement> -> E
+			// remove the empty STATEMENT
+			free(*tree);
+			*tree = NULL;
+
 			unget_token();
 			return OK;
 	}
@@ -415,9 +420,6 @@ Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
 // var id: = exp
 // var id: type
 Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
-		return ERR_SYNTAX;
 	// create subtrees
 	tree->a = (void*)ASTNode_new(VAR_TYPE);
 	if (tree->a == NULL)
@@ -425,6 +427,11 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	tree->b = (void*)ASTNode_new(VAR_HEAD);
 	if (tree->b == NULL)
 		return ERR_INTERNAL;
+
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
+		return ERR_SYNTAX;
+
 	// assign name
 	((ASTNode*)(tree->b))->a = (void*)BufferString_get_as_string(buffer_string);
 	if (((ASTNode*)(tree->b))->a == NULL)
@@ -438,7 +445,6 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	if (CURRENT_TOKEN == TOKEN_ASSIGN){
 		((ASTNode*)(tree->a))->a = (void*)TYPE_NIL; // assign type
 		((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
-
 		// assign expression
 		return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b));
 	}
@@ -458,7 +464,6 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 			return ERR_SYNTAX;
 	}
 
-
 	((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_QUESTION){
@@ -466,8 +471,11 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 		GET_TOKEN(true);
 	}
 
-	if (CURRENT_TOKEN != TOKEN_ASSIGN)
-		return ERR_SYNTAX;
+	if (CURRENT_TOKEN != TOKEN_ASSIGN){
+		// declaration without an expression
+		unget_token();
+		return OK;
+	}
 	
 	// assign expression
 	return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b));
@@ -620,11 +628,6 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 	return ll_else(buffer_string, (ASTNode**)(&(bodies->b)));
 }
 
-
-// if (let x){}
-// if (x != nil){
-// let x := x
-// }
 
 Error generate_if_let_declaration_override_statement(ASTNode** tree, char* id){
 	*tree = ASTNode_new(LET_DEF);

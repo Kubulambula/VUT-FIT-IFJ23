@@ -7,6 +7,7 @@
 bool ENDING_IDENTIFIER_FLAG = false;
 Token TEMP_TOKEN;
 
+
 bool Stack_Init(Stack* stack, enum stack_type type){
     assert(stack != NULL);
 	stack->elements = malloc(STACK_SIZE*sizeof(union data));
@@ -16,15 +17,18 @@ bool Stack_Init(Stack* stack, enum stack_type type){
     return stack->elements == NULL ? false : true;
 }
 
+
 bool Stack_IsEmpty(const Stack *stack){
     assert(stack != NULL);
 	return stack->topIndex < 0 ? 1 : 0;	
 }
 
+
 bool Stack_IsFull(const Stack *stack){
     assert(stack != NULL);
 	return stack->topIndex >= stack->size-1 ? 1 : 0;
 }
+
 
 void Stack_Top_Token(const Stack *stack, Token* token){
     if(stack != NULL && stack->elements != NULL && !Stack_IsEmpty(stack)){
@@ -35,6 +39,7 @@ void Stack_Top_Token(const Stack *stack, Token* token){
     }
 }
 
+
 void Stack_Top_Node(const Stack *stack, exp_node **node){
     if(stack != NULL && stack->elements != NULL && !Stack_IsEmpty(stack)){
         *node = stack->elements[stack->topIndex].node;
@@ -44,11 +49,13 @@ void Stack_Top_Node(const Stack *stack, exp_node **node){
     }
 }
 
+
 void Stack_Top_Value(const Stack *stack, union literalValue *value){
     if(stack != NULL && stack->elements != NULL && !Stack_IsEmpty(stack)){
         *value = stack->elements[stack->topIndex].value;
     }
 }
+
 
 void Stack_Top_Token_Literal(const Stack *stack, Token* token){
     int i = 0;
@@ -61,6 +68,7 @@ void Stack_Top_Token_Literal(const Stack *stack, Token* token){
     }
 	*token = (Token)stack->elements[stack->topIndex - i].token;
 }
+
 
 void Stack_Push(Stack *stack, union data element){
     if(Stack_IsFull(stack)){
@@ -76,11 +84,13 @@ void Stack_Push(Stack *stack, union data element){
 	stack->elements[stack->topIndex] = element;
 }
 
+
 void Stack_Pop(Stack *stack){
     if(!(Stack_IsEmpty(stack))){
 		stack->topIndex--;
 	}
 }
+
 
 void Stack_Dispose(Stack *stack){
     if(stack != NULL){
@@ -90,6 +100,7 @@ void Stack_Dispose(Stack *stack){
     }
 }
 
+
 void Stack_Purge(exp_node *node){
     if(node != NULL){
         Stack_Purge(node->left);
@@ -97,6 +108,7 @@ void Stack_Purge(exp_node *node){
         free(node);
     }
 }
+
 
 void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *buffer_string){
     union literalValue value;
@@ -120,9 +132,11 @@ void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *
             Stack_Push(valueStack, data);
             break;
         default:
+            // Do nothing
             break;
     }
 }
+
 
 exp_node *new_leaf(Token type, union literalValue value){
     exp_node* leaf = (exp_node*)malloc(sizeof(exp_node));
@@ -135,6 +149,7 @@ exp_node *new_leaf(Token type, union literalValue value){
     return leaf;
 }
 
+
 exp_node* new_node(exp_node* left, exp_node* right, Token type){
     exp_node* node = (exp_node*)malloc(sizeof(exp_node));
     if(node != NULL){
@@ -144,6 +159,7 @@ exp_node* new_node(exp_node* left, exp_node* right, Token type){
     }
     return node;
 }
+
 
 Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token shift_type){
     Token token;
@@ -260,8 +276,6 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
 }
 
 
-
-
 int token2index(Token token){
     switch(token){
         case TOKEN_IDENTIFIER:
@@ -328,12 +342,12 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
     return table[token2index(stack_top_token)][token2index(current_precedent_token)];
 }
 
+
 Error precedent(BufferString* buffer_string, exp_node **node){
     Token top;
     Stack tokenStack;
     Stack nodeStack;
     Stack valueStack;
-    Error err;
     int state;
     union data data;
     if(token2index(CURRENT_TOKEN) > 7) //checks for empty expression
@@ -372,13 +386,13 @@ Error precedent(BufferString* buffer_string, exp_node **node){
                 continue;
 
             case 2:
-                err = shift_end(&tokenStack, &nodeStack, &valueStack, top);
-                if(err){
+                ERR = shift_end(&tokenStack, &nodeStack, &valueStack, top);
+                if(ERR){
                     Stack_Dispose(&tokenStack);
                     Stack_Dispose(&nodeStack);
                     Stack_Dispose(&valueStack);
                     *node = NULL;
-                    return err;
+                    return ERR;
                 }
                 Stack_Top_Token_Literal(&tokenStack, &top);
                 if(precedent_table(top, CURRENT_TOKEN) != 2 && precedent_table(top, CURRENT_TOKEN) != 0 && !ENDING_IDENTIFIER_FLAG){
@@ -393,12 +407,12 @@ Error precedent(BufferString* buffer_string, exp_node **node){
                 char* name = BufferString_get_as_string(buffer_string);
                 exp_node *node;
                 exp_node *func_node;
-                err = ll_func_call(buffer_string, (ASTNode**)(&func_node), name);
-                if(err){
+                ERR = ll_func_call(buffer_string, (ASTNode**)(&func_node), name);
+                if(ERR){
                     Stack_Dispose(&tokenStack);
                     Stack_Dispose(&nodeStack);
                     Stack_Dispose(&valueStack);
-                    return err;
+                    return ERR;
                 }
                 node = new_node(func_node, NULL, TOKEN_KEYWORD_FUNC);
                 if(node == NULL){
@@ -426,6 +440,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
     return OK;
 }
 
+
 Error let_nil(exp_node **node, char* identifier_name){
     union literalValue name;        // Uvidíme jestli tohle pomůže
     name.s = identifier_name;       
@@ -449,6 +464,7 @@ Error let_nil(exp_node **node, char* identifier_name){
 
     return OK;
 }
+
 
 Error variable_expression(exp_node **node, char* identifier_name){
     union literalValue name;

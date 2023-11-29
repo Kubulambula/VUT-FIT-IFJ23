@@ -94,6 +94,8 @@ FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg);
 
 ASTNode* ASTNode_new(ASTNodeType type);
 
+void ASTNode_free(ASTNode* node);
+
 ASTNode* ASTNode_find_leftmost_node(ASTNode* node);
 
 ASTNode* ASTNode_find_rightmost_node(ASTNode* node);

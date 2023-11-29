@@ -13,6 +13,10 @@ ASTNode* ASTNode_new(ASTNodeType type){
 	return node;
 }
 
+void ASTNode_free(ASTNode* node){
+    
+}
+
 
 ASTNode* ASTNode_find_leftmost_node(ASTNode* node){
 	if(node == NULL)

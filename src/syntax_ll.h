@@ -1,12 +1,10 @@
 #ifndef SYNTAX_LL_H
 #define SYNTAX_LL_H
 
-//#include <stdbool.h>
-//#include "buffer_string.h"
-//#include "syntax_precedent.h"
 #include "error.h"
 #include "lexer.h"
 #include "ast.h"
+
 
 Error ll_program(BufferString* buffer_string, ASTNode** tree);
 
