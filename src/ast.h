@@ -25,7 +25,7 @@ typedef enum {
 
     VAR_DEF, // a VAR_TYPE, b VAR_HEAD
     LET_DEF, // a VAR_TYPE, b VAR_HEAD
-        VAR_TYPE, // a Symbol_type , b bool nilable
+        VAR_TYPE, // a Type , b bool nilable
         VAR_HEAD, // a name, b, EXPRESSION
     
     ASSIGN, // a is variable name & b is EXPRESSION
@@ -90,6 +90,8 @@ FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
 ASTNode* ASTNode_new(ASTNodeType type);
 
 ASTNode* ASTNode_find_leftmost_node(ASTNode* node);
+
+ASTNode* ASTNode_find_rightmost_node(ASTNode* node);
 
 
 //TODO

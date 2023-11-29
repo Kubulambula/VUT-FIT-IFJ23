@@ -26,6 +26,18 @@ ASTNode* ASTNode_find_leftmost_node(ASTNode* node){
 }
 
 
+ASTNode* ASTNode_find_rightmost_node(ASTNode* node){
+	if(node == NULL)
+		return NULL;
+	
+	while (node->b != NULL){
+		node = node->b;
+	}
+
+	return node;
+}
+
+
 
 
 FuncDefArg* FuncDefArg_new(){
