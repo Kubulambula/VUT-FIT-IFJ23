@@ -94,7 +94,7 @@ int precedent_table(Token stack_top_token, Token current_token);
 // Funkce provede precedenční analýzu výrazu a sestavý pro něj AST. Funkce nepočítá s epsilon pravidly (prázdný výraz není validní výraz)
 Error precedent(exp_node **node, BufferString* buffer_string);
 
-bool let_nil(exp_node **node, char* identifier);
+Error let_nil(exp_node **node, char* identifier);
 
 // tohle všechno může být v type:
 //TOKEN_OPERATOR_PLUS,       left je levý operátor, right je pravý operátor(tohle platí pro všechny binární operátory)

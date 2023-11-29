@@ -363,12 +363,13 @@ Error precedent(exp_node **node, BufferString* buffer_string){
                 CURRENT_TOKEN = PRECEDENT_END;
 
             case 2:
-                if(!shift_end(&tokenStack, &nodeStack, &valueStack, top)){
+                err = shift_end(&tokenStack, &nodeStack, &valueStack, top);
+                if(err){
                     Stack_Dispose(&tokenStack);
                     Stack_Dispose(&nodeStack);
                     Stack_Dispose(&valueStack);
                     *node = NULL;
-                    return ERR_SYNTAX;
+                    return err;
                 }
                 Stack_Top_Token_Literal(&tokenStack, &top);
                 if(precedent_table(top, CURRENT_TOKEN) != 2 && precedent_table(top, CURRENT_TOKEN) != 0 && !ENDING_IDENTIFIER_FLAG){
@@ -380,33 +381,31 @@ Error precedent(exp_node **node, BufferString* buffer_string){
 
             case 4:
                 unget_token(buffer_string);
+                char* name = BufferString_get_as_string(buffer_string);
                 exp_node *node;
                 exp_node *func_node;
-                //err = ll_func_call(buffer_string, &(ASTNode)func_node)
+                //err = ll_func_call(buffer_string, &(ASTNode)func_node, name)    --uncomment this after merge
                 if(err){
-
+                    Stack_Dispose(&tokenStack);
+                    Stack_Dispose(&nodeStack);
+                    Stack_Dispose(&valueStack);
                     return err;
                 }
                 node = new_node(func_node, NULL, TOKEN_KEYWORD_FUNC);
                 if(node == NULL){
-
+                    Stack_Dispose(&tokenStack);
+                    Stack_Dispose(&nodeStack);
+                    Stack_Dispose(&valueStack);
                     return ERR_INTERNAL;
                 }
-
-                // if(ll_func_call(buffer_string)){
-                //     Stack_Dispose(&tokenStack);
-                //     Stack_Dispose(&nodeStack);
-                //     Stack_Dispose(&valueStack);
-                //     *node = NULL;
-                //     return ERR_SYNTAX;
-                // }
-                // Stack_Top_Token(&stack, &top);
-                // if(CURRENT_TOKEN == TOKEN_EOL)
-                //     CURRENT_TOKEN = get_token(buffer_string, true);
+                Stack_Push(&nodeStack, (union data)node);
+                Stack_Pop(&tokenStack);
+                Stack_Push(&tokenStack, (union data)(Token)PRECEDENT_E);
+                Stack_Top_Token_Literal(&tokenStack, &top);
+                CURRENT_TOKEN = get_token(buffer_string, true);
         }
     }
     Stack_Top_Node(&nodeStack, node);
-
     Stack_Dispose(&tokenStack);
     Stack_Dispose(&valueStack);
     free(nodeStack.elements);
@@ -416,19 +415,26 @@ Error precedent(exp_node **node, BufferString* buffer_string){
     return OK;
 }
 
-bool let_nil(exp_node **node, char* identifier_name){
+Error let_nil(exp_node **node, char* identifier_name){
     exp_node *left = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier_name);
     exp_node *right = new_leaf(TOKEN_LITERAL_NIL, (union literalValue)0);
     if(left == NULL || right == NULL){
         free(left);
         free(right);
-        return false;
+        return ERR_INTERNAL;
     }
     *node = new_node(left, right, TOKEN_OPERATOR_NOT_EQUALS);
     if(*node == NULL){
         free(left);
         free(right);
-        return false;
+        return ERR_INTERNAL;
     }
-    return true;
+    return OK;
+}
+
+Error variable_expression(exp_node **node, char* identifier_name){
+    *node = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier_name);
+    if(*node == NULL){
+        return ERR_INTERNAL;
+    }
 }
