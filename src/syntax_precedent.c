@@ -118,24 +118,22 @@ void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *
 
 exp_node *new_leaf(Token type, union literalValue value){
     exp_node* leaf = (exp_node*)malloc(sizeof(exp_node));
-    if(leaf == NULL){
-        return NULL;
+    if(leaf != NULL){
+        leaf->left = NULL;
+        leaf->right = NULL;
+        leaf->type = type;
+        leaf->value = (union literalValue)value;
     }
-    leaf->left = NULL;
-    leaf->right = NULL;
-    leaf->type = type;
-    leaf->value = (union literalValue)value;
     return leaf;
 }
 
 exp_node* new_node(exp_node* left, exp_node* right, Token type){
     exp_node* node = (exp_node*)malloc(sizeof(exp_node));
-    if(node == NULL){
-        return NULL;
+    if(node != NULL){
+        node->left = left;
+        node->right = right;
+        node->type = type;
     }
-    node->left = left;
-    node->right = right;
-    node->type = type;
     return node;
 }
 
@@ -309,7 +307,6 @@ int token2index(Token token){
 }
 
 
-
 int precedent_table(Token stack_top_token, Token current_precedent_token){
     int  table[10][10] = {
     { 5, 4, 2, 2, 2, 2, 2, 2, 2, 0},   // i wish there was some easier way to do this :')
@@ -365,6 +362,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
                 ENDING_IDENTIFIER_FLAG = true;
                 TEMP_TOKEN = CURRENT_TOKEN;
                 CURRENT_TOKEN = PRECEDENT_END;
+                continue;
 
             case 2:
                 err = shift_end(&tokenStack, &nodeStack, &valueStack, top);
@@ -388,7 +386,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
                 char* name = BufferString_get_as_string(buffer_string);
                 exp_node *node;
                 exp_node *func_node;
-                //err = ll_func_call(buffer_string, &(ASTNode)func_node, name)    --uncomment this after merge
+                err = ll_func_call(buffer_string, (ASTNode**)(&func_node), name);
                 if(err){
                     Stack_Dispose(&tokenStack);
                     Stack_Dispose(&nodeStack);
@@ -421,25 +419,28 @@ Error precedent(BufferString* buffer_string, exp_node **node){
 
 Error let_nil(exp_node **node, char* identifier_name){
     exp_node *left = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier_name);
+    if (left == NULL)
+        return ERR_INTERNAL;
     exp_node *right = new_leaf(TOKEN_LITERAL_NIL, (union literalValue)0);
-    if(left == NULL || right == NULL){
+    if (right == NULL){
         free(left);
-        free(right);
         return ERR_INTERNAL;
     }
+
     *node = new_node(left, right, TOKEN_OPERATOR_NOT_EQUALS);
     if(*node == NULL){
         free(left);
         free(right);
         return ERR_INTERNAL;
     }
+
     return OK;
 }
 
 Error variable_expression(exp_node **node, char* identifier_name){
     *node = new_leaf(TOKEN_IDENTIFIER, (union literalValue)identifier_name);
-    if(*node == NULL){
+    if(*node == NULL)
         return ERR_INTERNAL;
-    }
+    
     return OK;
 }
