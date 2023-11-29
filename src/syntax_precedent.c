@@ -344,20 +344,23 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
 
 
 Error precedent(BufferString* buffer_string, exp_node **node){
+    ENDING_IDENTIFIER_FLAG = false;
     Token top;
     Stack tokenStack;
     Stack nodeStack;
     Stack valueStack;
     int state;
     union data data;
+    CURRENT_TOKEN = get_token(buffer_string, true);
     if(token2index(CURRENT_TOKEN) > 7) //checks for empty expression
         return ERR_SYNTAX;
     if(!Stack_Init(&tokenStack, TOKEN) || !Stack_Init(&nodeStack, NODE) || !Stack_Init(&valueStack, VALUE)){
         Stack_Dispose(&tokenStack);
         Stack_Dispose(&nodeStack);
         Stack_Dispose(&valueStack);
+        return ERR_INTERNAL;
     }
-    data.token = PRECEDENT_E;
+    data.token = PRECEDENT_END;
     Stack_Push(&tokenStack, data);
     Stack_Top_Token_Literal(&tokenStack, &top);
 
@@ -403,7 +406,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
                 break;
 
             case 4:
-                unget_token(buffer_string);
+                unget_token();
                 char* name = BufferString_get_as_string(buffer_string);
                 exp_node *node;
                 exp_node *func_node;
@@ -437,6 +440,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
     if(ENDING_IDENTIFIER_FLAG)
         CURRENT_TOKEN = TEMP_TOKEN;
     ENDING_IDENTIFIER_FLAG = false;
+    unget_token();
     return OK;
 }
 
