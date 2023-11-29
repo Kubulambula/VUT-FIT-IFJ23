@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <assert.h>
+// #include <assert.h>
 #include "ast.h"
 
 
@@ -38,14 +38,12 @@ ASTNode* ASTNode_find_rightmost_node(ASTNode* node){
 }
 
 
-
-
 FuncDefArg* FuncDefArg_new(){
     FuncDefArg* arg = (FuncDefArg*)malloc(sizeof(FuncDefArg));
     if (arg != NULL){
         arg->name = NULL;
         arg->identifier = NULL;
-        arg->type = NIL;
+        arg->type = TYPE_NIL;
         arg->next = NULL;
     }
 

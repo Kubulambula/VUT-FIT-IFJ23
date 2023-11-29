@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include "syntax_ll.h"
+#include "syntax_precedent.h"
+#include "lexer.h"
 
 
-Token CURRENT_TOKEN;
 Error ERR;
 
 
@@ -23,7 +24,7 @@ Error ll_program(BufferString* buffer_string, ASTNode** tree){
 
 		default: //<program> -> <statements> <program>
 			unget_token();
-			ERR = ll_statements(buffer_string, tree, NULL);
+			ERR = ll_statements(buffer_string, tree);
 			return ERR ? ERR : ll_program(buffer_string, tree);
 	}
 }
@@ -44,7 +45,6 @@ Error ll_func_definition(BufferString* buffer_string, ASTNode** tree){
 	if (ERR)
 		return ERR;	
 	
-	// TODO change scope to function scope
 	return ll_func_definition_body(buffer_string, (ASTNode**)&((*tree)->b));
 }
 
@@ -95,13 +95,13 @@ Error ll_func_definition_head(BufferString* buffer_string, ASTNode** func_head){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 	case TOKEN_KEYWORD_INT:
-		func_signature->b = INT;
+		func_signature->b = (void*)TYPE_INT;
 		break;
 	case TOKEN_KEYWORD_DOUBLE:
-		func_signature->b = DOUBLE;
+		func_signature->b = (void*)TYPE_DOUBLE;
 		break;
 	case TOKEN_KEYWORD_STRING:
-		func_signature->b = STRING;
+		func_signature->b = (void*)TYPE_STRING;
 		break;
 	// case (more types here)
 	default:
@@ -179,13 +179,13 @@ Error ll_func_definition_head_arg(BufferString* buffer_string, FuncDefArg** func
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 	case TOKEN_KEYWORD_INT:
-		(*func_arg)->type = INT;
+		(*func_arg)->type = TYPE_INT;
 		break;
 	case TOKEN_KEYWORD_DOUBLE:
-		(*func_arg)->type = DOUBLE;
+		(*func_arg)->type = TYPE_DOUBLE;
 		break;
 	case TOKEN_KEYWORD_STRING:
-		(*func_arg)->type = STRING;
+		(*func_arg)->type = TYPE_STRING;
 		break;
 	// case (more types here)
 	default:
@@ -388,7 +388,7 @@ Error ll_func_call_arg_without_name(BufferString* buffer_string, ASTNode* tree){
 
 
 
-	
+
 	// TODO precedence get value
 	return OK;
 }
@@ -414,7 +414,7 @@ Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
 // var id: type = exp
 // var id: = exp
 // var id: type
-Error ll_var_declaration(BufferString* buffer_string, ASTNode* tree){
+Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
 		return ERR_SYNTAX;
@@ -436,24 +436,23 @@ Error ll_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_ASSIGN){
-		((ASTNode*)(tree->a))->a = (void*)NIL; // assign type
+		((ASTNode*)(tree->a))->a = (void*)TYPE_NIL; // assign type
 		((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
-		// TODO precedence
+
 		// assign expression
-		//((ASTNode*)(tree->b))->b = ;	
-		return OK;
+		return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b));
 	}
 
 	// assign type
 	switch (CURRENT_TOKEN){
 		case TOKEN_KEYWORD_INT:
-			((ASTNode*)(tree->a))->a = (void*)INT;
+			((ASTNode*)(tree->a))->a = (void*)TYPE_INT;
 			break;
 		case TOKEN_KEYWORD_DOUBLE:
-			((ASTNode*)(tree->a))->a = (void*)DOUBLE;
+			((ASTNode*)(tree->a))->a = (void*)TYPE_DOUBLE;
 			break;
 		case TOKEN_KEYWORD_STRING:
-			((ASTNode*)(tree->a))->a = (void*)STRING;
+			((ASTNode*)(tree->a))->a = (void*)TYPE_STRING;
 			break;
 		default:
 			return ERR_SYNTAX;
@@ -470,11 +469,8 @@ Error ll_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	if (CURRENT_TOKEN != TOKEN_ASSIGN)
 		return ERR_SYNTAX;
 	
-	// TODO precedence
 	// assign expression
-	//((ASTNode*)(tree->b))->b = ;
-
-	return OK;
+	return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b));
 }
 
 
@@ -487,7 +483,7 @@ Error ll_var_declaration(BufferString* buffer_string, ASTNode** tree){
 	if (*tree == NULL)
 		return ERR_INTERNAL;
 
-	return ll_var_declaration(buffer_string, *tree);
+	return ll_let_var_declaration(buffer_string, *tree);
 }
 
 Error ll_let_declaration(BufferString* buffer_string, ASTNode** tree){
@@ -499,7 +495,7 @@ Error ll_let_declaration(BufferString* buffer_string, ASTNode** tree){
 	if (*tree == NULL)
 		return ERR_INTERNAL;
 
-	return ll_var_declaration(buffer_string, *tree);
+	return ll_let_var_declaration(buffer_string, *tree);
 }
 
 Error ll_while(BufferString* buffer_string, ASTNode** tree){
@@ -515,9 +511,10 @@ Error ll_while(BufferString* buffer_string, ASTNode** tree){
 	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
 		return ERR_SYNTAX;
 	
-	// TODO precedence condition
-	// (*tree)->a
-	
+	ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)));
+	if (ERR)
+		return ERR;
+
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
 		return ERR_SYNTAX;
@@ -546,10 +543,7 @@ Error ll_return(BufferString* buffer_string, ASTNode** tree){
 	if (*tree == NULL)
 		return ERR_INTERNAL;
 	
-	// TODO precedence assign
-	// (*tree)->a
-
-	return OK;
+	return precedent(buffer_string, (exp_node**)(&((*tree)->a)));
 }
 
 Error ll_if(BufferString* buffer_string, ASTNode** tree){
@@ -560,12 +554,8 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 	// put it in a helper variable so that we don't need to use that casting hell
 	ASTNode* bodies = ASTNode_new(IFELSE_BODIES);
 	if (bodies == NULL)
-		return ERR_INTERNAL;
-	
+		return ERR_INTERNAL;	
 	(*tree)->b = (void*)bodies;
-
-
-
 
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_IF)
@@ -584,9 +574,10 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 		char* id = BufferString_get_as_string(buffer_string);
 		if (id == NULL)
 			return ERR_INTERNAL;
-		
-		// TODO pre generated expression with id
-		// (*tree)->a
+
+		ERR = let_nil((exp_node**)(&((*tree)->a)), id);
+		if (ERR)
+			return ERR;
 
 		GET_TOKEN(true);
 		if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
@@ -609,8 +600,9 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 			return ERR_SYNTAX;
 
 	} else {
-		// TODO precedence
-		// (*tree)->a
+		ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)));
+		if (ERR)
+			return ERR;
 
 		GET_TOKEN(true);
 		if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
@@ -647,81 +639,16 @@ Error generate_if_let_declaration_override_statement(ASTNode** tree, char* id){
 	if ((*tree)->b == NULL)
 		return ERR_INTERNAL;
 
-	((ASTNode*)((*tree)->a))->a = (void*)NIL;
+	((ASTNode*)((*tree)->a))->a = (void*)TYPE_NIL;
 	((ASTNode*)((*tree)->a))->b = (void*)false;
 
 	((ASTNode*)((*tree)->b))->a = (void*)id;
-	// TODO generate expression with variable name
 	// ((ASTNode*)((*tree)->b))->b = (void*);
 
+	variable_expression((exp_node**)(&(((ASTNode*)((*tree)->b))->b)), id);
 	
 	return OK;
 }
-
-
-Error ll_if_head(BufferString* buffer_string, ASTNode* tree){
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_KEYWORD_IF)
-		return ERR_SYNTAX;
-	
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
-		return ERR_SYNTAX;
-	
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN == TOKEN_KEYWORD_LET){
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
-			return ERR_SYNTAX;
-		
-		char* name = BufferString_get_as_string(buffer_string);
-		if (name == NULL)
-			return ERR_INTERNAL;
-		
-		// TODO pre generated expression
-		// tree->a
-
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
-			return ERR_SYNTAX;
-		
-
-
-
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
-			return ERR_SYNTAX;
-
-		// TODO pre generated statement
-
-		ERR = ll_statements(buffer_string, (ASTNode**)(&(((ASTNode*)(tree->b))->a)));
-		if (ERR)
-			return ERR;
-
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_BRACE_RIGHT)
-			return ERR_SYNTAX;
-
-	} else {
-		// TODO precedence
-		// tree->a
-
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
-			return ERR_SYNTAX;
-
-		ERR = ll_statements(buffer_string, (ASTNode**)(&(((ASTNode*)(tree->b))->a)));
-		if (ERR)
-			return ERR;
-
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_BRACE_RIGHT)
-			return ERR_SYNTAX;
-	}
-
-	return ll_else(buffer_string, (ASTNode**)(&(((ASTNode*)(tree->b))->b)));
-}
-
 
 Error ll_else(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);

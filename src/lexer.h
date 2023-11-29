@@ -6,6 +6,7 @@
 #include "buffer_string.h"
 #include "error.h"
 
+
 typedef enum{
     // Error token
     TOKEN_ERR_INTERNAL, // token indicating internal error (ERR_INTERNAL)
@@ -65,7 +66,14 @@ typedef enum{
     PRECEDENT_END,
 } Token;
 
-// Token CURRENT_TOKEN;
+
+extern Token CURRENT_TOKEN;
+
+
+#define GET_TOKEN(skip_eol) \
+	CURRENT_TOKEN = get_token(buffer_string, skip_eol); \
+	if (CURRENT_TOKEN == TOKEN_ERR_INTERNAL || CURRENT_TOKEN == TOKEN_ERR_LEXICAL) \
+		return (CURRENT_TOKEN == TOKEN_ERR_INTERNAL ? ERR_INTERNAL : ERR_LEXICAL);
 
 
 #ifndef NDEBUG
@@ -175,8 +183,6 @@ Token get_token(BufferString* buffer_string, bool skip_eol);
 
 void unget_token();
 
-// finds next token
-// returns Token type
 Token get_next_token(BufferString* buffer_string);
 
 #endif

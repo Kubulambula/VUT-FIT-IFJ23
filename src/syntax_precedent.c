@@ -1,5 +1,7 @@
-#include "syntax_precedent.h"
 #include <stdlib.h>
+#include <assert.h>
+#include "syntax_precedent.h"
+#include "syntax_ll.h"
 
 #define STACK_SIZE 10
 bool ENDING_IDENTIFIER_FLAG = false;
@@ -72,13 +74,13 @@ void Stack_Push(Stack *stack, union data element){
 	}
     stack->topIndex++;
 	stack->elements[stack->topIndex] = element;
-};
+}
 
 void Stack_Pop(Stack *stack){
     if(!(Stack_IsEmpty(stack))){
 		stack->topIndex--;
 	}
-};
+}
 
 void Stack_Dispose(Stack *stack){
     if(stack != NULL){
@@ -94,7 +96,7 @@ void Stack_Purge(exp_node *node){
         Stack_Purge(node->right);
         free(node);
     }
-};
+}
 
 void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *buffer_string){
     Stack_Push(tokenStack, (union data)token);
@@ -109,6 +111,8 @@ void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *
             Stack_Push(valueStack, (union data)(union literalValue)BufferString_get_as_double(buffer_string));
             break;
         default:
+            // Should report an error???
+            break;
     }
 }
 
@@ -322,7 +326,7 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
     return table[token2index(stack_top_token)][token2index(current_precedent_token)];
 }
 
-Error precedent(exp_node **node, BufferString* buffer_string){
+Error precedent(BufferString* buffer_string, exp_node **node){
     Token top;
     Stack tokenStack;
     Stack nodeStack;
@@ -437,4 +441,5 @@ Error variable_expression(exp_node **node, char* identifier_name){
     if(*node == NULL){
         return ERR_INTERNAL;
     }
+    return OK;
 }

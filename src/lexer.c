@@ -6,10 +6,11 @@
 
 #include "lexer.h"
 
-// Token CURRENT_TOKEN;
 
 
 FILE* source_file = NULL;
+
+Token CURRENT_TOKEN;
 
 Token last_token = TOKEN_ERR_INTERNAL;
 bool use_last_token = false;

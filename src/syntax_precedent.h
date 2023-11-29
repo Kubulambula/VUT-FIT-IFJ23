@@ -4,15 +4,24 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "lexer.h"
-//#include "ast.h"
-#include "syntax_ll_grammar.h"
+// #include "ast.h"
+// #include "syntax_ll.h"
 
 // Union literálů
+// union literalValue{
+//     int i;      
+//     double d;
+//     char* s;
+// };
+
+// Union literalu
 union literalValue{
-    int i;      
+    int i;
     double d;
     char* s;
+    Token t;
 };
+
 
 // Struktura uzlu výrazu
 typedef struct exp_node_t{
@@ -92,9 +101,12 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
 int precedent_table(Token stack_top_token, Token current_token);
 
 // Funkce provede precedenční analýzu výrazu a sestavý pro něj AST. Funkce nepočítá s epsilon pravidly (prázdný výraz není validní výraz)
-Error precedent(exp_node **node, BufferString* buffer_string);
+Error precedent(BufferString* buffer_string, exp_node **node);
 
 Error let_nil(exp_node **node, char* identifier);
+
+Error variable_expression(exp_node **node, char* identifier_name);
+
 
 // tohle všechno může být v type:
 //TOKEN_OPERATOR_PLUS,       left je levý operátor, right je pravý operátor(tohle platí pro všechny binární operátory)

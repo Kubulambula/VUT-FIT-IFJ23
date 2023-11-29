@@ -14,15 +14,11 @@ int main(void) {
 	if (!BufferString_init(&buffer_string))
 		return ERR_INTERNAL;
 	
-	SymTable table;
-	if (!SymTable_init(&table))
-		return ERR_INTERNAL;
-
 	ASTNode* ast = ASTNode_new(ROOT);
 	if (ast == NULL)
 		return ERR_INTERNAL;
 
-	Error err = ll_program(&buffer_string, &table, &ast);
+	Error err = ll_program(&buffer_string, &ast);
 	printf("ERR: %d\n", err);
 	return err;
 }

@@ -18,33 +18,13 @@ typedef enum{
 } SymbolType;
 
 
-typedef enum{
-    NONE, // for no return check
-    NIL, // void funkce
-    INT,
-    //BOOL,
-    DOUBLE,
-    STRING,
-} Type;
-
-
-
-
-// typedef struct FuncDefArg{
-//     char* name;
-//     char* identifier;
-//     Type type;
-//     struct FuncDefArg* next;
-// }FuncDefArg;
-
-
 typedef struct{
     char* name;
     SymbolType symbol_type;
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
-    FuncDefArg *args;  //list of arguments of function
+    FuncDefArg* args;  //list of arguments of function
 } Symbol;
 
 
@@ -53,14 +33,11 @@ Symbol* Symbol_new();
 void Symbol_free(Symbol* symbol);
 
 
-
-
-
-typedef struct{
+typedef struct SymTable_t{
     Symbol** table;  // pointer to symbol table
     int size;   //table size
     int count;  //count of symbols inserted
-    SymTable* previous;
+    struct SymTable_t* previous;
 } SymTable;
 
 
@@ -98,6 +75,5 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
 */
 //Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
 Symbol* SymTable_get(SymTable* symTable, char* name);
-
 
 #endif

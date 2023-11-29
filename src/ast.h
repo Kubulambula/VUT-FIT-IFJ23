@@ -1,8 +1,20 @@
 #ifndef AST_H
 #define AST_H
 
-#include "symtable.h"
+// #include "symtable.h"
 #include "lexer.h"
+#include "syntax_precedent.h"
+
+
+typedef enum{
+    TYPE_NONE, // for no return check
+    TYPE_NIL, // void funkce
+    TYPE_INT,
+    //TYPE_BOOL,
+    TYPE_DOUBLE,
+    TYPE_STRING,
+} Type;
+
 
 typedef struct FuncDefArg{
     char* name;
@@ -10,6 +22,7 @@ typedef struct FuncDefArg{
     Type type;
     struct FuncDefArg* next;
 }FuncDefArg;
+
 
 typedef enum {
     // EXPRESSION = If it's a literal, the expression has the value of the literal.
@@ -40,8 +53,6 @@ typedef enum {
     
     RETURN, // a is expression - some operator
 
-
- 
     EXPRESSION, // a is EXPRESSION_TREE, b is NULL 
    
 } ASTNodeType;
@@ -54,37 +65,31 @@ typedef struct{
     void* b;  
 } ASTNode;
 
-// Union literálů
-union literalValue{
-    int i;
-    double d;
-    char* s;
-    Token t;
-};
 
-// Struktura uzlu výrazu
-typedef struct{
-    Token type;                 // typ uzlu
-    union literalValue value;   // hodnota uzlu, v případě že jde o literál
-    exp_node* left;             // levý potomek
-    exp_node* right;            // pravý potomek
-} exp_node;
+// // Union literalu
+// union literalValue{
+//     int i;
+//     double d;
+//     char* s;
+//     Token t;
+// };
+
+
+// // Struktura uzlu výrazu
+// typedef struct{
+//     Token type;                 // typ uzlu
+//     union literalValue value;   // hodnota uzlu, v případě že jde o literál
+//     exp_node* left;             // levý potomek
+//     exp_node* right;            // pravý potomek
+// } exp_node;
 
 
 FuncDefArg* FuncDefArg_new();
 
 void FuncDefArg_free(FuncDefArg* arg);
 
-FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
-
-
-// typedef struct LList{
-//     void* value;
-//     struct LList* next;
-// } LList;
-
-
-
+// FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
+FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg);
 
 
 ASTNode* ASTNode_new(ASTNodeType type);
@@ -94,7 +99,4 @@ ASTNode* ASTNode_find_leftmost_node(ASTNode* node);
 ASTNode* ASTNode_find_rightmost_node(ASTNode* node);
 
 
-//TODO
-//functions for structs, too tired from ISS hell
-//void LList_dispose() for all trees ?? :C
 #endif
