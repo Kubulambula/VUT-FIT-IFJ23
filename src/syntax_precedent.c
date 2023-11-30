@@ -6,6 +6,7 @@
 #define STACK_SIZE 10
 bool ENDING_IDENTIFIER_FLAG = false;
 Token TEMP_TOKEN;
+int paranthesis_cnt;
 
 
 bool Stack_Init(Stack* stack, enum stack_type type){
@@ -345,6 +346,7 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
 
 Error precedent(BufferString* buffer_string, exp_node **node){
     ENDING_IDENTIFIER_FLAG = false;
+    paranthesis_cnt = 0;
     Token top;
     Stack tokenStack;
     Stack nodeStack;
@@ -354,6 +356,7 @@ Error precedent(BufferString* buffer_string, exp_node **node){
     CURRENT_TOKEN = get_token(buffer_string, true);
     if(token2index(CURRENT_TOKEN) > 7) //checks for empty expression
         return ERR_SYNTAX;
+
     if(!Stack_Init(&tokenStack, TOKEN) || !Stack_Init(&nodeStack, NODE) || !Stack_Init(&valueStack, VALUE)){
         Stack_Dispose(&tokenStack);
         Stack_Dispose(&nodeStack);
@@ -367,7 +370,18 @@ Error precedent(BufferString* buffer_string, exp_node **node){
 
     while(top != PRECEDENT_END || token2index(CURRENT_TOKEN) != 8){
         //ll_log("precedent");
+        if(CURRENT_TOKEN == TOKEN_PARENTHESIS_LEFT){
+            paranthesis_cnt++;}
+        else if(CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT){
+            paranthesis_cnt--;
+        }
+
         state = precedent_table(top, CURRENT_TOKEN);
+
+        if(paranthesis_cnt < 0 && state == 2){
+            state == 5;
+        }
+        
         switch(state){
             case 0:
                 Stack_Dispose(&tokenStack);
