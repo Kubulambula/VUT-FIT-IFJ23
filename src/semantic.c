@@ -4,8 +4,38 @@
 #include <stdlib.h>
 #include "lexer.h"
 
+static Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
+{
+    SymTable* global = tables;
+    while(global->previous != NULL)
+        global = global->previous;
+    
+    Symbol* target = SymTable_get(global,func->a);
+    if(target == NULL || target->type != FUNCTION)
+        return ERR_SEMATIC_UNDEFINED_FUNC;
+    
+    FuncDefArg* args = func->b;
+    while(args != NULL)
+    {
+        //problem
+    }
 
-Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
+}
+static Token nonLiteral_in_exp(exp_node* node)
+{
+    if(node == NULL)
+        return TOKEN_KEYWORD_NIL;
+    if(node->type= TOKEN_KEYWORD_FUNC || node->type == TOKEN_IDENTIFIER)
+        return TOKEN_KEYWORD_VAR;
+
+    if(nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL)
+        return TOKEN_KEYWORD_VAR;
+    if(nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL)
+        return TOKEN_KEYWORD_VAR;
+
+    return TOKEN_KEYWORD_NIL;
+}
+static Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
 {
     while(symTable != NULL)
     {
@@ -19,7 +49,7 @@ Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
     return NULL;
 }
 
-Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
+static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
 {
     switch (node->type)
     {
@@ -38,25 +68,94 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
         break;
 
         //VARIABLES
-    case TOKEN_IDENTIFIER: //var/let
+    case TOKEN_IDENTIFIER:
         Symbol* target = SymTable_get_recurse(tables,node->value.s);
         if(target == NULL || target->symbol_type == FUNCTION)
+            return ERR_SEMATIC_UNDEFINED_VAR;
+        if (!target->initialized)
             return ERR_SEMATIC_UNDEFINED_VAR;
         *returnType = target->type;
         return OK;
         break;
-    case TOKEN_KEYWORD_FUNC:
-        break;
-        //OPERATORS
-    case TOKEN_OPERATOR_MINUS: // - 
-        break;
-    case TOKEN_OPERATOR_MULTIPLICATION: // *
-        break;
-    case TOKEN_OPERATOR_DIVISION: // /
+
+    case TOKEN_KEYWORD_FUNC:                                          
+        Type out = NIL;
+        Error err = funcCallCheck(node->left,&out,tables);
+        if(err != OK)
+            return err;
+        if(out == NIL)
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        *returnType = out;
+        return OK;
         break;
 
-    
+    //OPERATORS
+    case TOKEN_OPERATOR_MINUS: // - 
+    case TOKEN_OPERATOR_MULTIPLICATION: // *
+        Type a,b;
+        Error aEr = handle_expression(node->left,tables,&a);
+        if(aEr != OK)
+            return aEr;
+        Error bEr = handle_expression(node->right,tables,&b);
+        if(bEr != OK)
+            return bEr;
+        if((a == INT && b == INT)||(a==DOUBLE&&b==DOUBLE))  //INT INT || DOUBLE DOUBLE
+        {
+            *returnType = a;
+            return OK;
+        }
+        if(a == INT && b == DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL); // LITERAL INT DOUBLE
+        {
+            *returnType = DOUBLE;
+            return OK;
+        }
+        if(a == DOUBLE && b == INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL);// DOUBLE LITERAL INT
+        {
+            *returnType = DOUBLE;
+            return OK;
+        }
+        return ERR_SEMATIC_INCOMPATIBLE_TYPES ; //all other wrong types
+        break;
+
+    case TOKEN_OPERATOR_DIVISION: // /
+        Type a,b;
+        Error aEr = handle_expression(node->left,tables,&a);
+        if(aEr != OK)
+            return aEr;
+        Error bEr = handle_expression(node->right,tables,&b);
+        if(bEr != OK)
+            return bEr;
+        if((a == INT && b == INT)||(a==DOUBLE&&b==DOUBLE))  //INT INT || DOUBLE DOUBLE
+        {
+            *returnType = a;
+            return OK;
+        }
+        return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        break;
     case TOKEN_OPERATOR_PLUS:   // +
+        Type a,b;
+        Error aEr = handle_expression(node->left,tables,&a);
+        if(aEr != OK)
+            return aEr;
+        Error bEr = handle_expression(node->right,tables,&b);
+        if(bEr != OK)
+            return bEr;
+        if((a == INT && b == INT)||(a==DOUBLE&&b==DOUBLE)|| (a == STRING && b == STRING))  //INT INT || DOUBLE DOUBLE || STRING STRING
+        {
+            *returnType = a;
+            return OK;
+        }
+        if(a == INT && b == DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL); // LITERAL INT DOUBLE
+        {
+            *returnType = DOUBLE;
+            return OK;
+        }
+        if(a == DOUBLE && b == INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL);// DOUBLE LITERAL INT
+        {
+            *returnType = DOUBLE;
+            return OK;
+        }
+        return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         break;
     
     //LOGICAL
@@ -66,6 +165,7 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
     case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
     case TOKEN_OPERATOR_EQUALS: // ==
     case TOKEN_OPERATOR_NOT_EQUALS: // !=
+    case TOKEN_NIL_COALESCING:  // ??
         Type a,b;
         Error aEr = handle_expression(node->left,tables,&a);
         if(aEr != OK)
@@ -75,26 +175,32 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
             return bEr;
         if (a != b)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-        if(a == BOOL)
+        if(a == BOOL || a == NIL)
             return ERR_SYNTAX;
-        *returnType = a;
+        *returnType = BOOL;
         return OK;
         break;
 
-    case TOKEN_NIL_COALESCING:
+    case TOKEN_EXCLAMATION:
+        *returnType = ((exp_node*)node->left)->type;
+        return OK;
         break;
+
+ 
+        
     }
 }
 
-Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
+static Error handle_statement(ASTNode* statement,SymTable* tables,Type expected_type)
 {
 
     switch (statement->type)
     {
     case VAR_DEF:
-        //VAR DEF
+    case LET_DEF:
         Symbol* var = Symbol_new();
-        var->symbol_type=VAR;
+
+        var->symbol_type=(statement->type == VAR_DEF)?VAR:LET;
         var->name=((ASTNode*)statement->b)->a;
         var->type=((ASTNode*)statement->a)->a;
         var->nilable=((ASTNode*)statement->a)->b;
@@ -104,7 +210,7 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
             free(var);
             return error;
         }
-        // AMIDIATE VAR ASIGN
+        // AMIDIATE ASIGN
         if (((ASTNode*)statement->b)->b == NULL)
         {
             if (var->type == NIL || var->nilable ==false)
@@ -112,14 +218,12 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
             else
                 return OK;
         }
-
         Type expReturnType;
         Error error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType);
         if (error != OK )
             return error;
         if(!var->nilable && expReturnType == NIL)
-            return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-        
+            return ERR_SEMATIC_BAD_TYPE_INFERENCE; 
         //type infering
         if(var->type == NIL)
         {
@@ -127,49 +231,9 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
         }else if (var->type != expReturnType)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         var->initialized=true;
-
-
-    case LET_DEF:
-        Symbol* let = Symbol_new();
-        let->symbol_type=LET;
-        let->name=((ASTNode*)statement->b)->a;
-        let->type=((ASTNode*)statement->a)->a;
-        let->nilable=((ASTNode*)statement->a)->b;
-        Error error = SymTable_insert(tables,let);
-        if(error != OK)
-        {
-            free(let);
-            return error;
-        }
-        // AMIDIATE LET ASIGN
-        if (((ASTNode*)statement->b)->b == NULL)
-        {
-            if (let->type == NIL || let->nilable ==false)
-                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-            else
-                return OK;
-        }
-
-        Type expReturnType;
-        Error error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType);
-        if (error != OK )
-            return error;
-        if(!let->nilable && expReturnType == NIL)
-            return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-        
-        //type infering
-        if(let->type == NIL)
-        {
-            let->type = expReturnType;    
-        }else if (let->type != expReturnType)
-            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-        let->initialized=true;
-        
-
-
-
-
+        return OK;
         break;
+
     case ASSIGN:
         Symbol* target = SymTable_get_recurse(tables,statement->a);
         if(target == NULL || target->symbol_type == FUNCTION)   //var/let exists check
@@ -190,7 +254,18 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
         
         break;
     case FUNC_CALL:
-
+        
+        SymTable* global = tables;
+        while(global->previous!=NULL)
+            global = global->previous;
+        Symbol* target = SymTable_get(tables,statement->a);
+        if(target == NULL || target->symbol_type == VAR || target->symbol_type == LET)   //var/let exists check
+            return ERR_SEMATIC_UNDEFINED_FUNC;
+        Type dump = NIL;
+        Error err = funcCallCheck(statement->a,&dump,tables);
+        if (err !=OK)
+            return err;
+        return OK;
         break;
     case IFELSE:
 
@@ -204,11 +279,9 @@ Error handle_statements(ASTNode* statement,SymTable* tables,Type returnType)
 
     }
 
-    statement = statement->b;
-
 }
 
-void error_free_all(SymTable* tables)
+static void error_free_all(SymTable* tables)
 {
     while(tables !=NULL)
     {
@@ -220,33 +293,57 @@ void error_free_all(SymTable* tables)
 
 
 
+Error handle_statements(ASTNode*statement,SymTable* tables,Type expected_type)
+{
+    SymTable* localTable = malloc(sizeof(SymTable));
+    SymTable_init(localTable);
+    localTable->previous=tables;
+    while(statement!= NULL)
+    {
+        Error err = handle_statement(statement,localTable,expected_type);
+        if(err != OK)
+        {
+            SymTable_free(localTable);
+            return err;
+        }
 
+        statement=statement->b;
+    }
+    return OK;
+}
 
 
 Error sematic(ASTNode *code_tree)
 {
     //GLOBAL SymTable
-    SymTable *tables = malloc(sizeof(SymTable));
-    SymTable_init(tables);
-    tables->previous = NULL;
+    SymTable *globalTable = malloc(sizeof(SymTable));
+    SymTable_init(globalTable);
+    globalTable->previous = NULL;
+
+    //PRE-DEFINED FUNCTIONS TO SYMTABLE
 
 
-    //FUNCTIONS TO SYMTABLE
+    //USER FUNCTIONS TO SYMTABLE
     ASTNode *functions = code_tree->a;
     while(functions != NULL)
     {
         
         ASTNode *func = (ASTNode*)(functions->b);
+        if(func->b == NULL)
+        {
+            error_free_all(globalTable);
+            return ERR_SEMATIC_UNDEFINED_FUNC;
+        }
         Symbol *symbolFunc = Symbol_new();
         symbolFunc->symbol_type = FUNCTION;
         symbolFunc->args = (FuncDefArg*)((ASTNode*)(((ASTNode*)func->a)->a))->b;
         symbolFunc->name = ((ASTNode*)(((ASTNode*)func->a)->a))->a;
         symbolFunc->type = ((ASTNode*)func->a)->b;
 
-        Error error= SymTable_insert(tables,symbolFunc);
+        Error error= SymTable_insert(globalTable,symbolFunc);
         if(error != OK)
         {
-            error_free_all(tables);
+            error_free_all(globalTable);
             Symbol_free(symbolFunc);
             return error;
         }
@@ -261,22 +358,44 @@ Error sematic(ASTNode *code_tree)
     {
         //HANDLE FUNC BODY
         ASTNode *func = functions->b;
-        Symbol* symbolFunc = SymTable_get(tables,((ASTNode*)(((ASTNode*)func->a)->a))->a);
+        Symbol* symbolFunc = SymTable_get(globalTable,((ASTNode*)(((ASTNode*)func->a)->a))->a);
         
-        //func symtable  
-        SymTable *innerTables = malloc(sizeof(SymTable));
-        SymTable_init(innerTables);
-        innerTables->previous = tables;
+        //extra symtable with args
+        SymTable *funcArgTable = malloc(sizeof(SymTable));
+        SymTable_init(funcArgTable);
+        funcArgTable->previous = globalTable;
+
+      
+      
+        FuncDefArg* arg = symbolFunc->args;
+        while(arg != NULL)
+        {
+            Symbol* symbolArg = Symbol_new();
+            symbolArg->initialized=true;
+            symbolArg->name=arg->identifier;
+            symbolArg->nilable=false;
+            symbolArg->symbol_type= LET;
+            symbolArg->type=arg->type;                       
+            Error error= SymTable_insert(funcArgTable,symbolArg);
+            if(error != OK)
+            {
+                error_free_all(funcArgTable);
+                Symbol_free(symbolArg);
+                return error;
+            }
+            arg = arg->next;
+        }
+
 
         //func body code check
         ASTNode *statement = func->b; 
-        Error error = handle_statements(func->b,innerTables,symbolFunc->type);
+        Error error = handle_statements(func->b,funcArgTable,symbolFunc->type);
         if (error != OK)
         {
-            error_free_all(innerTables);
+            error_free_all(funcArgTable);
             return error; 
         }
-        SymTable_free(innerTables);
+        SymTable_free(funcArgTable);
 
         functions = functions->a;
     }
@@ -285,7 +404,7 @@ Error sematic(ASTNode *code_tree)
 
 
     //MAIN BODY
-    Error error = handle_statements(main,tables,NIL);
+    Error error = handle_statements(main,globalTable,NONE);
 
 
 
@@ -296,7 +415,6 @@ Error sematic(ASTNode *code_tree)
 
 //return v globalu? NESMÍ BÝT
 
-// odvozeni typu?
 
 //typy u operátorů, (int op double ? )
 //string operátory
