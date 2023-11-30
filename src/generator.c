@@ -109,6 +109,28 @@ void func_built_in(){
 
     // func substring
     printf("LABEL substring\n");
+    printf("CREATEFRAME\n");
+    //definice promenych
+    printf("DEFVAR TF@&retV\n");
+    printf("DEFVAR TF@&1\n");
+    printf("DEFVAR TF@&2\n");
+    printf("DEFVAR TF@&3\n");
+    printf("MOVE TF@&retV string@\n");
+    printf("MOVE TF@&1 GF@arg\n");           //retezec
+    printf("MOVE TF@&2 GF@arg2\n");          //startIndex i
+    printf("MOVE TF@&3 GF@arg3\n");          //endIndex+1 j
+    printf("DEFVAR TF@tempBool\n");         //pomocna promena pro skoky
+    printf("DEFVAR TF@tempChar\n");         //pomocna promena pro ukladani znaku
+    
+    //cyklus
+    printf("LABEL substringWHILE\n");
+    printf("LT TF@tempBool TF@&2 TF@&3\n"); 
+    printf("JUMPIFEQ substringEND TF@tempBool bool@false\n");
+        printf("GETCHAR TF@tempChar TF@&1 TF@&2\n");
+        printf("CONCAT TF@&retV TF@&retV TF@tempChar\n");
+        printf("ADD TF@&2 TF@&2 int@1\n");
+        printf("JUMP substringWHILE\n");
+    printf("LABEL substringEND\n");
     printf("RETURN \n");
 
     //FUNC substring FOR TESTING
@@ -116,27 +138,28 @@ void func_built_in(){
     LABEL substring
     CREATEFRAME
     #definice promenych
-    DEFVAR TF@retV
+    DEFVAR TF@&retV
     DEFVAR TF@&1
     DEFVAR TF@&2
     DEFVAR TF@&3
+    MOVE TF@&retV string@
     MOVE TF@&1 GF@arg           #retezec
     MOVE TF@&2 GF@arg2          #startIndex i
     MOVE TF@&3 GF@arg3          #endIndex+1 j
-    DEFVAR TF@&temp             #promena pro pocet cyklu
-    DEFVAR TF@&tempBool         #pomocna promena pro skoky
-    DEFVAR TF@&tempChar         #pomocna promena pro ukladani znaku
-    SUB TF@&temp TF@&2 TF@&1    #pocet cyklu
+    DEFVAR TF@tempBool         #pomocna promena pro skoky
+    DEFVAR TF@tempChar         #pomocna promena pro ukladani znaku
     
     #cyklus
     LABEL substringWHILE
-    LT TF@&tempBool TF@&temp TF@&2
+    LT TF@tempBool TF@&2 TF@&3 
     JUMPIFEQ substringEND TF@tempBool bool@false
-        GETCHAR tempChar TF@&1 TF@tempBool
-        CONCAT TF@retV TF@retV tempChar
-        ADD TF@tempBool TF@tempBool int@1
+        GETCHAR TF@tempChar TF@&1 TF@&2
+        CONCAT TF@&retV TF@&retV TF@tempChar
+        ADD TF@&2 TF@&2 int@1
         JUMP substringWHILE
     LABEL substringEND
+
+    RETURN
 
     RETURN
     */
