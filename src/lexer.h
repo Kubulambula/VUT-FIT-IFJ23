@@ -111,6 +111,7 @@ static inline void print_token_as_string(Token t){
         "TOKEN_LITERAL_INT",
         "TOKEN_LITERAL_DOUBLE",
         "TOKEN_LITERAL_STRING",
+        "TOKEN_LITERAL_NIL",
         "TOKEN_ASSIGN",
         "TOKEN_EXCLAMATION",
         "TOKEN_QUESTION",
@@ -119,6 +120,8 @@ static inline void print_token_as_string(Token t){
         "TOKEN_COLON",
         "TOKEN_ARROW",
         "TOKEN_IDENTIFIER",
+        "PRECEDENT_E",
+        "PRECEDENT_END",
     };
     printf("%s\n", tokens_as_string[t]);
     //printf("%s", tokens_as_string[t]);

@@ -50,6 +50,9 @@ typedef enum {
     IFELSE, // a is expression condition, b IFELSE_BODIES
         IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are STATEMENTs
     WHILE, // a is expression condition and b is STATEMENT
+
+    //UPSCOPE // a is name of variable that should be copies to be upper scope
+    // ^^^ o tomto se musime poradit na meetingu ^^^
     
     RETURN, // a is expression - some operator
 

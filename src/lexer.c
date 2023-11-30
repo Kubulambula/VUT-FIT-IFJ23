@@ -7,6 +7,8 @@
 #include "lexer.h"
 
 
+// declaration from error.h
+Error ERR;
 
 FILE* source_file = NULL;
 
@@ -224,7 +226,7 @@ void unget_token(){
 Token get_next_token(BufferString* buffer_string){
         char nextChar;
         State state = LEXER_STATE_START;
-        Error err;
+        // Error err;
         // Clear the BufferString from the junk accumulated from previous token
         BufferString_clear(buffer_string);
 
@@ -481,13 +483,13 @@ Token get_next_token(BufferString* buffer_string){
                 
                 case LEXER_STATE_STRING_ESCAPE:
                     ungetc(nextChar, source_file); // push the char back for escape_string()
-                    err = escape_string(buffer_string);
-                    if (err == ERR_INTERNAL)
+                    ERR = escape_string(buffer_string);
+                    if (ERR == ERR_INTERNAL)
                         return TOKEN_ERR_INTERNAL;
-                    else if (err == ERR_LEXICAL)
+                    else if (ERR == ERR_LEXICAL)
                         return TOKEN_ERR_LEXICAL;
                     // sanity check
-                    assert(err == OK);
+                    assert(ERR == OK);
                     // it was ok, so return back to normal string
                     state = LEXER_STATE_STRING;
                     break;
@@ -526,13 +528,13 @@ Token get_next_token(BufferString* buffer_string){
                 
                 case LEXER_STATE_MULTILINE_STRING_ESCAPE:
                     ungetc(nextChar, source_file); // push the char back for escape_string()
-                    err = escape_string(buffer_string);
-                    if (err == ERR_INTERNAL)
+                    ERR = escape_string(buffer_string);
+                    if (ERR == ERR_INTERNAL)
                         return TOKEN_ERR_INTERNAL;
-                    else if (err == ERR_LEXICAL)
+                    else if (ERR == ERR_LEXICAL)
                         return TOKEN_ERR_LEXICAL;
                     // sanity check
-                    assert(err == OK);
+                    assert(ERR == OK);
                     // it was ok, so return back to normal string
                     state = LEXER_STATE_MULTILINE_STRING;
                     break;

@@ -4,10 +4,6 @@
 #include "lexer.h"
 
 
-// declaration from error.h
-Error ERR;
-
-
 Error ll_program(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
@@ -374,27 +370,20 @@ Error ll_func_call_arg_with_name(BufferString* buffer_string, ASTNode* tree){
 	if (CURRENT_TOKEN != TOKEN_COLON)
 		return ERR_SYNTAX;
 	
-	// TODO precedence get value
+	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)));
+	if (ERR)
+		return ERR;
+	
 	return OK;
 }
 
 Error ll_func_call_arg_without_name(BufferString* buffer_string, ASTNode* tree){
+	tree->a = NULL; // the argument was used without a name
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// TODO precedence get value
+	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)));
+	if (ERR)
+		return ERR;
+	
 	return OK;
 }
 
@@ -515,17 +504,17 @@ Error ll_while(BufferString* buffer_string, ASTNode** tree){
 	if (*tree == NULL)
 		return ERR_INTERNAL;
 
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
-		return ERR_SYNTAX;
+	// GET_TOKEN(true);
+	// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
+	// 	return ERR_SYNTAX;
 	
 	ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)));
 	if (ERR)
 		return ERR;
 
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
-		return ERR_SYNTAX;
+	// GET_TOKEN(true);
+	// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
+	// 	return ERR_SYNTAX;
 
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
@@ -569,9 +558,9 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_IF)
 		return ERR_SYNTAX;
 	
-	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
-		return ERR_SYNTAX;
+	// GET_TOKEN(true);
+	// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
+	// 	return ERR_SYNTAX;
 	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_KEYWORD_LET){
@@ -587,19 +576,20 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 		if (ERR)
 			return ERR;
 
-		GET_TOKEN(true);
-		if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
-			return ERR_SYNTAX;
+		// GET_TOKEN(true);
+		// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
+		// 	return ERR_SYNTAX;
 		
 		GET_TOKEN(true);
 		if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
 			return ERR_SYNTAX;
 
-		// TODO pre generated statement
-		// bodies->a
-
-		// find last statement
-		// ERR = ll_statements(buffer_string, ));
+		ERR = generate_if_let_declaration_override_statement((ASTNode**)(&(bodies->a)), id);
+		if (ERR)
+			return ERR;
+		
+		// add statements behind the generated one
+		ERR = ll_statements(buffer_string, (ASTNode**)(&(((ASTNode*)(bodies->a))->b)));
 		if (ERR)
 			return ERR;
 
@@ -608,9 +598,14 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 			return ERR_SYNTAX;
 
 	} else {
+		unget_token();
 		ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)));
 		if (ERR)
 			return ERR;
+
+		// GET_TOKEN(true);
+		// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
+		// 	return ERR_SYNTAX;
 
 		GET_TOKEN(true);
 		if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
