@@ -289,7 +289,7 @@ Error ll_func_call(BufferString* buffer_string, ASTNode** tree, char* func_name)
 	if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
 		return ERR_SYNTAX;
 	
-	ERR = ll_func_call_args(buffer_string, (ASTNode**)((*tree)->b));
+	ERR = ll_func_call_args(buffer_string, (ASTNode**)(&((*tree)->b)));
 	if (ERR)
 		return ERR;
 	
@@ -305,13 +305,24 @@ Error ll_func_call(BufferString* buffer_string, ASTNode** tree, char* func_name)
 // // foo(x, y)
 // // foo()
 Error ll_func_call_args(BufferString* buffer_string, ASTNode** tree){
-	GET_TOKEN(true);
-	unget_token();
-	if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT) // no args
-		return OK;
+	// save our position at the start of the firts arg just in case
+	ERR = save_current_file_offset();
+	if (ERR)
+		return ERR;
 
-	// Look mom! I am using a do-while loop!
-	do{
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT){ // no args
+		unget_token();
+		return OK;
+	}
+
+	// go back before the fist arg
+	// Using this function because ll_func_call_arg() has to look 2 token ahead and has to have its file offset set before the 1st arg
+	ERR = rollback_to_saved_file_offset();
+	if (ERR)
+		return ERR;
+
+	do{ // Look mom! I am using a do-while loop!
 		*tree = ASTNode_new(FUNC_CALL_ARGS);
 		if (*tree == NULL)
 			return ERR_INTERNAL;
@@ -333,6 +344,10 @@ Error ll_func_call_args(BufferString* buffer_string, ASTNode** tree){
 // // foo(x: val,)
 // // foo(val,)
 Error ll_func_call_arg(BufferString* buffer_string, ASTNode** tree){
+	*tree = ASTNode_new(FUNC_CALL_ARG);
+	if (*tree == NULL)
+		return ERR_INTERNAL;
+
 	ERR = save_current_file_offset(); // save our position at the start of the current arg
 	if (ERR)
 		return ERR;
@@ -340,14 +355,11 @@ Error ll_func_call_arg(BufferString* buffer_string, ASTNode** tree){
 	// call GET_TOKEN() 2x because we want to look two tokens ahead to decide how to process the arg
 	GET_TOKEN(true);
 	GET_TOKEN(true);
-	// immediately go back to the first token of the arg
+
+	// immediately go back to the first token of the arg so the following functions can work normally
 	ERR = rollback_to_saved_file_offset();
 	if (ERR)
 		return ERR;
-	
-	*tree = ASTNode_new(FUNC_CALL_ARG);
-	if (*tree == NULL)
-		return ERR_INTERNAL;
 
 	// CURRENT_TOKEN is still the value from the second calling of GET_TOKEN()
 	if (CURRENT_TOKEN == TOKEN_COLON) // arg with name
@@ -369,7 +381,7 @@ Error ll_func_call_arg_with_name(BufferString* buffer_string, ASTNode* tree){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_COLON)
 		return ERR_SYNTAX;
-	
+
 	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)));
 	if (ERR)
 		return ERR;
@@ -399,10 +411,8 @@ Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_ASSIGN)
 		return ERR_SYNTAX;
-
-	// TODO precendence get value
-
-	return OK;
+	
+	return precedent(buffer_string, (exp_node**)(&((*tree)->b)));
 }
 
 // var id: type = exp
