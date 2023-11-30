@@ -18,6 +18,7 @@ typedef enum{
 
 
 typedef enum{
+    NONE, //differentiate main and void func return type
     NIL, // void funkce
     INT,
     BOOL,   //need for expression return check
