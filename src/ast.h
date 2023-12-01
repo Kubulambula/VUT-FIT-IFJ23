@@ -44,6 +44,7 @@ typedef enum {
     ASSIGN, // a is variable name & b is EXPRESSION
     
     FUNC_CALL, // a is funcion name and b is FUNC_ARGS
+        // >>>>> This could be reworked to be the same as FuncDefArg <<<<<
         FUNC_CALL_ARGS, // a is FUNC_ARG & b is FUNC_ARGS or NULL if this was the last arg
             FUNC_CALL_ARG, // a is name b is expression with value
     
@@ -51,12 +52,13 @@ typedef enum {
         IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are STATEMENTs
     WHILE, // a is expression condition and b is STATEMENT
 
-    //UPSCOPE // a is name of variable that should be copies to be upper scope
-    // ^^^ o tomto se musime poradit na meetingu ^^^
+    //CHECK_IF_LET // a is variable name
+    // ^^^ o tomto se musime poradit na meetingu ^^^ - alternativy, jak to vyresit?
     
-    RETURN, // a is expression - some operator
+    RETURN, // a is expression - some operator & b is NULL
 
     EXPRESSION, // a is EXPRESSION_TREE, b is NULL 
+    // ^^^ o tomto se musime poradit na meetingu ^^^ - je to potreba???
    
 } ASTNodeType;
 

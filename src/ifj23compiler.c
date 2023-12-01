@@ -6,18 +6,16 @@
 #include "syntax_ll.h"
 #include "ast.h"
 
+
+
 int main(void) {
 	initLexer(stdin);
-
-	BufferString buffer_string;
-	if (!BufferString_init(&buffer_string))
-		return ERR_INTERNAL;
 	
-	ASTNode* ast = ASTNode_new(ROOT);
-	if (ast == NULL)
-		return ERR_INTERNAL;
+	Error err;
+	ASTNode* ast;
 
-	Error err = ll_program(&buffer_string, &ast);
+	err = syntax(&ast);
+
 	printf("ERR: %d\n", err);
-	return err;
+	return OK;
 }

@@ -4,6 +4,29 @@
 #include "lexer.h"
 
 
+Error syntax(ASTNode** tree){
+	BufferString buffer_string;
+	if(!BufferString_init(&buffer_string))
+		return ERR_INTERNAL;
+
+	*tree = ASTNode_new(ROOT);
+	if (*tree == NULL){
+		BufferString_free(&buffer_string);
+		return ERR_INTERNAL;
+	}
+
+	ERR = ll_program(&buffer_string, tree);
+	if (ERR){
+		BufferString_free(&buffer_string);
+		ASTNode_free(*tree);
+		*tree = NULL;
+		return ERR;
+	}
+
+	return OK;
+}
+
+
 Error ll_program(BufferString* buffer_string, ASTNode** tree){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
@@ -21,7 +44,7 @@ Error ll_program(BufferString* buffer_string, ASTNode** tree){
 
 		default: //<program> -> <statements> <program>
 			unget_token();
-			ERR = ll_statements(buffer_string, tree);
+			ERR = ll_statements(buffer_string, (ASTNode**)&(ASTNode_find_rightmost_node(*tree)->b));
 			return ERR ? ERR : ll_program(buffer_string, tree);
 	}
 }
