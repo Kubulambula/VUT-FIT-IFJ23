@@ -343,7 +343,7 @@ int precedent_table(Token stack_top_token, Token current_precedent_token){
 }
 
 
-Error precedent(BufferString* buffer_string, exp_node **node){
+Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
     ENDING_IDENTIFIER_FLAG = false;
     Token top;
     Stack tokenStack;
@@ -352,8 +352,10 @@ Error precedent(BufferString* buffer_string, exp_node **node){
     int state;
     union data data;
     CURRENT_TOKEN = get_token(buffer_string, true);
-    if(token2index(CURRENT_TOKEN) > 7) //checks for empty expression
+
+    if(token2index(CURRENT_TOKEN) > 7 && !allow_empty) //checks for empty expression
         return ERR_SYNTAX;
+
 
     if(!Stack_Init(&tokenStack, TOKEN) || !Stack_Init(&nodeStack, NODE) || !Stack_Init(&valueStack, VALUE)){
         Stack_Dispose(&tokenStack);

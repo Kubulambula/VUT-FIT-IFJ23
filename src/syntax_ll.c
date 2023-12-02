@@ -405,7 +405,7 @@ Error ll_func_call_arg_with_name(BufferString* buffer_string, ASTNode* tree){
 	if (CURRENT_TOKEN != TOKEN_COLON)
 		return ERR_SYNTAX;
 
-	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)));
+	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)), false);
 	if (ERR)
 		return ERR;
 	
@@ -415,7 +415,7 @@ Error ll_func_call_arg_with_name(BufferString* buffer_string, ASTNode* tree){
 Error ll_func_call_arg_without_name(BufferString* buffer_string, ASTNode* tree){
 	tree->a = NULL; // the argument was used without a name
 
-	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)));
+	ERR = precedent(buffer_string, (exp_node**)(&(tree->b)) , false);
 	if (ERR)
 		return ERR;
 	
@@ -435,7 +435,7 @@ Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
 	if (CURRENT_TOKEN != TOKEN_ASSIGN)
 		return ERR_SYNTAX;
 	
-	return precedent(buffer_string, (exp_node**)(&((*tree)->b)));
+	return precedent(buffer_string, (exp_node**)(&((*tree)->b)), false);
 }
 
 // var id: type = exp
@@ -468,7 +468,7 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 		((ASTNode*)(tree->a))->a = (void*)TYPE_NIL; // assign type
 		((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
 		// assign expression
-		return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b));
+		return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b), false);
 	}
 
 	// assign type
@@ -500,7 +500,7 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	}
 	
 	// assign expression
-	return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b));
+	return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b), false);
 }
 
 
@@ -541,7 +541,7 @@ Error ll_while(BufferString* buffer_string, ASTNode** tree){
 	// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_LEFT)
 	// 	return ERR_SYNTAX;
 	
-	ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)));
+	ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)), false);
 	if (ERR)
 		return ERR;
 
@@ -573,7 +573,7 @@ Error ll_return(BufferString* buffer_string, ASTNode** tree){
 	if (*tree == NULL)
 		return ERR_INTERNAL;
 	
-	return precedent(buffer_string, (exp_node**)(&((*tree)->a)));
+	return precedent(buffer_string, (exp_node**)(&((*tree)->a)), true);
 }
 
 Error ll_if(BufferString* buffer_string, ASTNode** tree){
@@ -632,7 +632,7 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 
 	} else {
 		unget_token();
-		ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)));
+		ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)), false);
 		if (ERR)
 			return ERR;
 

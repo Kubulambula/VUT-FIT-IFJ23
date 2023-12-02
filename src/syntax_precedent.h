@@ -100,7 +100,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
 int precedent_table(Token stack_top_token, Token current_token);
 
 // Funkce provede precedenční analýzu výrazu a sestavý pro něj AST. Funkce nepočítá s epsilon pravidly (prázdný výraz není validní výraz)
-Error precedent(BufferString* buffer_string, exp_node **node);
+Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty);
 
 Error let_nil(exp_node **node, char* identifier);
 
@@ -118,7 +118,7 @@ Error variable_expression(exp_node **node, char* identifier_name);
 //TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL,
 //TOKEN_OPERATOR_EQUALS,
 //TOKEN_OPERATOR_NOT_EQUALS,
-//TOKEN_EXCLAMATION, // !           left je levý operátor, right je NULL
+//TOKEN_EXCLAMATION, // !           left je levý operand, right je NULL
 //TOKEN_NIL_COALESCING,
 
 //TOKEN_LITERAL_INT,    v value je hodnota, left a right je NULL
