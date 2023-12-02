@@ -1,6 +1,7 @@
 #include "error.h"
 #include "ast.h"
 #include "lexer.h"  
+#include "symtable.h"  
 #include <stdlib.h>
 
 // built-in funcs detection
@@ -9,10 +10,7 @@
 
 
 
-
-
-
-void func_built_in(){
+void code_generation_buildin(){
 
     // ----- READ FUNC -----
 
@@ -234,7 +232,132 @@ void func_built_in(){
 
     // func write
     printf("LABEL write\n");
+    printf("RETURN \n");
 
 }
+
+
+void generate_args(FuncDefArg* Arg){
+    int ArgNum = 1;
+    while(Arg->next != NULL){
+        printf("DEFVAR TF@&%d",ArgNum);
+        printf("MOVE TF@&%d GF@arg%d",ArgNum, ArgNum);  // this should be done when calling the func
+        ArgNum++;
+    }
+}
+
+
+// might not be necessary
+// This needs to be done so retV can be assigned value beforehand
+void generate_retV(Type type){
+    switch (type)
+    {
+    //TODO
+    //Types ...
+    case STRING:
+        printf("DEFVAR TF@&retV");
+        printf("MOVE TF@&retV string@\n");
+        break;
+    
+    default:
+        break;
+    }
+
+}
+
+
+
+void code_generation_prep(){
+    printf("LABEL main");
+    code_generation_buildin();
+    printf("JUMP MAIN");
+}
+
+void code_generation(ASTNode* node){
+
+    //ASTNode* nextNode ;
+
+    switch (node -> type)
+    {
+    case ROOT:
+
+        if(node -> a != NULL){
+            code_generation(node -> a); // GENERATE USER FUNCS
+        }
+        else if(node -> b != NULL){
+            code_generation(node -> b); // NO MORE FUNCS TO GENERATE, GOING TO GLOBAL 
+        }
+        else{
+            return; // SHOULD BE DONE?
+        }
+
+        break;
+        
+    case FUNC_DEFS:
+
+        if(node -> a != NULL){
+            code_generation(node -> a); // FUNC DEFINITION
+        }
+        else if(node -> b != NULL){
+            code_generation(node -> b); // ANOTHER FUNC DEF
+        }
+        else{
+            return; // NO MORE FUNCS TO GENERATE
+        }
+
+        
+        break;
+
+    case STATEMENT:
+            
+        break;
+    
+    case FUNC_DEF:
+        
+        if(node -> a != NULL){
+            code_generation(node -> a); // FUNC HEAD
+        }
+        else if(node -> b != NULL){
+            code_generation(node -> b); // STATEMENT
+        }
+        else{
+            return; 
+        }
+ 
+        break;
+
+    case FUNC_HEAD:
+        if(node -> a != NULL){
+            code_generation(node -> a); // FUNC ARGS
+        }
+        else if(node -> b != NULL){
+            code_generation(node -> b); // STATEMENT
+        }
+        else{
+            return; 
+        }
+        break;
+
+    case FUNC_HEAD_SIGNATURE:
+        printf("LABEL %s", node -> a);
+        printf("CREATEFRAME");
+        if(node->b != NULL)
+            generate_args(node -> b);
+        break;
+        
+    default:
+        break;
+    }
+    
+
+
+
+}
+
+
+
+
+
+
 
 
