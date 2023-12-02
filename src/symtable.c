@@ -7,7 +7,8 @@
 Symbol* Symbol_new(){
     Symbol* symbol = (Symbol*)malloc(sizeof(Symbol));
     if(symbol != NULL){
-        symbol->type = NIL;
+        symbol->symbol_type = UNKNOWN,
+        symbol->type = TYPE_NIL;
         symbol->name = NULL;
         symbol->nilable = false;
         symbol->initialized = false;

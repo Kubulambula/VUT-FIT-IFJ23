@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <assert.h>
+// #include <assert.h>
 #include "ast.h"
 
 
@@ -11,6 +11,121 @@ ASTNode* ASTNode_new(ASTNodeType type){
 		node->b = NULL;
 	}
 	return node;
+}
+
+void ASTNode_free(ASTNode* node){
+    if (node == NULL)
+        return;
+    
+    switch (node->type){
+        case ROOT:
+            ASTNode_free((ASTNode*)node->a);
+            ASTNode_free((ASTNode*)node->b);
+            free(node);
+            break;
+        
+        case STATEMENT:
+            ASTNode_free((ASTNode*)node->a); // free the specific statement (assign, if, while, ...)
+            ASTNode_free((ASTNode*)node->b); // free the next statement
+            free(node);
+            break;
+        
+        case FUNC_DEFS:
+            ASTNode_free((ASTNode*)node->a);
+            ASTNode_free((ASTNode*)node->b);
+            free(node);
+            break;
+        
+        case FUNC_DEF:
+            ASTNode_free((ASTNode*)node->a);
+            ASTNode_free((ASTNode*)node->b);
+            free(node);
+            break;
+        
+        case FUNC_HEAD:
+            ASTNode_free((ASTNode*)node->a);
+            ASTNode_free((ASTNode*)node->b);
+            free(node);
+            break;
+        
+        case FUNC_HEAD_SIGNATURE:
+            free(node->a); // free function name
+            FuncDefArg_free((FuncDefArg*)(node->b)); // free FuncDefArgs
+            free(node);
+            break;
+        
+        case VAR_DEF:
+        case LET_DEF:
+            ASTNode_free((ASTNode*)node->a); // free VAR_TYPE
+            ASTNode_free((ASTNode*)node->b); // free VAR_HEAD
+            free(node);
+            break;
+        
+        case VAR_TYPE:
+            // do nothing - no need to free anything
+            free(node);
+            break;
+        
+        case VAR_HEAD:
+            free(node->a); // free the var name
+            // TODO free the expression
+            free(node);
+            break;
+        
+        case ASSIGN:
+            free(node->a); // free the var name
+            // TODO free the expression
+            free(node);
+            break;
+        
+        case FUNC_CALL:
+            printf(">>>>>>> %s\n", (char*)node->a);
+            free(node->a); // free func name
+            ASTNode_free((ASTNode*)node->b); // free the args
+            free(node);
+            break;
+        
+        case FUNC_CALL_ARGS:
+            ASTNode_free((ASTNode*)node->a); // free FUNC_ARG
+            ASTNode_free((ASTNode*)node->b); // free FUNC_ARGS
+            free(node);
+            break;
+        
+        case FUNC_CALL_ARG:
+            free(node->a); // free the arg name
+            // TODO free the expression
+            free(node);
+            break;
+        
+        case IFELSE:
+            // TODO free the expression
+            ASTNode_free((ASTNode*)node->b); // free the bodies
+            free(node);
+            break;
+        
+        case IFELSE_BODIES:
+            ASTNode_free((ASTNode*)node->a); // free the true branch
+            ASTNode_free((ASTNode*)node->b); // free the false branch
+            free(node);
+            break;
+        
+        case WHILE:
+            // TODO free the expression
+            ASTNode_free((ASTNode*)node->b); // free the while body
+            free(node);
+            break;
+        
+        case RETURN:
+            // TODO free the expression if not NULL
+            free(node);
+            break;
+        
+        case EXPRESSION:
+            break;
+        
+        default:
+            break;
+    }
 }
 
 
@@ -26,6 +141,16 @@ ASTNode* ASTNode_find_leftmost_node(ASTNode* node){
 }
 
 
+ASTNode* ASTNode_find_rightmost_node(ASTNode* node){
+	if(node == NULL)
+		return NULL;
+	
+	while (node->b != NULL){
+		node = node->b;
+	}
+
+	return node;
+}
 
 
 FuncDefArg* FuncDefArg_new(){
@@ -33,7 +158,7 @@ FuncDefArg* FuncDefArg_new(){
     if (arg != NULL){
         arg->name = NULL;
         arg->identifier = NULL;
-        arg->type = NIL;
+        arg->type = TYPE_NIL;
         arg->next = NULL;
     }
 
