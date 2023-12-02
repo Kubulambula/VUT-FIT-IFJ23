@@ -101,7 +101,7 @@ void Stack_Dispose(Stack *stack){
 }
 
 
-void Stack_Purge(exp_node *node){
+void exp_node_purge(exp_node *node){
     if(node != NULL){
         Stack_Purge(node->left);
         Stack_Purge(node->right);
@@ -265,7 +265,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             Stack_Pop(nodeStack);
             Stack_Top_Node(nodeStack, &left);
             if(right == NULL){
-                Stack_Purge(left);
+                exp_node_purge(left);
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);
