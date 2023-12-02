@@ -79,7 +79,6 @@ void ASTNode_free(ASTNode* node){
             break;
         
         case FUNC_CALL:
-            printf(">>>>>>> %s\n", (char*)node->a);
             free(node->a); // free func name
             ASTNode_free((ASTNode*)node->b); // free the args
             free(node);
