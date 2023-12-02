@@ -357,6 +357,8 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
     Stack tokenStack;
     Stack nodeStack;
     Stack valueStack;
+    exp_node *temp_node;
+    exp_node *func_node;
     int state;
     union data data;
     CURRENT_TOKEN = get_token(buffer_string, true);
@@ -419,8 +421,6 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
                 break;
 
             case 4:
-                exp_node *node;
-                exp_node *func_node;
                 unget_token();
                 char* name = BufferString_get_as_string(buffer_string);
                 ERR = ll_func_call(buffer_string, (ASTNode**)(&func_node), name);
@@ -430,15 +430,15 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
                     Stack_Dispose(&valueStack);
                     return ERR;
                 }
-                node = new_node(func_node, NULL, TOKEN_KEYWORD_FUNC);
-                if(node == NULL){
+                temp_node = new_node(func_node, NULL, TOKEN_KEYWORD_FUNC);
+                if(temp_node == NULL){
                     Stack_Dispose(&tokenStack);
                     Stack_Dispose(&nodeStack);
                     Stack_Dispose(&valueStack);
                     return ERR_INTERNAL;
                 }
                 //nodeStack
-                data.node = node;
+                data.node = temp_node;
                 Stack_Push(&nodeStack, data);
                 //tokenStack
                 Stack_Pop(&tokenStack);
