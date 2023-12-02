@@ -15,8 +15,9 @@ Error syntax(ASTNode** tree){
 		return ERR_INTERNAL;
 	}
 
-	ERR = ll_program(&buffer_string, tree);
+	ERR = ll_program(&buffer_string, *tree);
 	if (ERR){
+		// printf("segfault in free\n");
 		BufferString_free(&buffer_string);
 		ASTNode_free(*tree);
 		*tree = NULL;
@@ -27,8 +28,9 @@ Error syntax(ASTNode** tree){
 }
 
 
-Error ll_program(BufferString* buffer_string, ASTNode** tree){
+Error ll_program(BufferString* buffer_string, ASTNode* tree){
 	GET_TOKEN(true);
+	unget_token(); // unget the token because the next function has to read it again
 	switch (CURRENT_TOKEN){
 		// This will be skipped for simplicity, because GET_TOKEN() skips EOL
 		case TOKEN_EOL: // <program> -> TOKEN_EOL <program>
@@ -38,14 +40,23 @@ Error ll_program(BufferString* buffer_string, ASTNode** tree){
 			return OK;
 
 		case TOKEN_KEYWORD_FUNC: // <program> -> <func_def> <program>
-			unget_token();
-			ERR = ll_func_definition(buffer_string, (ASTNode**)&(ASTNode_find_leftmost_node(*tree)->a));
+			ERR = ll_func_definition(buffer_string, (ASTNode**)&(ASTNode_find_leftmost_node(tree)->a));
 			return ERR ? ERR : ll_program(buffer_string, tree);
 
-		default: //<program> -> <statements> <program>
-			unget_token();
-			ERR = ll_statements(buffer_string, (ASTNode**)&(ASTNode_find_rightmost_node(*tree)->b));
+		//<program> -> <statements> <program>
+		// We have to check for the possible ll_statements states beforehand so we don't end up in an infinite loop
+		case TOKEN_KEYWORD_VAR:
+		case TOKEN_KEYWORD_LET:
+		case TOKEN_KEYWORD_IF:
+		case TOKEN_KEYWORD_WHILE:
+		case TOKEN_KEYWORD_RETURN:
+		case TOKEN_IDENTIFIER:
+			ERR = ll_statements(buffer_string, (ASTNode**)&(ASTNode_find_rightmost_node(tree)->b));
 			return ERR ? ERR : ll_program(buffer_string, tree);
+		
+		default:
+			print_token_as_string(CURRENT_TOKEN);
+			return ERR_SYNTAX;
 	}
 }
 
@@ -87,6 +98,13 @@ Error ll_func_definition_head(BufferString* buffer_string, ASTNode** func_head){
 	if (func_signature == NULL)
 		return ERR_INTERNAL;
 	(*func_head)->a = (void*)func_signature;
+	// create VAR_TYPE - for return type
+	ASTNode* var_type = ASTNode_new(VAR_TYPE);
+	if (var_type == NULL)
+		return ERR_INTERNAL;
+	(*func_head)->b = (void*)var_type;
+	var_type->a = (void*)TYPE_NIL;
+	var_type->b = (void*)false;
 
 	// assing func name
 	func_signature->a = (void*)BufferString_get_as_string(buffer_string);
@@ -115,19 +133,26 @@ Error ll_func_definition_head(BufferString* buffer_string, ASTNode** func_head){
 	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 	case TOKEN_KEYWORD_INT:
-		func_signature->b = (void*)TYPE_INT;
+		var_type->a = (void*)TYPE_INT;
 		break;
 	case TOKEN_KEYWORD_DOUBLE:
-		func_signature->b = (void*)TYPE_DOUBLE;
+		var_type->a = (void*)TYPE_DOUBLE;
 		break;
 	case TOKEN_KEYWORD_STRING:
-		func_signature->b = (void*)TYPE_STRING;
+		var_type->a = (void*)TYPE_STRING;
 		break;
 	// case (more types here)
 	default:
 		return ERR_SYNTAX;
 	}
 
+	GET_TOKEN(true);
+	if(CURRENT_TOKEN != TOKEN_QUESTION){
+		unget_token();
+		return OK;
+	}
+
+	var_type->b = (void*)true;
 	return OK;
 }
 
@@ -439,8 +464,8 @@ Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
 }
 
 // var id: type = exp
-// var id: = exp
 // var id: type
+// var id = exp
 Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 	// create subtrees
 	tree->a = (void*)ASTNode_new(VAR_TYPE);
@@ -460,18 +485,17 @@ Error ll_let_var_declaration(BufferString* buffer_string, ASTNode* tree){
 		return ERR_INTERNAL;
 	
 	GET_TOKEN(true);
-	if (CURRENT_TOKEN != TOKEN_COLON)
-		return ERR_SYNTAX;
-	
-	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_ASSIGN){
 		((ASTNode*)(tree->a))->a = (void*)TYPE_NIL; // assign type
 		((ASTNode*)(tree->a))->b = (void*)false; // assign nilable
 		// assign expression
 		return precedent(buffer_string, (exp_node**)(&((ASTNode*)(tree->b))->b), false);
-	}
+	} else if (CURRENT_TOKEN != TOKEN_COLON) {
+		return ERR_SYNTAX;
+	}	
 
 	// assign type
+	GET_TOKEN(true);
 	switch (CURRENT_TOKEN){
 		case TOKEN_KEYWORD_INT:
 			((ASTNode*)(tree->a))->a = (void*)TYPE_INT;

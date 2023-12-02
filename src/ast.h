@@ -33,7 +33,7 @@ typedef enum {
     
     FUNC_DEFS, // a is FUNC_DEFS or NULL , b FUNC_DEF
         FUNC_DEF, // a is FUNC_HEAD & b is STATEMENT
-            FUNC_HEAD,// a is FUNC_HEAD_SIGNATURE & b is type
+            FUNC_HEAD,// a is FUNC_HEAD_SIGNATURE & b is VAR_TYPE
                 FUNC_HEAD_SIGNATURE, // a is function name & b is *FuncDefArg
 
     VAR_DEF, // a VAR_TYPE, b VAR_HEAD

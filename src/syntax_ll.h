@@ -8,7 +8,7 @@
 
 Error syntax(ASTNode** tree);
 
-Error ll_program(BufferString* buffer_string, ASTNode** tree);
+Error ll_program(BufferString* buffer_string, ASTNode* tree);
 
 Error ll_func_definition(BufferString* buffer_string, ASTNode** tree);
 
