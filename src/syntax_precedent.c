@@ -447,7 +447,7 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
                 Stack_Top_Token_Literal(&tokenStack, &top);
                 CURRENT_TOKEN = get_token(buffer_string, true);
 
-                if(token2index(CURRENT_TOKEN) == 0){    // its crappy solution and i don`t like it, but it works
+                if(token2index(CURRENT_TOKEN) == 0){    // its lazy solution and i don`t like it, but it works
                     ENDING_IDENTIFIER_FLAG = true;
                     TEMP_TOKEN = CURRENT_TOKEN;
                     CURRENT_TOKEN = PRECEDENT_END;
