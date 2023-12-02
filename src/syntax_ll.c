@@ -16,9 +16,8 @@ Error syntax(ASTNode** tree){
 	}
 
 	ERR = ll_program(&buffer_string, *tree);
+	BufferString_free(&buffer_string);
 	if (ERR){
-		// printf("segfault in free\n");
-		BufferString_free(&buffer_string);
 		ASTNode_free(*tree);
 		*tree = NULL;
 		return ERR;
@@ -268,7 +267,7 @@ Error ll_func_definition_body(BufferString* buffer_string, ASTNode** tree){
 
 Error ll_statements(BufferString* buffer_string, ASTNode** tree){
 	char* name; // helper variable to store TOKEN_IDENTIFIER contents
-
+	
 	*tree = ASTNode_new(STATEMENT);
 	if (*tree == NULL)
 		return ERR_INTERNAL;

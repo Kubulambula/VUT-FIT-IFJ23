@@ -25,8 +25,8 @@ void ASTNode_free(ASTNode* node){
             break;
         
         case STATEMENT:
-            free((ASTNode*)node->a); // free the specific statement (assign, if, while, ...)
-            free((ASTNode*)node->b); // free the next statement
+            ASTNode_free((ASTNode*)node->a); // free the specific statement (assign, if, while, ...)
+            ASTNode_free((ASTNode*)node->b); // free the next statement
             free(node);
             break;
         
@@ -44,7 +44,7 @@ void ASTNode_free(ASTNode* node){
         
         case FUNC_HEAD:
             ASTNode_free((ASTNode*)node->a);
-            // node->b is Type - no free needed
+            ASTNode_free((ASTNode*)node->b);
             free(node);
             break;
         
@@ -79,6 +79,7 @@ void ASTNode_free(ASTNode* node){
             break;
         
         case FUNC_CALL:
+            printf(">>>>>>> %s\n", (char*)node->a);
             free(node->a); // free func name
             ASTNode_free((ASTNode*)node->b); // free the args
             free(node);
@@ -115,7 +116,7 @@ void ASTNode_free(ASTNode* node){
             break;
         
         case RETURN:
-            // TODO free the expression
+            // TODO free the expression if not NULL
             free(node);
             break;
         

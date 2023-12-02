@@ -11,10 +11,12 @@
 int main(void) {
 	initLexer(stdin);
 	
-	Error err;
+	Error err = OK;
 	ASTNode* ast;
 
 	err = syntax(&ast);
+	if (err == OK)
+		ASTNode_free(ast);
 
 	printf("ERR: %d\n", err);
 	return OK;
