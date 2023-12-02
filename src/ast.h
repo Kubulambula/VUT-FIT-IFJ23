@@ -20,6 +20,7 @@ typedef struct FuncDefArg{
     char* name;
     char* identifier;
     Type type;
+    bool nilable;
     struct FuncDefArg* next;
 }FuncDefArg;
 

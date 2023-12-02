@@ -199,8 +199,10 @@ Error ll_func_definition_head_arg(BufferString* buffer_string, FuncDefArg** func
 		return ERR_INTERNAL;
 	
 	// name can be "_" meaning without name
-	if ((*func_arg)->name[0] == '_' && (*func_arg)->name[1] == '\0')
+	if ((*func_arg)->name[0] == '_' && (*func_arg)->name[1] == '\0'){
+		free((*func_arg)->name);
 		(*func_arg)->name = NULL;
+	}
 	
 	// arg identifier
 	GET_TOKEN(true);
@@ -236,6 +238,12 @@ Error ll_func_definition_head_arg(BufferString* buffer_string, FuncDefArg** func
 	default:
 		return ERR_SYNTAX;
 	}
+
+	GET_TOKEN(true);
+	if (CURRENT_TOKEN == TOKEN_QUESTION)
+		(*func_arg)->nilable = true;
+	else
+		unget_token();
 
 	return OK;
 }
