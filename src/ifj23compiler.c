@@ -7,7 +7,6 @@
 #include "ast.h"
 
 
-
 int main(void) {
 	initLexer(stdin);
 	
