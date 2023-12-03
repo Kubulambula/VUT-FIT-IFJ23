@@ -7,7 +7,6 @@
 bool ENDING_IDENTIFIER_FLAG = false;
 Token TEMP_TOKEN;
 
-
 bool Stack_Init(Stack* stack, enum stack_type type){
     assert(stack != NULL);
 	stack->elements = malloc(STACK_SIZE*sizeof(union data));
@@ -105,14 +104,14 @@ void exp_node_purge(exp_node *node){
     if(node == NULL)
         return;
     
-    if (node->type == TOKEN_KEYWORD_FUNC)
+    if(node->type == TOKEN_KEYWORD_FUNC){
         ASTNode_free((ASTNode*)(node->left));
-    else
+    }
+    else{
         exp_node_purge(node->left);
-
-    exp_node_purge(node->right);
-
-    free(node);
+        exp_node_purge(node->right);
+        free(node);
+    }
 }
 
 
@@ -265,11 +264,11 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
             //nodeStack
-            Stack_Top_Node(nodeStack, &right);
+            Stack_Top_Node(nodeStack, &left);
             if(left == NULL)
                 return ERR_INTERNAL;
             Stack_Pop(nodeStack);
-            Stack_Top_Node(nodeStack, &left);
+            Stack_Top_Node(nodeStack, &right);
             if(right == NULL){
                 exp_node_purge(left);
                 return ERR_INTERNAL;
@@ -386,8 +385,13 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
 
 
     while(top != PRECEDENT_END || token2index(CURRENT_TOKEN) != 8){
-        //ll_log("precedent");
         state = precedent_table(top, CURRENT_TOKEN);
+
+        #if !defined NDEBUG && VERBOSE
+        print_token_as_string(top);
+        print_token_as_string(CURRENT_TOKEN);
+        #endif
+
         switch(state){
             case 0:
                 Stack_Dispose(&tokenStack);
