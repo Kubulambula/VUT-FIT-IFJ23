@@ -26,7 +26,7 @@
 
 // ----- READ FUNCTIONS -----
 #define FUNC_readString \
-	"\n\n# Function readString()->String? (build-in)"\
+	"\n\n# Function readString()->String? (built-in)"\
 	"\nLABEL		readString"\
 	"\nDEFVAR 		LF@valString"\
 	"\nREAD		LF@valString string"\
@@ -34,7 +34,7 @@
 	"\nRETURN\n"
 
 #define FUNC_readInt \
-	"\n\n# Function readInt()->Int? (build-in)"\
+	"\n\n# Function readInt()->Int? (built-in)"\
 	"\nLABEL		readInt"\
 	"\nDEFVAR		LF@valInt"\
 	"\nREAD		LF@valInt int"\
@@ -42,7 +42,7 @@
 	"\nRETURN\n"
 
 #define FUNC_readDouble \
-	"\n\n# Function readDouble()->Double? (build-in)"\
+	"\n\n# Function readDouble()->Double? (built-in)"\
 	"\nLABEL		readDouble"\
 	"\nDEFVAR		LF@valDouble"\
 	"\nREAD		LF@valDouble float"\
@@ -72,7 +72,7 @@
 
 // ----- CONVERSION FUNCTIONS ------
 #define FUNC_Int2Double \
-	"\n\n# Function Int2Double(_ term: Int)->Double (build-in)"\
+	"\n\n# Function Int2Double(_ term: Int)->Double (built-in)"\
 	"\nLABEL		Int2Double"\
 	"\nDEFVAR		LF@valDouble"\
 	"\nINT2FLOAT	LF@valDouble LF@term"\
@@ -80,7 +80,7 @@
 	"\nRETURN\n"
 
 #define FUNC_Double2Int \
-	"\n\n# Function Double2Int(_ term: Double)->Int (build-in)"\
+	"\n\n# Function Double2Int(_ term: Double)->Int (built-in)"\
 	"\nLABEL		Double2Int"\
 	"\nDEFVAR		LF@valInt"\
 	"\nFLOAT2INT	LF@valInt LF@term"\
@@ -89,7 +89,7 @@
 
 // ----- STRING FUNCTIONS -----
 #define FUNC_length \
-	"\n\n# Function length(_ s: String)->Int (build-in)"\
+	"\n\n# Function length(_ s: String)->Int (built-in)"\
 	"\nLABEL		length"\
 	"\nDEFVAR		LF@len"\
 	"\nSTRLEN		LF@len LF@s"\
@@ -97,7 +97,7 @@
 	"\nRETURN\n"
 
 #define FUNC_substring \
-	"\n\n# Function substring(of s: String, startingAt i: Int, endingBefore j: Int)->String?"\
+	"\n\n# Function substring(of s: String, startingAt i: Int, endingBefore j: Int)->String? (built-in)"\
 	"\nLABEL		substring"\
 	"\n# Check for initial conditions to determine if we should return nil"\
 	"\nDEFVAR		LF@condition"\
@@ -130,7 +130,7 @@
 	"\nRETURN\n"
 
 #define FUNC_ord \
-	"\n\n# Function ord(_ c: String)->Int"\
+	"\n\n# Function ord(_ c: String)->Int (built-in)"\
 	"\nLABEL		ord"\
 	"\nDEFVAR		LF@len"\
 	"\nSTRLEN		LF@len LF@c"\
@@ -144,7 +144,8 @@
 	"\nRETURN\n"
 
 #define FUNC_chr \
-	"\n\n# Function chr(_ i: Int)->String"\
+	"\n\n# Function chr(_ i: Int)->String (built-in)"\
+	"\nLABEL		chr"\
 	"\nDEFVAR		LF@chrVal"\
 	"\nINT2CHAR	LF@chrVal LF@i"\
 	"\nPUSHS		LF@chrVal"\

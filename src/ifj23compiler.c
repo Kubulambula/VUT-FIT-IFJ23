@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "error.h"
 #include "buffer_string.h"
 #include "ast.h"
 #include "lexer.h"
 #include "syntax_ll.h"
 #include "generator.h"
+
 
 int main(void) {
 	initLexer(stdin);
@@ -19,6 +22,9 @@ int main(void) {
 		return err;
 	}
 
+
+	printf("ERR: %d\n", err);
+
 	// No semantic yet :(
 	// err = semantic(ast);
 	// if (err){
@@ -27,10 +33,16 @@ int main(void) {
 	// 	return err;
 	// }
 
-	generate_code(ast);
+	err = generate_code(ast, NULL);
+	if (err)
+		fprintf(stderr, "Code generation ERR: %d", err);
+	
 
 	ASTNode_free(ast);
+	if (err == OK)
+		fprintf(stderr, "ERR: %d - good job!\n", err); // should be ok
+	else
+		fprintf(stderr, "ERR: %d", err);
 
-	fprintf(stderr, "ERR: %d - good job!\n", err); // should be ok
 	return OK;
 }
