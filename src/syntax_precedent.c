@@ -102,11 +102,17 @@ void Stack_Dispose(Stack *stack){
 
 
 void exp_node_purge(exp_node *node){
-    if(node != NULL){
-        Stack_Purge(node->left);
-        Stack_Purge(node->right);
-        free(node);
-    }
+    if(node == NULL)
+        return;
+    
+    if (node->type == TOKEN_KEYWORD_FUNC)
+        ASTNode_free((ASTNode*)(node->left));
+    else
+        exp_node_purge(node->left);
+
+    exp_node_purge(node->right);
+
+    free(node);
 }
 
 

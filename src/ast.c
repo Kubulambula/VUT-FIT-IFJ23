@@ -68,13 +68,13 @@ void ASTNode_free(ASTNode* node){
         
         case VAR_HEAD:
             free(node->a); // free the var name
-            // TODO free the expression
+            exp_node_purge(node->b); // free the expression
             free(node);
             break;
         
         case ASSIGN:
             free(node->a); // free the var name
-            // TODO free the expression
+            exp_node_purge(node->b); // free the expression
             free(node);
             break;
         
@@ -92,12 +92,12 @@ void ASTNode_free(ASTNode* node){
         
         case FUNC_CALL_ARG:
             free(node->a); // free the arg name
-            // TODO free the expression
+            exp_node_purge(node->b); // free the expression
             free(node);
             break;
         
         case IFELSE:
-            // TODO free the expression
+            exp_node_purge(node->a); // free the expression
             ASTNode_free((ASTNode*)node->b); // free the bodies
             free(node);
             break;
@@ -109,13 +109,13 @@ void ASTNode_free(ASTNode* node){
             break;
         
         case WHILE:
-            // TODO free the expression
+            exp_node_purge(node->a); // free the expression
             ASTNode_free((ASTNode*)node->b); // free the while body
             free(node);
             break;
         
         case RETURN:
-            // TODO free the expression if not NULL
+            exp_node_purge(node->b); // free the expression
             free(node);
             break;
         
