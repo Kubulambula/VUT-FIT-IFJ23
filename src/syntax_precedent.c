@@ -106,12 +106,13 @@ void exp_node_purge(exp_node *node){
     
     if(node->type == TOKEN_KEYWORD_FUNC){
         ASTNode_free((ASTNode*)(node->left));
-    }
-    else{
+    } else if(node->type == TOKEN_IDENTIFIER || node->type == TOKEN_LITERAL_STRING){
+        free((node->value).s);
+    } else{
         exp_node_purge(node->left);
         exp_node_purge(node->right);
-        free(node);
     }
+    free(node);
 }
 
 
@@ -121,7 +122,8 @@ void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *
     data.token = token;
     Stack_Push(tokenStack, data);
     switch(token){
-        case TOKEN_IDENTIFIER: case TOKEN_LITERAL_STRING:
+        case TOKEN_IDENTIFIER:
+        case TOKEN_LITERAL_STRING:
             value.s = BufferString_get_as_string(buffer_string);
             data.value = value;
             Stack_Push(valueStack, data);
