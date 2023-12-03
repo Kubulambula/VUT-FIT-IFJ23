@@ -29,7 +29,7 @@
 	"\n\n# Function readString()->String? (build-in)"\
 	"\nLABEL		readString"\
 	"\nDEFVAR 		LF@valString"\
-	"\nREAD			LF@valString string"\
+	"\nREAD		LF@valString string"\
 	"\nPUSHS		LF@valString"\
 	"\nRETURN\n"
 
@@ -37,15 +37,15 @@
 	"\n\n# Function readInt()->Int? (build-in)"\
 	"\nLABEL		readInt"\
 	"\nDEFVAR		LF@valInt"\
-	"\nREAD			LF@valInt int"\
+	"\nREAD		LF@valInt int"\
 	"\nPUSHS		LF@valInt"\
-	"\nRETURN"
+	"\nRETURN\n"
 
 #define FUNC_readDouble \
 	"\n\n# Function readDouble()->Double? (build-in)"\
 	"\nLABEL		readDouble"\
 	"\nDEFVAR		LF@valDouble"\
-	"\nREAD			LF@valDouble float"\
+	"\nREAD		LF@valDouble float"\
 	"\nPUSHS		LF@valDouble"\
 	"\nRETURN\n"
 
@@ -54,10 +54,10 @@
 	"\n\n# Function write(_ argCnt: Int) (built-in)"\
 	"\nLABEL		write"\
 	"\nLABEL		writeLoop"\
-	"\nJUMPIFEQ		writeLoopBreak LF@argCnt int@0"\
+	"\nJUMPIFEQ	writeLoopBreak LF@argCnt int@0"\
 	"\nSUB			LF@argCnt LF@argCnt int@1"\
-	"\nCALL			$write_helper"\
-	"\nJUMP			writeLoop"\
+	"\nCALL		$write_helper"\
+	"\nJUMP		writeLoop"\
 	"\nLABEL		writeLoopBreak"\
 	"\nRETURN\n"
 
@@ -66,7 +66,7 @@
 	"\nLABEL 		$write_helper"\
 	"\nCREATEFRAME"\
 	"\nDEFVAR 		TF@arg"\
-	"\nPOPS			TF@arg"\
+	"\nPOPS		TF@arg"\
 	"\nWRITE		TF@arg"\
 	"\nRETURN\n"
 
@@ -102,26 +102,26 @@
 	"\n# Check for initial conditions to determine if we should return nil"\
 	"\nDEFVAR		LF@condition"\
 	"\nLT			LF@condition LF@i int@0 # Check if i < 0"\
-	"\nJUMPIFEQ		substring_return_nil LF@condition bool@true"\
+	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\nLT			LF@condition LF@j int@0 # Check if j < 0"\
-	"\nJUMPIFEQ		substring_return_nil LF@condition bool@true"\
+	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\nGT			LF@condition LF@i LF@j # Check if i > j"\
-	"\nJUMPIFEQ		substring_return_nil LF@condition bool@true"\
+	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\nDEFVAR		LF@len"\
 	"\nSTRLEN		LF@len LF@s # don't call length() for simplicity"\
 	"\nLT			LF@condition LF@i LF@len # Check if i < len"\
-	"\nJUMPIFEQ		substring_return_nil LF@condition bool@false # Invert the condition to i >= len"\
+	"\nJUMPIFEQ	substring_return_nil LF@condition bool@false # Invert the condition to i >= len"\
 	"\nGT			LF@condition LF@j LF@len # Check if j > len"\
-	"\nJUMPIFEQ		substring_return_nil LF@condition bool@true"\
+	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\n# Initial conditions passed. Now run the substring"\
 	"\nDEFVAR		LF@substr # Variable with the substring to be returned"\
 	"\nDEFVAR		LF@c # Helper variable with current char"\
 	"\nLABEL		substringWhile"\
-	"\nJUMPIFEQ		substringWhileBreak LF@i LF@j # if i == j goto substringWhileBreak"\
+	"\nJUMPIFEQ	substringWhileBreak LF@i LF@j # if i == j goto substringWhileBreak"\
 	"\nGETCHAR		LF@c LF@s LF@i # c = s[i]"\
 	"\nADD			LF@i LF@i int@1 # i++"\
 	"\nCONCAT		LF@substr LF@substr LF@c # substr = substr + c"\
-	"\nJUMP			substringWhile"\
+	"\nJUMP		substringWhile"\
 	"\nLABEL		substringWhileBreak"\
 	"\nPUSHS		LF@substr"\
 	"\nRETURN"\
@@ -134,19 +134,19 @@
 	"\nLABEL		ord"\
 	"\nDEFVAR		LF@len"\
 	"\nSTRLEN		LF@len LF@c"\
-	"\nJUMPIFQE		ord_return_zero LF@len int@0"\
+	"\nJUMPIFEQ	ord_return_zero LF@len int@0"\
 	"\nDEFVAR		LF@ordVal"\
-	"\nSTRI2INT		LF@ordVal LF@c int@0"\
+	"\nSTRI2INT	LF@ordVal LF@c int@0"\
 	"\nPUSHS		LF@ordVal"\
 	"\nRETURN"\
 	"\nLABEL		ord_return_zero"\
 	"\nPUSHS		int@0"\
-	"\nRETURN"
+	"\nRETURN\n"
 
 #define FUNC_chr \
-	"\n# Function chr(_ i: Int)->String"\
+	"\n\n# Function chr(_ i: Int)->String"\
 	"\nDEFVAR		LF@chrVal"\
-	"\nINT2CHAR		LF@chrVal LF@i"\
+	"\nINT2CHAR	LF@chrVal LF@i"\
 	"\nPUSHS		LF@chrVal"\
 	"\nRETURN\n"
 
