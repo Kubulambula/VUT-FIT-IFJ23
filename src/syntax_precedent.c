@@ -266,13 +266,13 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
             //nodeStack
-            Stack_Top_Node(nodeStack, &left);
-            if(left == NULL)
+            Stack_Top_Node(nodeStack, &right);
+            if(right == NULL)
                 return ERR_INTERNAL;
             Stack_Pop(nodeStack);
-            Stack_Top_Node(nodeStack, &right);
-            if(right == NULL){
-                exp_node_purge(left);
+            Stack_Top_Node(nodeStack, &left);
+            if(left == NULL){
+                exp_node_purge(right);
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);

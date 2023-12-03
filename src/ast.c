@@ -196,7 +196,7 @@ FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg){
 void print_ast_node(ASTNode *node, int offset){
     if(node != NULL){
         for(int i = 0; i < offset; i++){
-            printf("\t");
+            printf("   ");
         }
         printf("( ");
         print_astnode_as_string(node->type);
@@ -215,8 +215,16 @@ void print_ast_node(ASTNode *node, int offset){
             case FUNC_CALL:
             case FUNC_CALL_ARG:
                 printf(" %s )\n", (char*)node->a);
+                print_exp_node((exp_node*)node->b, offset+1);
+                break;
+
+            case IFELSE:
+            case WHILE:
+                printf(" )\n");
+                print_exp_node((exp_node*)node->a, offset+1);
                 print_ast_node(node->b, offset+1);
                 break;
+
             case EXPRESSION:
                 printf(" )\n");
                 print_exp_node((exp_node*)node->a, offset+1);
@@ -232,7 +240,7 @@ void print_ast_node(ASTNode *node, int offset){
 void print_exp_node(exp_node *node, int offset){
     if(node != NULL){
         for(int i = 0; i < offset; i++){
-            printf("\t");
+            printf("   ");
         }
         printf("[ ");
         print_token_as_string(node->type);
