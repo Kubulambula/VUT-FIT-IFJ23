@@ -51,6 +51,7 @@ static Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
 
 static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
 {
+    bool eq= false;  
     switch (node->type)
     {
         //LITERALS
@@ -66,7 +67,6 @@ static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
         *returnType = STRING;
         return OK;
         break;
-
         //VARIABLES
     case TOKEN_IDENTIFIER:
         Symbol* target = SymTable_get_recurse(tables,node->value.s);
@@ -159,13 +159,13 @@ static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
         break;
     
     //LOGICAL
+    case TOKEN_OPERATOR_EQUALS: // ==
+        eq=true;        
     case TOKEN_OPERATOR_LESS_THAN: // <
     case TOKEN_OPERATOR_GREATER_THAN:  // >
     case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
     case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
-    case TOKEN_OPERATOR_EQUALS: // ==
     case TOKEN_OPERATOR_NOT_EQUALS: // !=
-    case TOKEN_NIL_COALESCING:  // ??
         Type a,b;
         Error aEr = handle_expression(node->left,tables,&a);
         if(aEr != OK)
@@ -173,14 +173,26 @@ static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
         Error bEr = handle_expression(node->right,tables,&b);
         if(bEr != OK)
             return bEr;
+        if(eq)
+        {
+            if(((exp_node*)node->left)->type==TOKEN_IDENTIFIER && b == NIL)
+                *returnType = BOOL;
+                return OK;
+        }
         if (a != b)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         if(a == BOOL || a == NIL)
             return ERR_SYNTAX;
+        if(a == INT && b == DOUBLE && nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL); // LITERAL INT DOUBLE
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        if(a == DOUBLE && b == INT && nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL);// DOUBLE LITERAL INT
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            
         *returnType = BOOL;
         return OK;
         break;
 
+    case TOKEN_NIL_COALESCING:  // ??
     case TOKEN_EXCLAMATION:
         *returnType = ((exp_node*)node->left)->type;
         return OK;
