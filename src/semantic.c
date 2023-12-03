@@ -538,7 +538,7 @@ Error sematic(ASTNode *code_tree)
 
 
     //MAIN BODY
-    Error error = handle_statements(main,globalTable,NONE);
+    Error error = handle_statements(main,globalTable,TYPE_NONE);
 
 
 
