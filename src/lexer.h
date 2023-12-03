@@ -6,6 +6,7 @@
 #include "buffer_string.h"
 #include "error.h"
 
+
 typedef enum{
     // Error token
     TOKEN_ERR_INTERNAL, // token indicating internal error (ERR_INTERNAL)
@@ -47,6 +48,7 @@ typedef enum{
     TOKEN_LITERAL_INT, // an int literal
     TOKEN_LITERAL_DOUBLE, // a double literal
     TOKEN_LITERAL_STRING, // a string literal
+    TOKEN_LITERAL_NIL,    // a nil literal
     //TOKEN_LITERAL_MULTILINE_STRING, // a multiline string literal // this can be passed as a regular string
     // Miscellaneous 
     TOKEN_ASSIGN, // =
@@ -64,7 +66,14 @@ typedef enum{
     PRECEDENT_END,
 } Token;
 
-// Token CURRENT_TOKEN;
+
+extern Token CURRENT_TOKEN;
+
+
+#define GET_TOKEN(skip_eol) \
+	CURRENT_TOKEN = get_token(buffer_string, skip_eol); \
+	if (CURRENT_TOKEN == TOKEN_ERR_INTERNAL || CURRENT_TOKEN == TOKEN_ERR_LEXICAL) \
+		return (CURRENT_TOKEN == TOKEN_ERR_INTERNAL ? ERR_INTERNAL : ERR_LEXICAL);
 
 
 #ifndef NDEBUG
@@ -102,6 +111,7 @@ static inline void print_token_as_string(Token t){
         "TOKEN_LITERAL_INT",
         "TOKEN_LITERAL_DOUBLE",
         "TOKEN_LITERAL_STRING",
+        "TOKEN_LITERAL_NIL",
         "TOKEN_ASSIGN",
         "TOKEN_EXCLAMATION",
         "TOKEN_QUESTION",
@@ -110,8 +120,11 @@ static inline void print_token_as_string(Token t){
         "TOKEN_COLON",
         "TOKEN_ARROW",
         "TOKEN_IDENTIFIER",
+        "PRECEDENT_E",
+        "PRECEDENT_END",
     };
     printf("%s\n", tokens_as_string[t]);
+    //printf("%s", tokens_as_string[t]);
 }
 #else
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -173,8 +186,6 @@ Token get_token(BufferString* buffer_string, bool skip_eol);
 
 void unget_token();
 
-// finds next token
-// returns Token type
 Token get_next_token(BufferString* buffer_string);
 
 #endif

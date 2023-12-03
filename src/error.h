@@ -1,7 +1,6 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-// Error ERR;
 
 typedef enum{
 	OK = 0, // no error
@@ -26,6 +25,9 @@ typedef enum{
 	ERR_DEBUG = 100 // debug error
 #endif
 } Error;
+
+
+extern Error ERR;
 
 
 #endif
