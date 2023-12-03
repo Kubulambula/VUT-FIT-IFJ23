@@ -82,7 +82,7 @@ void Stack_Pop(Stack *stack);
 void Stack_Dispose(Stack *stack);
 
 // Nic nezůstane
-void Stack_Purge(exp_node *node);
+void exp_node_purge(exp_node *node);
 
 // Alokuje nový list výrazového stromu
 exp_node *new_leaf(Token type, union literalValue value);

@@ -34,7 +34,7 @@ void initLexer(FILE* file){
 char get_next_char(){
 #if !defined NDEBUG && defined VERBOSE // only print in verbose debug
     char Nextchar = getc(source_file);
-    printf("Read char: %c\n", Nextchar);
+    printf("Read char: %c %d\n", Nextchar, (int)Nextchar);
     return Nextchar;
 #else
     return getc(source_file);
