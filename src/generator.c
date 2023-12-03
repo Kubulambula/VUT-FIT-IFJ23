@@ -1,7 +1,8 @@
 #include "error.h"
 #include "ast.h"
 #include "lexer.h"  
-#include "symtable.h"  
+#include "symtable.h"
+#include "buffer_string.h"  
 #include <stdlib.h>
 
 // built-in funcs detection
@@ -247,6 +248,28 @@ void generate_args(FuncDefArg* Arg){
 }
 
 
+// suboptimal implementation 
+char* process_string_literal(char* string){
+    BufferString IFJ23string;
+    BufferString_init(&IFJ23string);
+    int Idx = 0;
+    while(string[Idx]!='\0'){ // strlen better ?
+        if(string[Idx] <= ' ' || string[Idx] == '#' || string[Idx] == '\\'){
+            char asciiValue[6]; // Assuming ASCII values are 3 digits or less
+            sprintf(asciiValue, "\\%03d", string[Idx]);
+            BufferString_append_str(&IFJ23string, asciiValue);
+        } else{
+            BufferString_append_char(&IFJ23string, string[Idx]);
+        }
+        Idx++;
+    }
+    char *IFJ23stringOut = BufferString_get_as_string(&IFJ23string);
+    return IFJ23stringOut; // has to free in main body, do we care if it works?
+}
+
+
+
+/*
 // might not be necessary
 // This needs to be done so retV can be assigned value beforehand
 void generate_retV(Type type){
@@ -264,7 +287,7 @@ void generate_retV(Type type){
     }
 
 }
-
+*/
 
 
 void code_generation_prep(){
