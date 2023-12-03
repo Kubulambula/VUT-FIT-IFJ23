@@ -124,6 +124,7 @@ Error variable_expression(exp_node **node, char* identifier_name);
 //TOKEN_LITERAL_INT,    v value je hodnota, left a right je NULL
 //TOKEN_LITERAL_DOUBLE,
 //TOKEN_LITERAL_STRING,
+//TOKEN_LITERAL_NIL
 
 //TOKEN_IDENTIFIER      v value je jméno proměnné (union literalValue.s), left a right je NULL
 
