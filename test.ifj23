@@ -1,7 +1,6 @@
-func foo() {
-	let x: String
-	x = "ahoj"
-	let y: String
-	let z: Int
-	z = nibba()
+if (n > 1) {
+    write(" n je vetsi nez jedna")
+}
+else{
+    
 }
