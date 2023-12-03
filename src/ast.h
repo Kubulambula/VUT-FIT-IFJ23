@@ -10,7 +10,7 @@ typedef enum{
     TYPE_NONE, // for no return check
     TYPE_NIL, // void funkce
     TYPE_INT,
-    //TYPE_BOOL,
+    TYPE_BOOL,
     TYPE_DOUBLE,
     TYPE_STRING,
 } Type;
