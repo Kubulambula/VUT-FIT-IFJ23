@@ -366,6 +366,7 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
     exp_node *func_node;
     int state;
     union data data;
+    union litralValue;
     CURRENT_TOKEN = get_token(buffer_string, true);
 
     //checks for empty expression
@@ -432,8 +433,9 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
 
             case 4:
                 unget_token();
-                char* name = BufferString_get_as_string(buffer_string);
-                ERR = ll_func_call(buffer_string, (ASTNode**)(&func_node), name);
+                Stack_Top_Value(&valueStack, &data.value);
+                Stack_Pop(&valueStack);
+                ERR = ll_func_call(buffer_string, (ASTNode**)(&func_node), data.value.s);
                 if(ERR){
                     Stack_Dispose(&tokenStack);
                     Stack_Dispose(&nodeStack);
