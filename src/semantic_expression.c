@@ -147,7 +147,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
-            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
+            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE && b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
             {
                 *returnType = a;
                 return OK;
@@ -157,7 +157,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 *returnType = TYPE_STRING;
                 return OK;
             }
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
+            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL) // LITERAL INT TYPE_DOUBLE
             {
                 *returnType =TYPE_DOUBLE;
                 return OK;
@@ -183,8 +183,9 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
-            
-            if(a == TYPE_BOOL ||b == TYPE_BOOL)
+            if(a == TYPE_NIL || b == TYPE_NIL)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            if(a == TYPE_BOOL || b == TYPE_BOOL)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -204,8 +205,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
+
             
-            if(a != b || a == TYPE_BOOL)
+            
+            if(a != b || a == TYPE_BOOL || b == TYPE_NIL)   
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             break;
 
