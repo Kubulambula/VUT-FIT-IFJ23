@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "syntax_precedent.h"
 #include "syntax_ll.h"
+#include "lexer.h"
 
 #define STACK_SIZE 10
 bool ENDING_IDENTIFIER_FLAG = false;
