@@ -8,6 +8,11 @@
 #include "semantic.h"
 #include <stdio.h>
 
+void prin()
+{
+    printf("KOK OK\n");
+    fflush(stdout);
+}
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* codeTable,int scope)
 {
     SymTable* global = tables;
@@ -397,55 +402,65 @@ Error semantic(ASTNode *code_tree,SymTable* codeTable)
        functions = functions->a;
     }
    
+    
 
 
-
+    //statement must be pointer to pointer
     //INIT GLOBAL VARIABLES
-    ASTNode* statement = (ASTNode*)code_tree->b;
-    while(statement!=NULL)
+    ASTNode** statement = (ASTNode**)&code_tree->b;
+    while(*statement!=NULL)
     {
-       
-        if (((ASTNode*)statement->a)->type == VAR_DEF || ((ASTNode*)statement->a)->type == LET_DEF)
+        prin();
+        if (((ASTNode*)((*statement)->a))->type == VAR_DEF || ((ASTNode*)((*statement)->a))->type == LET_DEF)
         {
             //insert into symtable
-            exp_node* tempExp = ((ASTNode*)((ASTNode*)statement->a)->b)->b;
-            ((ASTNode*)((ASTNode*)statement->a)->b)->b = NULL;
+            exp_node* tempExp = ((ASTNode*)((ASTNode*)((*statement)->a))->b)->b;
+            ((ASTNode*)((ASTNode*)((*statement)->a))->b)->b = NULL;
             bool dump;
-            Error err = handle_statement(statement->a,globalTable,codeTable,TYPE_NONE,0,&dump,false);
+            Error err = handle_statement((*statement)->a,globalTable,codeTable,TYPE_NONE,0,&dump,false);
             if(err != OK)
-                return err;
-            
-
-            printf("KOK\n");
-            fflush(stdout);
+                return err;    
             //move def to root
             //statement is first found defvar/letvar
 
-            ASTNode*newRoot = statement;  //newRoot = root->right->right->left
+
+
+
+
+
+            ASTNode*newRoot = *statement;  //newRoot = root->right->right->left
             ASTNode*tempRoot = code_tree->b; //tempRoot = root->right
             code_tree->b= newRoot; // root->right = root->right->right->left       
             //*statement=(*statement)->b; //statement = root->right->right->left->right 
 
             //replace with assign if needed 
-            if(((ASTNode*)newRoot->b)->b != NULL)   
+            if(tempExp != NULL)   
             {
+                ASTNode* newStatement = ASTNode_new(STATEMENT);
                 ASTNode* newAssign = ASTNode_new(ASSIGN);
                 newAssign->a=((ASTNode*)((ASTNode*)newRoot->a)->b)->a;
                 newAssign->b=tempExp;
-                statement->a = newAssign;
+                newStatement->a = newAssign;
+                newStatement->b=newRoot->b;
                 //(*statement)->b= newRoot->b; //statement->b = root->right->left->right->left ?
             } 
-            printf("KOK OK\n");
-            fflush(stdout);
-            newRoot->b=tempRoot;
             
-        }
-        printf("kok\n");
-        fflush(stdout);
-        statement = (ASTNode*)statement->b;
-    }
-    
 
+            newRoot->b=tempRoot;
+       
+       
+       
+       
+       
+        }
+       prin();
+        statement = (ASTNode**)&((*statement)->b);
+        prin();
+    }
+        
+    
+            
+            
 
     //start body check
     ASTNode *globalStatement = code_tree->b;
