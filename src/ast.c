@@ -212,7 +212,6 @@ void print_ast_node(ASTNode *node, int offset){
 
         switch(node->type){
             case FUNC_HEAD_SIGNATURE:
-            case VAR_TYPE:
                 break;
             case FUNC_CALL:
                 print_tree_string((char*)node->a,offset+1);
@@ -233,6 +232,10 @@ void print_ast_node(ASTNode *node, int offset){
 
             case EXPRESSION:
                 print_exp_node((exp_node*)node->a, offset+1);
+                break;
+            
+            case VAR_TYPE:
+                printf("Type: %ld, Nilable: %ld\n", (long)node->a, (long)node->b);
                 break;
 
             default:

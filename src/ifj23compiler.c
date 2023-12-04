@@ -29,8 +29,8 @@ int main(void) {
     if(code_table == NULL){
         return ERR_INTERNAL;
     }
-	
-	// No semantic yet :(
+
+
 	err = semantic(ast, code_table);
 	if (err){
 		fprintf(stderr, "Semantic ERR: %d\n", err);

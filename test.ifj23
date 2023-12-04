@@ -1,15 +1,2 @@
-let x = 1
-func foo(){
-
-}
-
-let y: Int = 69
-
-foo()
-
-var a: String = "Hello"
-
-
-
-
-
+var x: Int? = 1
+var y = 2

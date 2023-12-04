@@ -402,15 +402,9 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable)
        functions = functions->a;
     }
 
-
     ERR = rearrange_statements(code_tree, codeTable, globalTable);
     if (ERR)
         return ERR;
-    
-
-    // print_
-
-    printf("im here\n");
     
     //start body check
     bool returning=false;
@@ -500,7 +494,7 @@ Error rearrange_statements(ASTNode* root, SymTable* codeTable, SymTable* globalT
         ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b = NULL; // throw it out the window
 
         if(tempExp != NULL){
-            if ((Type)(((ASTNode*)(def_statement->a))->a) == TYPE_NIL){ // do inference
+            if ((Type)(((ASTNode*)(((ASTNode*)(def_statement->a))->a))->a) == TYPE_NIL){ // do inference
                 Type expType;
                 ERR = handle_expression(tempExp, globalTable, &expType, codeTable, 0);
                 if (ERR)
@@ -508,7 +502,7 @@ Error rearrange_statements(ASTNode* root, SymTable* codeTable, SymTable* globalT
                 if (expType == TYPE_NIL)
                     return ERR_SEMATIC_BAD_TYPE_INFERENCE;
                 // assign the inferred type
-                ((ASTNode*)(def_statement->a))->a = (void*)expType;
+                (((ASTNode*)(((ASTNode*)(def_statement->a))->a))->a) = (void*)expType;
             }
 
             // create new assign statement if necessary
