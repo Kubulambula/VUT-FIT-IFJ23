@@ -7,12 +7,12 @@
 Symbol* Symbol_new(){
     Symbol* symbol = (Symbol*)malloc(sizeof(Symbol));
     if(symbol != NULL){
-        symbol->symbol_type = UNKNOWN,
         symbol->type = TYPE_NIL;
         symbol->name = NULL;
         symbol->nilable = false;
         symbol->initialized = false;
         symbol->args = NULL;
+        symbol->scope=0;
     }
     return symbol;
 }
@@ -139,5 +139,18 @@ Symbol* SymTable_get(SymTable* symTable, char* name)
     }
 
    
+    return NULL;
+}
+Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
+{
+    while(symTable != NULL)
+    {
+        Symbol* target=SymTable_get(symTable,name);
+        if (target != NULL)
+        {
+            return target;
+        }
+        symTable=symTable->previous;
+    }
     return NULL;
 }
