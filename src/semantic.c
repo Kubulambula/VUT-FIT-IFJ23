@@ -43,7 +43,7 @@ Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* cod
         else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         Type a;
-        Error err = handle_expression(((ASTNode*)arg->a)->b,tables,&a);
+        Error err = handle_expression(((ASTNode*)arg->a)->b,tables,&a,codeTable,scope);
         if(err != OK)
             return err;
         if (a != symTable_arg->type)
@@ -151,7 +151,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
                 return OK;
         }
         
-        error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType);
+        error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType,codeTable,scoping);
         if (error != OK )
             return error;
         if(generatedSymbol->type == TYPE_NIL)
@@ -197,7 +197,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         target->initialized=true;
 
     
-        error = handle_expression(statement->b,tables,&expReturnType);
+        error = handle_expression(statement->b,tables,&expReturnType,codeTable,scoping);
         if (error != OK)
             return error;
        
@@ -233,7 +233,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
     case IFELSE:
         //check condition
         expReturnType =TYPE_NIL;
-        error = handle_expression(statement->a,tables,&expReturnType);
+        error = handle_expression(statement->a,tables,&expReturnType,codeTable,scoping);
         if (error != OK)
             return error;
         if(expReturnType != TYPE_BOOL)
@@ -267,7 +267,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         break;
     case WHILE:
         expReturnType=TYPE_NIL;
-        error = handle_expression(statement->a,tables,&expReturnType);
+        error = handle_expression(statement->a,tables,&expReturnType,codeTable,scoping);
         if (error != OK)
             return error;
         if(expReturnType != TYPE_BOOL)
@@ -295,7 +295,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
                 if (statement->a == NULL)
                     return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
                 expReturnType=TYPE_NIL;
-                error = handle_expression(statement->a,tables,&expReturnType);
+                error = handle_expression(statement->a,tables,&expReturnType,codeTable,scoping);
                 if (error != OK)
                     return error;
                 if(expReturnType != expected_type)
