@@ -120,6 +120,8 @@ void Add_token(Stack *tokenStack, Stack *valueStack, Token token, BufferString *
     union literalValue value;
     union data data;
     data.token = token;
+    if(token == TOKEN_KEYWORD_NIL)
+        data.token = TOKEN_LITERAL_NIL;
     Stack_Push(tokenStack, data);
     switch(token){
         case TOKEN_IDENTIFIER:
@@ -266,13 +268,13 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
             //nodeStack
-            Stack_Top_Node(nodeStack, &left);
-            if(left == NULL)
+            Stack_Top_Node(nodeStack, &right);
+            if(right == NULL)
                 return ERR_INTERNAL;
             Stack_Pop(nodeStack);
-            Stack_Top_Node(nodeStack, &right);
-            if(right == NULL){
-                exp_node_purge(left);
+            Stack_Top_Node(nodeStack, &left);
+            if(left == NULL){
+                exp_node_purge(right);
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);
@@ -297,6 +299,10 @@ int token2index(Token token){
         case TOKEN_LITERAL_DOUBLE:
         case TOKEN_LITERAL_INT:
         case TOKEN_LITERAL_STRING:
+
+        case TOKEN_KEYWORD_NIL:
+        case TOKEN_LITERAL_NIL:
+
         case PRECEDENT_E:
             return 0;   // i
         case TOKEN_PARENTHESIS_LEFT:

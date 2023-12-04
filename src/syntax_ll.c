@@ -163,9 +163,10 @@ Error ll_func_definition_head_args(BufferString* buffer_string, FuncDefArg** fun
 	if (CURRENT_TOKEN == TOKEN_PARENTHESIS_RIGHT)
 		return OK;
 
+	FuncDefArg** arg = func_args;
 	do {
 		// check arg
-		ERR = ll_func_definition_head_arg(buffer_string, FuncDefArg_get_last_arg(func_args));
+		ERR = ll_func_definition_head_arg(buffer_string, arg);
 		if (ERR)
 			return ERR;
 
@@ -175,6 +176,8 @@ Error ll_func_definition_head_args(BufferString* buffer_string, FuncDefArg** fun
 			unget_token();
 			return OK;
 		}
+
+		arg = &((*arg)->next);
 
 	} while(CURRENT_TOKEN == TOKEN_COMMA); // if comma is found, next must be next arg
 	// anything else is error
