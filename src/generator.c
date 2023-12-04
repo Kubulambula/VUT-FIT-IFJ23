@@ -158,34 +158,25 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             return OK;
         
         case TOKEN_NIL_COALESCING:
-            ERR = generate_expression(expression->left, symtable);
-            if (ERR)
-                return ERR;
+            // evaluate right first so that the left operand is first on stack
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
 
-            unsigned lowest_available_label_index = LABEL_INDEX;
+            unsigned available_label_index = LABEL_INDEX;
             LABEL_INDEX += 2;
-            // create temp frame with temp variables
-            printf("# === coalesting ===\nCREATEFRAME\nDEFVAR     TF@$temp1\nDEFVAR     TF@$temp2\nDEFVAR     TF@$temp3\n");
-            // get the operands from stack to temp variables
-            printf("POPS    TF@$temp2\nPOPS     TF@$temp1\n");
-            // compare if 1st operand is nil
-            printf("EQ      TF@$temp3 TF@$temp1 nil@nil\n");
-            printf("JUMPIFEQ    coalesting_2nd_%d TF@$temp3 bool@true\n", lowest_available_label_index + 1);
-            printf("PUSHS   TF@$temp1\n");
-            printf("JUMP    coalesting_end_%d\n", lowest_available_label_index);
-            printf("LABEL   coalesting_2nd_%d\n", lowest_available_label_index + 1);
-            printf("PUSHS   TF@$temp2\n");
-            printf("LABEL   coalesting_end_%d\n# === coalesting end ===\n", lowest_available_label_index);
+
+            printf(COALESTING, available_label_index, available_label_index);
             return OK;
         
         case TOKEN_KEYWORD_FUNC:
             return generate_func_call((ASTNode*)(expression->left), symtable);
 
         case TOKEN_IDENTIFIER:
-            // somehow detect the Frame
+            // detect the Frame
             if (SymTable_get(symtable, (expression->value).s) == NULL)
                 strcpy(frame_name, "LF");
             else
@@ -230,10 +221,69 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             free(literal_value);
             return OK;
         
+        case TOKEN_OPERATOR_LESS_THAN:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+
+            return OK;
+
+        case TOKEN_OPERATOR_GREATER_THAN:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+
+            return OK;
+
+        case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+                
+            return OK;
+
+        case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+                
+            return OK;
+
+        case TOKEN_OPERATOR_EQUALS:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+                
+            return OK;
+
+        case TOKEN_OPERATOR_NOT_EQUALS:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+                
+            return OK;
+        
         default:
             fprintf(stderr, "Bad expression\n");
             return ERR_INTERNAL;
-            break;
     }
 }
 
@@ -292,21 +342,56 @@ Error generate_return(ASTNode* ret, SymTable* symtable){
 }
 
 Error generate_assign(ASTNode* assign, SymTable* symtable){
-    printf("assign");
+    printf("# === assign to %s ===\n", (char*)(assign->a));
+    
+    // evaluate the expression to assign
+    ERR = generate_expression((exp_node*)(assign->b), symtable);
+    if (ERR)
+        return ERR;
+
+    // detect the frame
+    char frame_name[3];
+    if (SymTable_get(symtable, (char*)(assign->a)) == NULL)
+        strcpy(frame_name, "LF");
+    else
+        strcpy(frame_name, "GF");
+    
+    // write the code - pop the value from stack
+    printf("POPS    %s@%s # pop the value to the variable\n# === assign to %s end ===\n", frame_name, (char*)(assign->a), (char*)(assign->a));
     return OK;
 }
 
 
 Error generate_var_def(ASTNode* var_let_def, SymTable* symtable){
-    printf("var/let def\n");
+    //ASTNode* type = (ASTNode*)(var_let_def->a); // I don't care about this
+    ASTNode* head = (ASTNode*)(var_let_def->b);
+    // create the variable
+    printf("# === Create var %s ===\n", (char*)(head->a));
+    // detect the frame
+    char frame_name[3];
+    if (SymTable_get(symtable, (char*)(head->a)) == NULL)
+        strcpy(frame_name, "LF");
+    else
+        strcpy(frame_name, "GF");
+    printf("DEFVAR  %s@%s\n", frame_name, (char*)(head->a));
+
+    if (head->b == NULL)
+        return OK; // no assignment expression
     
+    printf("# === inicialize var %s ===\n", (char*)(head->a));
+    // evaluate the expression
+    ERR = generate_expression((exp_node*)(head->b), symtable);
+    if (ERR)
+        return ERR;
     
+    // assign the expression value to the variable
+    printf("POPS      %s@%s", frame_name, (char*)(head->a));
+
     return OK;
 }
 
 Error generate_func_call(ASTNode* func_call, SymTable* symtable){
     printf("\n# === call %s() ===\nCREATEFRAME\nPUSHFRAME\n", (char*)(func_call->a));
-
 
     // write() is a special little function with args on the stack
     if (strcmp((char*)(func_call->a), "write") == 0){
@@ -354,8 +439,8 @@ Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg, SymTable* 
     if (ERR)
         return ERR;
     
-    printf("DEFVAR  TF@%s\n", arg->identifier);
-    printf("POPS    TF@%s\n", arg->identifier);
+    printf("DEFVAR  LF@%s\n", arg->identifier);
+    printf("POPS    LF@%s\n", arg->identifier);
     
     return OK;
 }
@@ -413,12 +498,10 @@ Error generate_user_functions(ASTNode* func_defs, SymTable* symtable, bool skip_
 
 Error generate_user_function(ASTNode* func_def, SymTable* symtable){
     ERR = generate_user_function_comment_head((ASTNode*)(func_def->a));
-
     if (ERR)
         return ERR;
 
     printf("LABEL           %s\n", (char*)(((ASTNode*)(((ASTNode*)(func_def->a))->a))->a));
-    printf("# Function code goes here\n");
     
     ERR = generate_statements((ASTNode*)(func_def->b), symtable);
     if (ERR)
