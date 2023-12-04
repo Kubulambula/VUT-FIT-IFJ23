@@ -268,16 +268,26 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
             //nodeStack
+            //right
             Stack_Top_Node(nodeStack, &right);
             if(right == NULL)
                 return ERR_INTERNAL;
             Stack_Pop(nodeStack);
+            //left
             Stack_Top_Node(nodeStack, &left);
             if(left == NULL){
                 exp_node_purge(right);
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);
+
+            if(temp_token == TOKEN_OPERATOR_DIVISION && right->type == TOKEN_LITERAL_INT){
+                temp_token = TOKEN_OPERATOR_I_DIVISION;
+            }
+            else if(temp_token == TOKEN_OPERATOR_PLUS && left->type == TOKEN_LITERAL_STRING && right->type == TOKEN_LITERAL_STRING){
+                temp_token == TOKEN_CONCATENATE;
+            }
+
             node = new_node(left, right, temp_token);
             if(node == NULL)
                 return ERR_INTERNAL;
