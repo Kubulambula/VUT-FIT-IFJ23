@@ -90,18 +90,19 @@ Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* cod
 
 }
 
-Error appendScope(char*name,char**out,int scope,SymTable* tables)
+Error appendScope(char**name,int scope)
 {
     BufferString* nameScoped;
-        if(!BufferString_init_from(nameScoped,name))
+        if(!BufferString_init_from(nameScoped,*name))
             return ERR_INTERNAL;
         char integer[6];
         integer[0]='$';
         sprintf(integer+1, "%d", scope);
         if(!BufferString_append_str(nameScoped,integer))
             return ERR_INTERNAL;   
-        free(name);
-    *out = BufferString_get_as_string(nameScoped);
+        free(*name);
+    *name = BufferString_get_as_string(nameScoped);
+    return OK;
 }
 static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping,bool* returned)
 {
@@ -119,7 +120,8 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         generatedSymbol = Symbol_new();
         generatedSymbol->symbol_type=(statement->type == VAR_DEF)?VAR:LET;
         generatedSymbol->name=((ASTNode*)statement->b)->a;
-        generatedSymbol->type=((ASTNode*)statement->a)->a;
+                              
+        generatedSymbol->type=(Type)(((ASTNode*)(statement->a))->a);
         generatedSymbol->nilable=((ASTNode*)statement->a)->b;
         generatedSymbol->scope = scoping;
         error = SymTable_insert(tables,generatedSymbol);
@@ -130,10 +132,9 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         }
         //in ast, replace var name with varname$scope
         
-        error = appendScope(((ASTNode*)statement->b)->a,&namedScope,scoping,tables);
+        error = appendScope(((ASTNode*)statement->b)->a,scoping);
         if (error != OK)
             return error;
-        ((ASTNode*)statement->b)->a = namedScope;
         //if in global, insert into code generator symtable
         if(expected_type == TYPE_NONE)
         {
@@ -202,10 +203,9 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
        
         //in ast, replace var name with varname$scope
        
-        error = appendScope(statement->a,&namedScope,target->scope,tables);
+        error = appendScope(statement->a,target->scope);
         if(error != OK)
             return error;
-        statement->a=namedScope;
 
 
         if(expReturnType == TYPE_NIL && !target->nilable)
