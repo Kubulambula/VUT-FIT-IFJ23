@@ -5,7 +5,7 @@
 #include "symtable.h"
 
 
-
+Error semantic(ASTNode *code_tree,SymTable* codeTable);
 
 Error appendScope(char**name,int scope);
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* codeTable,int scope);

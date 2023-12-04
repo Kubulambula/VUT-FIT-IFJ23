@@ -23,23 +23,27 @@ int main(void) {
 		// syntax() frees the ast if it encounters an error automatically
 		return err;
 	}
+
+    SymTable *code_table = (SymTable*)malloc(sizeof(SymTable));
+
+    if(code_table == NULL){
+        return ERR_INTERNAL;
+    }
 	
 	// No semantic yet :(
-	// err = semantic(ast);
-	// if (err){
-	// 	fprintf(stderr, "Semantic ERR: %d\n", err);
-	// 	ASTNode_free(ast);
-	// 	return err;
-	// }
+	err = semantic(ast, code_table);
+	if (err){
+		fprintf(stderr, "Semantic ERR: %d\n", err);
+		ASTNode_free(ast);
+		return err;
+	}
 
-	SymTable table;
-	SymTable_init(&table);
 
-	err = generate_code(ast, &table);
+	err = generate_code(ast, code_table);
 	if (err)
 		fprintf(stderr, "Code generation ERR: %d\n", err);
 	
-	SymTable_free(&table);
+	SymTable_free(code_table);
 	
 
 	ASTNode_free(ast);

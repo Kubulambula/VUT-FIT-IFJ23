@@ -347,7 +347,7 @@ Error handle_statements(ASTNode*statement,SymTable* tables,SymTable*codeTable,Ty
 }
 
 
-Error sematic(ASTNode *code_tree,SymTable* codeTable)
+Error semantic(ASTNode *code_tree,SymTable* codeTable)
 {
     //GLOBAL SymTable
     
