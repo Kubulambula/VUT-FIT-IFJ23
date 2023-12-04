@@ -11,7 +11,6 @@
 
 
 typedef enum{
-    UNKNOWN,
     FUNCTION, // func foo()
     VAR, // var foo
     LET, // let foo
@@ -24,6 +23,7 @@ typedef struct{
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
+    int scope;
     FuncDefArg* args;  //list of arguments of function
 } Symbol;
 
@@ -76,4 +76,5 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
 //Symbol* Symtable_lookup(SymTable* symTable, char* name); // renamed as it was more clear
 Symbol* SymTable_get(SymTable* symTable, char* name);
 
+Symbol* SymTable_get_recurse(SymTable* symTable,char*name);
 #endif
