@@ -205,16 +205,18 @@ void print_ast_node(ASTNode *node, int offset){
         switch(node->type){
             case FUNC_HEAD:
             case FUNC_HEAD_SIGNATURE:
-                break;
             case VAR_TYPE:
-                //printf(" %d )\n", *(int*)node->b);
                 printf(" )\n");
                 break;
+            case FUNC_CALL:
+                printf(" )\n");
+                printf(" %s\n", (char*)node->a);
+                print_ast_node(node->b, offset+1);
             case VAR_HEAD:
             case ASSIGN:
-            case FUNC_CALL:
             case FUNC_CALL_ARG:
-                printf(" %s )\n", (char*)node->a);
+                printf(" )\n");
+                printf(" %s\n", (char*)node->a);
                 print_exp_node((exp_node*)node->b, offset+1);
                 break;
 
