@@ -327,6 +327,10 @@ Error generate_user_functions(ASTNode* func_defs, SymTable* symtable){
     if (func_defs == NULL)
         return OK;
     
+    // skip first 10 functions (built-in)
+    for (int i = 0; i < 10; i++)
+        func_defs = (ASTNode*)(func_defs->a);
+    
     ERR = generate_user_function((ASTNode*)(func_defs->b), symtable);
     if (ERR)
         return ERR;
