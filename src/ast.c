@@ -158,6 +158,7 @@ FuncDefArg* FuncDefArg_new(){
     if (arg != NULL){
         arg->name = NULL;
         arg->identifier = NULL;
+        arg->nilable = false;
         arg->type = TYPE_NIL;
         arg->next = NULL;
     }
@@ -180,12 +181,12 @@ void FuncDefArg_free(FuncDefArg* arg){
 }
 
 
-FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg){
-    if (*arg == NULL)
-        return arg;
+// FuncDefArg* FuncDefArg_get_last_arg(FuncDefArg* arg){
+//     if (arg == NULL)
+//         return NULL;
     
-    while((*arg)->next != NULL)
-        arg = &((*arg)->next);
+//     while(arg->next != NULL)
+//         arg = arg->next;
     
-    return arg;
-}
+//     return arg;
+// }

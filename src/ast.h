@@ -95,7 +95,7 @@ FuncDefArg* FuncDefArg_new();
 void FuncDefArg_free(FuncDefArg* arg);
 
 // FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
-FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg);
+// FuncDefArg* FuncDefArg_get_last_arg(FuncDefArg* arg);
 
 
 ASTNode* ASTNode_new(ASTNodeType type);
