@@ -191,7 +191,12 @@ FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg){
 }
 
 
-
+void print_tree_string(char* string, int offset){
+    for(int i = 0; i < offset; i++){
+            printf("   ");
+        }
+        printf("%s\n", string);
+}
 
 void print_ast_node(ASTNode *node, int offset){
     if(node != NULL){
@@ -210,13 +215,13 @@ void print_ast_node(ASTNode *node, int offset){
                 break;
             case FUNC_CALL:
                 printf(" )\n");
-                printf(" %s\n", (char*)node->a);
+                print_tree_string((char*)node->a,offset+1);
                 print_ast_node(node->b, offset+1);
             case VAR_HEAD:
             case ASSIGN:
             case FUNC_CALL_ARG:
                 printf(" )\n");
-                printf(" %s\n", (char*)node->a);
+                print_tree_string((char*)node->a,offset+1);
                 print_exp_node((exp_node*)node->b, offset+1);
                 break;
 
