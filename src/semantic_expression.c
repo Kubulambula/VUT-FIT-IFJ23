@@ -6,6 +6,47 @@
 #include "lexer.h"
 #include "buffer_string.h"
 
+static Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
+{
+    SymTable* global = tables;
+    while(global->previous != NULL)
+        global = global->previous;
+    
+    Symbol* target = SymTable_get(global,func->a);
+    if(target == NULL || target->type != FUNCTION)
+        return ERR_SEMATIC_UNDEFINED_FUNC;
+    const char*write="write";
+    if(strcmp(func->a,write))
+        return OK;
+    
+    ASTNode* arg = func->b;
+    FuncDefArg* symTable_arg=target->args;
+    while(arg != NULL && symTable_arg != NULL)
+    {
+        if(symTable_arg->name == NULL || ((ASTNode*)arg->a)->a == NULL)
+        {
+            if(symTable_arg->name != NULL || ((ASTNode*)arg->a)->a != NULL)
+                return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        }
+        else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
+            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        Type a;
+        Error err = handle_expression(((ASTNode*)arg->a)->b,tables,&a);
+        if(err != OK)
+            return err;
+        if (a != symTable_arg->type)
+            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        
+        symTable_arg = symTable_arg->next;
+        arg->b;
+    }
+    if(arg != NULL && symTable_arg != NULL)
+        return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
+    *returnType = target->type;
+    return OK;
+
+}
+
 static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
 {
     
