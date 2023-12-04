@@ -21,10 +21,7 @@ int main(void) {
 		// syntax() frees the ast if it encounters an error automatically
 		return err;
 	}
-
-
-	printf("ERR: %d\n", err);
-
+	
 	// No semantic yet :(
 	// err = semantic(ast);
 	// if (err){
@@ -33,16 +30,21 @@ int main(void) {
 	// 	return err;
 	// }
 
-	err = generate_code(ast, NULL);
+	SymTable table;
+	SymTable_init(&table);
+
+	err = generate_code(ast, &table);
 	if (err)
-		fprintf(stderr, "Code generation ERR: %d", err);
+		fprintf(stderr, "Code generation ERR: %d\n", err);
+	
+	SymTable_free(&table);
 	
 
 	ASTNode_free(ast);
 	if (err == OK)
 		fprintf(stderr, "ERR: %d - good job!\n", err); // should be ok
 	else
-		fprintf(stderr, "ERR: %d", err);
+		fprintf(stderr, "ERR: %d\n", err);
 
 	return OK;
 }

@@ -55,7 +55,7 @@
 	"\nLABEL		write"\
 	"\nLABEL		writeLoop"\
 	"\nJUMPIFEQ	writeLoopBreak LF@argCnt int@0"\
-	"\nSUB			LF@argCnt LF@argCnt int@1"\
+	"\nSUB		LF@argCnt LF@argCnt int@1"\
 	"\nCALL		$write_helper"\
 	"\nJUMP		writeLoop"\
 	"\nLABEL		writeLoopBreak"\
@@ -101,17 +101,17 @@
 	"\nLABEL		substring"\
 	"\n# Check for initial conditions to determine if we should return nil"\
 	"\nDEFVAR		LF@condition"\
-	"\nLT			LF@condition LF@i int@0 # Check if i < 0"\
+	"\nLT		LF@condition LF@i int@0 # Check if i < 0"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
-	"\nLT			LF@condition LF@j int@0 # Check if j < 0"\
+	"\nLT		LF@condition LF@j int@0 # Check if j < 0"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
-	"\nGT			LF@condition LF@i LF@j # Check if i > j"\
+	"\nGT		LF@condition LF@i LF@j # Check if i > j"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\nDEFVAR		LF@len"\
 	"\nSTRLEN		LF@len LF@s # don't call length() for simplicity"\
-	"\nLT			LF@condition LF@i LF@len # Check if i < len"\
+	"\nLT		LF@condition LF@i LF@len # Check if i < len"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@false # Invert the condition to i >= len"\
-	"\nGT			LF@condition LF@j LF@len # Check if j > len"\
+	"\nGT		LF@condition LF@j LF@len # Check if j > len"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\n# Initial conditions passed. Now run the substring"\
 	"\nDEFVAR		LF@substr # Variable with the substring to be returned"\
@@ -119,7 +119,7 @@
 	"\nLABEL		substringWhile"\
 	"\nJUMPIFEQ	substringWhileBreak LF@i LF@j # if i == j goto substringWhileBreak"\
 	"\nGETCHAR		LF@c LF@s LF@i # c = s[i]"\
-	"\nADD			LF@i LF@i int@1 # i++"\
+	"\nADD		LF@i LF@i int@1 # i++"\
 	"\nCONCAT		LF@substr LF@substr LF@c # substr = substr + c"\
 	"\nJUMP		substringWhile"\
 	"\nLABEL		substringWhileBreak"\

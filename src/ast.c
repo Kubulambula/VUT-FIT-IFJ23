@@ -116,7 +116,7 @@ void ASTNode_free(ASTNode* node){
             break;
         
         case RETURN:
-            exp_node_purge(node->b); // free the expression
+            exp_node_purge(node->a); // free the expression
             free(node);
             break;
         

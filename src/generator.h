@@ -18,11 +18,11 @@ char* get_generated_literal_nil();
 
 Error generate_func_call(ASTNode* func_call, SymTable* symtable);
 
-Error generate_func_call_args(ASTNode* func_call_args, FuncDefArg* arg);
+Error generate_func_call_args(ASTNode* func_call_args, FuncDefArg* arg, SymTable* symtable);
 
-Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg);
+Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg, SymTable* symtable);
 
-Error generate_func_call_write_args(ASTNode* func_call_args, unsigned* args_on_stack);
+Error generate_func_call_write_args(ASTNode* func_call_args, unsigned* args_on_stack, SymTable* symtable);
 
 Error generate_assing(ASTNode* assign, SymTable* symtable);
 

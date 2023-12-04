@@ -23,7 +23,7 @@
 
 #define MAIN \
 	"\n\n\n# ========== Main body of the program =========="\
-	"\nLABEL		$main"
+	"\nLABEL		$main\n"
 
 
 // #define FUNC_DEFINITIONS

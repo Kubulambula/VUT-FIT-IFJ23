@@ -79,10 +79,132 @@ char* get_generated_literal_nil(){
 }
 
 
+Error generate_expression(exp_node* expression, SymTable* symtable){
+    char frame_name[3]; // helper variable for getting variable frame
+    char* literal_value; // helper variable for outputing literal values
+
+    switch (expression->type){
+        case TOKEN_OPERATOR_PLUS:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+            
+            printf("ADDS\n");
+            return OK;
+        
+        case TOKEN_OPERATOR_CONCAT: // fancy + for strings
+            fprintf(stderr, "Not implemented yet\n");
+            return ERR_INTERNAL;
+            break;
+        
+        case TOKEN_OPERATOR_MINUS:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+            
+            printf("SUBS\n");
+            return OK;
+        
+        case TOKEN_OPERATOR_MULTIPLICATION:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+            
+            printf("MULS\n");
+            return OK;
+        
+        case TOKEN_OPERATOR_DIVISION: // we have to implement integer division
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+            
+            printf("DIVS\n");
+            return OK;
+        
+        case TOKEN_EXCLAMATION:
+            fprintf(stderr, "Not implemented yet\n");
+            return ERR_INTERNAL;
+            break;
+        
+        case TOKEN_NIL_COALESCING:
+            fprintf(stderr, "Not implemented yet\n");
+            return ERR_INTERNAL;
+            break;
+        
+        case TOKEN_KEYWORD_FUNC:
+            return generate_func_call((ASTNode*)(expression->left), symtable);
+
+        case TOKEN_IDENTIFIER:
+            // somehow detect the Frame
+            if (SymTable_get(symtable, (expression->value).s) == NULL)
+                strcpy(frame_name, "LF");
+            else
+                strcpy(frame_name, "GF");
+
+            printf("PUSHS   %s@%s\n", frame_name, (expression->value).s);
+            return OK;
+        
+        case TOKEN_LITERAL_INT:
+            literal_value = get_generated_literal_int((expression->value).i);
+            if (literal_value == NULL)
+                return ERR_INTERNAL;
+            
+            printf("PUSHS   %s\n", literal_value);
+            free(literal_value);
+            return OK;
+        
+        case TOKEN_LITERAL_DOUBLE:
+            literal_value = get_generated_literal_double((expression->value).d);
+            if (literal_value == NULL)
+                return ERR_INTERNAL;
+            
+            printf("PUSHS   %s\n", literal_value);
+            free(literal_value);
+            return OK;
+        
+        case TOKEN_LITERAL_STRING:
+            literal_value = get_generated_literal_string((expression->value).s);
+            if (literal_value == NULL)
+                return ERR_INTERNAL;
+            
+            printf("PUSHS   %s\n", literal_value);
+            free(literal_value);
+            return OK;
+        
+        case TOKEN_LITERAL_NIL:
+            literal_value = get_generated_literal_nil();
+            if (literal_value == NULL)
+                return ERR_INTERNAL;
+            
+            printf("PUSHS   %s\n", literal_value);
+            free(literal_value);
+            return OK;
+        
+        default:
+            fprintf(stderr, "Not implemented yet\n");
+            return ERR_INTERNAL;
+            break;
+    }
+}
+
+
 Error generate_statements(ASTNode* statement, SymTable* symtable){
     if (statement == NULL)
         return OK;
     
+    printf("# statement here\n");
     switch (((ASTNode*)(statement->a))->type){
         case VAR_DEF:
             break;
@@ -120,10 +242,11 @@ Error generate_statements(ASTNode* statement, SymTable* symtable){
 Error generate_func_call(ASTNode* func_call, SymTable* symtable){
     printf("\n# === call %s() ===\nCREATEFRAME\n", (char*)(func_call->a));
 
+
     // write() is a special little function with args on the stack
     if (strcmp((char*)(func_call->a), "write") == 0){
         unsigned args_on_stack = 0;
-        ERR = generate_func_call_write_args((ASTNode*)(func_call->b), &args_on_stack);
+        ERR = generate_func_call_write_args((ASTNode*)(func_call->b), &args_on_stack, symtable);
         if (ERR)
             return ERR;
         
@@ -138,9 +261,10 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
 
     } else {
         Symbol* func = SymTable_get(symtable, (char*)(func_call->a));
+        fprintf(stderr, "Function does not exist\n");
         if(func == NULL)
             return ERR_INTERNAL;
-        generate_func_call_args((ASTNode*)(func_call->b), func->args);
+        generate_func_call_args((ASTNode*)(func_call->b), func->args, symtable);
     }
 
     printf("PUSHFRAME\nCALL %s\nPOPFRAME\n# === end call %s() ===\n", (char*)(func_call->a), (char*)(func_call->a));
@@ -148,37 +272,43 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
 }
 
 
-Error generate_func_call_args(ASTNode* func_call_args, FuncDefArg* arg){
+Error generate_func_call_args(ASTNode* func_call_args, FuncDefArg* arg, SymTable* symtable){
     if (func_call_args == NULL)
         return OK;
 
-    ERR = generate_func_call_arg((ASTNode*)(func_call_args->a), arg);
+    ERR = generate_func_call_arg((ASTNode*)(func_call_args->a), arg, symtable);
     if (ERR)
         return ERR;
-    return generate_func_call_args((ASTNode*)(func_call_args->b), arg->next);
+    return generate_func_call_args((ASTNode*)(func_call_args->b), arg->next, symtable);
 }
 
 
-Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg){
-    printf("DEFVAR TF@%s\n", arg->identifier);
-
-    // TODO assign value to the var func_call_arg->b
-
+Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg, SymTable* symtable){
+    ERR = generate_expression((exp_node*)(func_call_arg->b), symtable);
+    if (ERR)
+        return ERR;
+    
+    printf("DEFVAR  TF@%s\n", arg->identifier);
+    printf("POPS    TF@%s\n", arg->identifier);
+    
     return OK;
 }
 
 
-Error generate_func_call_write_args(ASTNode* func_call_args, unsigned* args_on_stack){
+Error generate_func_call_write_args(ASTNode* func_call_args, unsigned* args_on_stack, SymTable* symtable){
     if (func_call_args == NULL){
         *args_on_stack = 0;
         return OK;
     }
     
-    ERR = generate_func_call_write_args((ASTNode*)(func_call_args->b), args_on_stack);
+    ERR = generate_func_call_write_args((ASTNode*)(func_call_args->b), args_on_stack, symtable);
     if (ERR)
         return ERR;
     
-    // TODO assign value to the var func_call_arg->b
+    ASTNode* arg = (ASTNode*)(func_call_args->a);
+    ERR = generate_expression((exp_node*)(arg->b), symtable);
+    if (ERR)
+        return ERR;
     
     *args_on_stack = *args_on_stack + 1;
     return OK;
@@ -209,10 +339,14 @@ Error generate_user_function(ASTNode* func_def, SymTable* symtable){
     ERR = generate_user_function_comment_head((ASTNode*)(func_def->a));
     if (ERR)
         return ERR;
-    
 
     printf("LABEL           %s\n", (char*)(((ASTNode*)(((ASTNode*)(func_def->a))->a))->a));
     printf("# Function code goes here\n");
+    
+    ERR = generate_statements((ASTNode*)(func_def->b), symtable);
+    if (ERR)
+        return ERR;
+        
     printf("RETURN\n");
     
     return OK;
@@ -223,19 +357,17 @@ Error generate_user_function_comment_head(ASTNode* func_head){
     ERR = generate_user_function_comment_head_signature((ASTNode*)(func_head->a));
     if (ERR)
         return ERR;
-
-    if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_INT)
-        printf("Int");
-    else if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_DOUBLE)
-        printf("Double");
-    else if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_STRING)
-        printf("String");
-    else {
-        printf("Bad type\n");
-        return ERR_INTERNAL;
+    if ((Type)(((ASTNode*)(func_head->b))->a) != TYPE_NIL){
+        if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_INT)
+            printf("->Int");
+        else if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_DOUBLE)
+            printf("->Double");
+        else if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_STRING)
+            printf("->String");
+        
+        if ((bool)(((ASTNode*)(func_head->b))->a) == true)
+            printf("?");
     }
-    if ((bool)(((ASTNode*)(func_head->b))->a) == true)
-        printf("?");
 
     printf(" (user-defined)\n");
     return OK;
@@ -265,7 +397,7 @@ Error generate_user_function_comment_head_signature(ASTNode* func_head_signature
         if (arg != NULL)
             printf(", ");
     }
-    printf(")->");
+    printf(")");
     return OK;
 }
 
@@ -293,85 +425,3 @@ Error generate_code(ASTNode* root, SymTable* symtable){
 
     return OK;
 }
-
-
-
-// void code_generation(ASTNode* node){
-//     //ASTNode* nextNode ;
-
-//     switch (node->type)
-//     {
-//     case ROOT:
-
-//         if(node -> a != NULL){
-//             code_generation(node -> a); // GENERATE USER FUNCS
-//         }
-//         else if(node -> b != NULL){
-//             code_generation(node -> b); // NO MORE FUNCS TO GENERATE, GOING TO GLOBAL 
-//         }
-//         else{
-//             return; // SHOULD BE DONE?
-//         }
-
-//         break;
-        
-//     case FUNC_DEFS:
-
-//         if(node -> a != NULL){
-//             code_generation(node -> a); // FUNC DEFINITION
-//         }
-//         else if(node -> b != NULL){
-//             code_generation(node -> b); // ANOTHER FUNC DEF
-//         }
-//         else{
-//             return; // NO MORE FUNCS TO GENERATE
-//         }
-
-        
-//         break;
-
-//     case STATEMENT:
-            
-//         break;
-    
-//     case FUNC_DEF:
-        
-//         if(node -> a != NULL){
-//             code_generation(node -> a); // FUNC HEAD
-//         }
-//         else if(node -> b != NULL){
-//             code_generation(node -> b); // STATEMENT
-//         }
-//         else{
-//             return; 
-//         }
- 
-//         break;
-
-//     case FUNC_HEAD:
-//         if(node -> a != NULL){
-//             code_generation(node -> a); // FUNC ARGS
-//         }
-//         else if(node -> b != NULL){
-//             code_generation(node -> b); // STATEMENT
-//         }
-//         else{
-//             return; 
-//         }
-//         break;
-
-//     case FUNC_HEAD_SIGNATURE:
-//         printf("LABEL %s", (char*)(node->a));
-//         printf("CREATEFRAME");
-//         if(node->b != NULL)
-//             generate_args(node -> b);
-//         break;
-        
-//     default:
-//         break;
-//     }
-    
-
-
-
-// }
