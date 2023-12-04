@@ -109,7 +109,6 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
     SymTable* localTable,*global;
     Symbol* generatedSymbol,*target;
     Error error;
-    char* namedScope;
     Type expReturnType;
     bool aReturn,bReturn = false;
     switch (statement->type)
@@ -311,7 +310,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
             return ERR_INTERNAL;
             break;
     }
-
+    return OK;
 }
 
 static void error_free_all(SymTable* tables)
@@ -422,7 +421,7 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
             {
                 ASTNode* newAssign = ASTNode_new(ASSIGN);
                 newAssign->a=((ASTNode*)((ASTNode*)newRoot->a)->b)->a;
-                newAssign->b=((ASTNode*)((ASTNode*)newRoot->a)->b)->b;
+                newAssign->b=tempExp;
                 (*statement)->a = newAssign;
                 //(*statement)->b= newRoot->b; //statement->b = root->right->left->right->left ?
             } 
