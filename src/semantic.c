@@ -244,7 +244,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         localTable->previous=tables;
         
         error = handle_statements(((ASTNode*)statement->b)->a,localTable,codeTable,expected_type,scoping+1,&aReturn);
-        Symbol_free(localTable);
+        SymTable_free(localTable);
         if(error != OK)
             return error;
         localTable = malloc(sizeof(SymTable));
@@ -258,6 +258,11 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
             return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
         
         return OK;
+        break;
+    case CHECK_IF_LET:
+        target = SymTable_get_recurse(tables,statement->a);
+
+
         break;
     case WHILE:
         expReturnType=TYPE_NIL;
@@ -357,20 +362,33 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
         symbolFunc->symbol_type = FUNCTION;
         symbolFunc->args = ((ASTNode*)(((ASTNode*)func->a)->a))->b;
         symbolFunc->name = ((ASTNode*)(((ASTNode*)func->a)->a))->a;
-        symbolFunc->type = ((ASTNode*)func->a)->b;
+        symbolFunc->type = (Type)(((ASTNode*)func->a)->b);
         symbolFunc->func_def= func;
         Error error= SymTable_insert(globalTable,symbolFunc);
+    
         if(error != OK)
         {
             error_free_all(globalTable);
             Symbol_free(symbolFunc);
             return error;
         }
-
+        Symbol *symbolFuncCode = Symbol_new();
+        symbolFuncCode->symbol_type = FUNCTION;
+        symbolFuncCode->args = ((ASTNode*)(((ASTNode*)func->a)->a))->b;
+        symbolFuncCode->name = ((ASTNode*)(((ASTNode*)func->a)->a))->a;
+        symbolFuncCode->type = (Type)(((ASTNode*)func->a)->b);
+        symbolFuncCode->func_def= func;
+        error= SymTable_insert(codeTable,symbolFuncCode);
+        if(error != OK)
+        {
+            error_free_all(globalTable);
+            Symbol_free(symbolFuncCode);
+            return error;
+        }
        functions = functions->a;
     }
     //INIT GLOBAL VARIABLES
-    ASTNode** statement = &code_tree->b;
+    ASTNode** statement = (ASTNode**)&code_tree->b;
     while(statement!=NULL)
     {
         if (((ASTNode*)(*statement)->a)->type == VAR_DEF || ((ASTNode*)(*statement)->a)->type == LET_DEF)
@@ -404,7 +422,7 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
             newRoot->b=tempRoot;
             
         }
-        statement = &(*statement)->b;
+        statement = (ASTNode**)&(*statement)->b;
     }
 
     //start body check
@@ -505,35 +523,5 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
 //když nechybý typ, nemusí být = výraz
 //chyba 7, špatný typ výrazu při přiřazení // expression v if () není typu TYPE_BOOL
 
-// v if () může být let id !!!
-// musím checknout jestli proměnná id existuje
 
 //VOID FCE NESMÍ MÍT RETURN, JINAK ERR 4 (ERR 4 TAKY KDYŽ TYP RETURN NESEDÍ)
-//CHYBÍ LI RETURN V NOT VOID FCI, ERR 6
-//VESTAVĚNÉ FCE DO SYMTABLE
-/*
-    INT + INT = INT
-    INT +TYPE_DOUBLE =TYPE_DOUBLE
-    STRING + STRING = STRING
-    EXP1 ?? EXP2 (EXP1 = Nil) = EXP2
-                  EXP1 != NIL = EXP1
-    typ EXP1,2 musí být stejný,(bez nil)
-    EXP1 == EXP2
-    if (typ exp1 != type exp2) ==> err 7
-    literály se potřebně přetypují (int>double) ale var a let NE!!!
-
-    ostatní porovnání:
-        nesmí být expy nil, nesmí se porovnávat des. číslo s celým  
-    chyby v expech se hlásí jako semantic err
-*/
-
-
-//TYPE_BOOL NESMÍ BÝT V UVNITŘ EXPU
-
-
-
-
-
-
-
-//volání fce parametr _
