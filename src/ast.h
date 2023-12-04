@@ -64,6 +64,40 @@ typedef enum {
 } ASTNodeType;
 
 
+#ifndef NDEBUG
+static inline void print_astnode_as_string(ASTNodeType t){
+    char* astnode_as_string[] = {
+        "ROOT",
+        "STATEMENT",
+        "FUNC_DEFS",
+        "FUNC_DEF",
+        "FUNC_HEAD",
+        "FUNC_HEAD_SIGNATURE",
+        "VAR_DEF",
+        "LET_DEF",
+        "VAR_TYPE",
+        "VAR_HEAD",
+        "ASSIGN",
+        "FUNC_CALL",
+        "FUNC_CALL_ARGS",
+        "FUNC_CALL_ARG",
+        "IFELSE",
+        "IFELSE_BODIES",
+        "WHILE",
+        "RETURN",
+        "EXPRESSION",
+    };
+    printf("%s", astnode_as_string[t]);
+}
+#else
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+static inline void print_astnode_as_string(ASTNodeType t){}
+#endif
+
+
+
+
+
 // One magical struct to rule them all
 typedef struct{
     ASTNodeType type;
@@ -106,5 +140,8 @@ ASTNode* ASTNode_find_leftmost_node(ASTNode* node);
 
 ASTNode* ASTNode_find_rightmost_node(ASTNode* node);
 
+void print_ast_node(ASTNode *node, int offset);
+
+void print_exp_node(exp_node *node, int offset);
 
 #endif
