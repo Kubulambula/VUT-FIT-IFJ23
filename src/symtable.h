@@ -25,6 +25,7 @@ typedef struct{
     bool initialized; // if true, the variable was assigned a value at least once
     int scope;
     FuncDefArg* args;  //list of arguments of function
+    ASTNode* func_def;
 } Symbol;
 
 

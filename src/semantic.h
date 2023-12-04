@@ -10,5 +10,5 @@
 Error appendScope(char*name,char**out,int scope,SymTable* tables);
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,int scope);
 
-Error handle_expression(exp_node* node,SymTable* tables,Type* returnType);
+Error handle_expression(exp_node* node,SymTable* tables,Type* returnType,bool done);
 #endif
