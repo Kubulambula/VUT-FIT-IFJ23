@@ -8,6 +8,28 @@
 
 Error syntax(ASTNode** tree);
 
+Error generate_built_in_function_definitions(ASTNode* root);
+
+Error generate_built_in_readString(ASTNode** func_defs);
+
+Error generate_built_in_readInt(ASTNode** func_defs);
+
+Error generate_built_in_readDouble(ASTNode** func_defs);
+
+Error generate_built_in_write(ASTNode** func_defs);
+
+Error generate_built_in_Int2Double(ASTNode** func_defs);
+
+Error generate_built_in_Double2Int(ASTNode** func_defs);
+
+Error generate_built_in_length(ASTNode** func_defs);
+
+Error generate_built_in_substring(ASTNode** func_defs);
+
+Error generate_built_in_ord(ASTNode** func_defs);
+
+Error generate_built_in_chr(ASTNode** func_defs);
+
 Error ll_program(BufferString* buffer_string, ASTNode* tree);
 
 Error ll_func_definition(BufferString* buffer_string, ASTNode** tree);

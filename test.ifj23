@@ -1,7 +1,0 @@
-func foo() {
-	let x: String
-	x = "ahoj"
-	let y: String
-	let z: Int
-	z = nibba()
-}
