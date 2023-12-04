@@ -77,12 +77,12 @@ Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* cod
   
   
     bool returning;
-    Error err = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,scope+1,&returning);
+    Error err = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,scope+1,&returning,target->nilable);
     if(err != OK)
         return err;
     
     //returning check
-
+    if(target->type == TYPE_NIL)
 
     
     target->initialized=true;
@@ -104,7 +104,7 @@ Error appendScope(char**name,int scope)
     *name = BufferString_get_as_string(nameScoped);
     return OK;
 }
-static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping,bool* returned)
+static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping,bool* returned,bool nilable_return)
 {
     SymTable* localTable,*global;
     Symbol* generatedSymbol,*target;
@@ -243,14 +243,14 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         SymTable_init(localTable);
         localTable->previous=tables;
         
-        error = handle_statements(((ASTNode*)statement->b)->a,localTable,codeTable,expected_type,scoping+1,&aReturn);
+        error = handle_statements(((ASTNode*)statement->b)->a,localTable,codeTable,expected_type,scoping+1,&aReturn,nilable_return);
         SymTable_free(localTable);
         if(error != OK)
             return error;
         localTable = malloc(sizeof(SymTable));
         SymTable_init(localTable);
         
-        error = handle_statements(((ASTNode*)statement->b)->b,localTable,codeTable,expected_type,scoping+1,&bReturn);
+        error = handle_statements(((ASTNode*)statement->b)->b,localTable,codeTable,expected_type,scoping+1,&bReturn,nilable_return);
         SymTable_free(localTable);
         if(error != OK)
             return error;
@@ -275,7 +275,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         localTable = malloc(sizeof(SymTable));
         SymTable_init(localTable);
         localTable->previous=tables;
-        error = handle_statements(statement->b,localTable,codeTable,expected_type,scoping+1,returned);
+        error = handle_statements(statement->b,localTable,codeTable,expected_type,scoping+1,returned,nilable_return);
         SymTable_free(localTable);
         if (error != OK)
             return error;
@@ -285,14 +285,16 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         switch (expected_type)
         {
             case TYPE_NONE:
-                return OK;
+                return ERR_SEMATIC_VOID_FUNC_RETURNS_VALUE;
                 break;
             case TYPE_NIL:
                 if (statement->a != NULL)
                     return ERR_SEMATIC_VOID_FUNC_RETURNS_VALUE;
+                *returned=true;
+                return OK;
                 break;
             default:
-                if (statement->a == NULL)
+                if (statement->a == NULL && !nilable_return)
                     return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
                 expReturnType=TYPE_NIL;
                 error = handle_expression(statement->a,tables,&expReturnType,codeTable,scoping);
@@ -300,6 +302,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
                     return error;
                 if(expReturnType != expected_type)
                     return ERR_SEMATIC_BAD_FUNC_RETURN_TYPE;
+                return OK;
                 break;
         }
         break;
@@ -320,16 +323,16 @@ static void error_free_all(SymTable* tables)
 
 
 
-Error handle_statements(ASTNode*statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping,bool* returned)
+Error handle_statements(ASTNode*statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping,bool* returned,bool nilable_return)
 {
-
+ 
     SymTable* localTable = malloc(sizeof(SymTable));
     SymTable_init(localTable);
     localTable->previous=tables;
     while(statement!= NULL)
     {   
         bool returning=false;
-        Error err = handle_statement(statement,localTable,codeTable,expected_type,scoping,&returning);
+        Error err = handle_statement(statement,localTable,codeTable,expected_type,scoping,&returning,nilable_return);
         if(err != OK)
         {
             SymTable_free(localTable);
@@ -352,7 +355,7 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
     SymTable* globalTable;
     SymTable_init(globalTable);
     
-    //USER FUNCTIONS TO SYMTABLE
+    //FUNCTIONS TO SYMTABLE
     ASTNode *functions = code_tree->a;
     while(functions != NULL)
     {
@@ -398,7 +401,7 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
             exp_node* tempExp = ((ASTNode*)((ASTNode*)(*statement)->a)->b)->b;
             ((ASTNode*)((ASTNode*)(*statement)->a)->b)->b = NULL;
             bool dump;
-            Error err = handle_statement((*statement)->a,globalTable,codeTable,TYPE_NONE,0,&dump);
+            Error err = handle_statement((*statement)->a,globalTable,codeTable,TYPE_NONE,0,&dump,false);
             if(err != OK)
                 return err;
          
@@ -432,11 +435,10 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
     while (globalStatement != NULL &&(globalStatement->type == LET_DEF || globalStatement->type == VAR_DEF))
         globalStatement = globalStatement->b;
     bool returning=false;
-    Error err = handle_statements(code_tree->b,globalTable,codeTable,TYPE_NONE,0,&returning);
+    Error err = handle_statements(code_tree->b,globalTable,codeTable,TYPE_NONE,0,&returning,false);
     if (err != OK)
         return err;
-    if(returning)
-        return ERR_SEMATIC_VOID_FUNC_RETURNS_VALUE;
+ 
     /*  
     //FUNC BODY CHECK
     ASTNode *functions = code_tree->a;
