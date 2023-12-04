@@ -18,8 +18,19 @@ Symbol* Symbol_new(){
 }
 
 
+void Symbol_free(Symbol* symbol)
+{
+    free(symbol->name);
+    FuncDefArg* arg = symbol->args;
+    while (arg != NULL)
+    {
+        FuncDefArg*temp = arg->next;
+        FuncDefArg_free(arg);
+        arg = temp;
+    }
+    free(symbol);
 
-
+}
 
 static unsigned hash(char* name,int size)
 {
