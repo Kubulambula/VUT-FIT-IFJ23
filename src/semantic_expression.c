@@ -62,10 +62,10 @@ Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
 
 }
 
-Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
+Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTable *code_table, int scoping)
 {
     if(node != NULL){
-        
+
         bool eq= false;  
         switch (node->type)
         {
@@ -153,6 +153,7 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
             }
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             break;
+
         case TOKEN_OPERATOR_PLUS:   // +
             Type a,b;
             Error aEr = handle_expression(node->left,tables,&a);
