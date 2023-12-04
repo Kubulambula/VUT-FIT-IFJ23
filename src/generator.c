@@ -96,10 +96,14 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             return OK;
         
         case TOKEN_CONCATENATE: // fancy + for strings
-            fprintf(stderr, "Not implemented yet\n");
-            return ERR_INTERNAL;
-            break;
-        
+            // temp variables
+            printf("CREATEFRAME\nDEFVAR     TF@$temp1\nDEFVAR     TF@$temp2");
+            // get variales from stack to the temp variables
+            printf("POPS    TF@$temp2\nPOPS      TF@temp1");
+            // concat them and push the result to stack
+            printf("CONCAT  TF@$temp1 TF@$temp1 TF@$temp2\nPUSHS   TF@$temp1");
+            return OK;
+
         case TOKEN_OPERATOR_MINUS:
             ERR = generate_expression(expression->left, symtable);
             if (ERR)
@@ -122,7 +126,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             printf("MULS\n");
             return OK;
         
-        case TOKEN_OPERATOR_DIVISION: // we have to implement integer division
+        case TOKEN_OPERATOR_DIVISION:
             ERR = generate_expression(expression->left, symtable);
             if (ERR)
                 return ERR;
@@ -131,6 +135,17 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
                 return ERR;
             
             printf("DIVS\n");
+            return OK;
+        
+        case TOKEN_OPERATOR_I_DIVISION:
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+            
+            printf("IDIVS\n");
             return OK;
         
         case TOKEN_EXCLAMATION:
@@ -193,7 +208,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             return OK;
         
         default:
-            fprintf(stderr, "Not implemented yet\n");
+            fprintf(stderr, "Bad expression\n");
             return ERR_INTERNAL;
             break;
     }
