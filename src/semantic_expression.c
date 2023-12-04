@@ -6,6 +6,21 @@
 #include "lexer.h"
 #include "buffer_string.h"
 
+static Token nonLiteral_in_exp(exp_node* node)
+{
+    if(node == NULL)
+        return TOKEN_KEYWORD_NIL;
+    if(node->type= TOKEN_KEYWORD_FUNC || node->type == TOKEN_IDENTIFIER)
+        return TOKEN_KEYWORD_VAR;
+
+    if(nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL)
+        return TOKEN_KEYWORD_VAR;
+    if(nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL)
+        return TOKEN_KEYWORD_VAR;
+
+    return TOKEN_KEYWORD_NIL;
+}
+
 static Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
 {
     SymTable* global = tables;
