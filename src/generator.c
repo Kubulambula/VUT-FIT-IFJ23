@@ -328,8 +328,11 @@ Error generate_user_functions(ASTNode* func_defs, SymTable* symtable){
         return OK;
     
     // skip first 10 functions (built-in)
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++){
+        // you cant try commenting this out to compare the generated functions to the built-in functions
+        // keep in mind, that the interpreter won't work after that, so check it manually
         func_defs = (ASTNode*)(func_defs->a);
+    }
     
     ERR = generate_user_function((ASTNode*)(func_defs->b), symtable);
     if (ERR)
