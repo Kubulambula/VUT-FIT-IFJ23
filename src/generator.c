@@ -95,7 +95,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             printf("ADDS\n");
             return OK;
         
-        case TOKEN_OPERATOR_CONCAT: // fancy + for strings
+        case TOKEN_CONCATENATE: // fancy + for strings
             fprintf(stderr, "Not implemented yet\n");
             return ERR_INTERNAL;
             break;
@@ -365,7 +365,7 @@ Error generate_user_function_comment_head(ASTNode* func_head){
         else if ((Type)(((ASTNode*)(func_head->b))->a) == TYPE_STRING)
             printf("->String");
         
-        if ((bool)(((ASTNode*)(func_head->b))->a) == true)
+        if ((bool)(((ASTNode*)(func_head->b))->b) == true)
             printf("?");
     }
 
