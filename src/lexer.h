@@ -127,8 +127,8 @@ static inline void print_token_as_string(Token t){
         "PRECEDENT_E",
         "PRECEDENT_END",
     };
-    printf("%s\n", tokens_as_string[t]);
-    //printf("%s", tokens_as_string[t]);
+    //printf("%s\n", tokens_as_string[t]);
+    printf("%s", tokens_as_string[t]);
 }
 #else
 #pragma GCC diagnostic ignored "-Wunused-parameter"

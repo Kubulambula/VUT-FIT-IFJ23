@@ -281,6 +281,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);
+            //operator
             node = new_node(left, right, temp_token);
             if(node == NULL)
                 return ERR_INTERNAL;

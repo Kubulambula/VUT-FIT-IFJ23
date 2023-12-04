@@ -188,5 +188,91 @@ void FuncDefArg_free(FuncDefArg* arg){
 //     while(arg->next != NULL)
 //         arg = arg->next;
     
-//     return arg;
-// }
+    //return arg;
+//}
+
+// offset nastavte pri prvnim volani na 0
+void print_tree_string(char* string, int offset){
+    for(int i = 0; i < offset; i++){
+            printf("|   ");
+        }
+        printf("%s\n", string);
+}
+
+// offset nastavte pri prvnim volani na 0
+void print_ast_node(ASTNode *node, int offset){
+    if(node != NULL){
+        for(int i = 0; i < offset; i++){
+            printf("|   ");
+        }
+        printf("( ");
+        print_astnode_as_string(node->type);
+        printf(" )\n");
+
+
+        switch(node->type){
+            case FUNC_HEAD_SIGNATURE:
+            case VAR_TYPE:
+                break;
+            case FUNC_CALL:
+                print_tree_string((char*)node->a,offset+1);
+                print_ast_node(node->b, offset+1);
+                break;
+            case VAR_HEAD:
+            case ASSIGN:
+            case FUNC_CALL_ARG:
+                print_tree_string((char*)node->a,offset+1);
+                print_exp_node((exp_node*)node->b, offset+1);
+                break;
+
+            case IFELSE:
+            case WHILE:
+                print_exp_node((exp_node*)node->a, offset+1);
+                print_ast_node(node->b, offset+1);
+                break;
+
+            case EXPRESSION:
+                print_exp_node((exp_node*)node->a, offset+1);
+                break;
+
+            default:
+                print_ast_node(node->a, offset+1);
+                print_ast_node(node->b, offset+1);
+        }
+    }
+}
+
+// offset nastavte pri prvnim volani na 0
+void print_exp_node(exp_node *node, int offset){
+    if(node != NULL){
+        for(int i = 0; i < offset; i++){
+            printf("|   ");
+        }
+        printf("[ ");
+        print_token_as_string(node->type);
+        printf(" ]");
+        switch(node->type){
+            case TOKEN_LITERAL_INT:
+                printf(" %d", node->value.i);
+                break;
+            case TOKEN_LITERAL_DOUBLE:
+                printf(" %lf", node->value.d);
+                break;
+            case TOKEN_LITERAL_STRING:
+            case TOKEN_IDENTIFIER:
+            case TOKEN_KEYWORD_FUNC:
+                printf(" %s", node->value.s);
+                break;
+            default:
+                break;
+        }
+        printf("\n");
+        if(node->type == TOKEN_KEYWORD_FUNC){
+            print_ast_node((ASTNode*)node->left, offset+1);
+        }
+        else{
+            print_exp_node(node->left, offset+1);
+            print_exp_node(node->right, offset+1);
+        }
+    }
+}
