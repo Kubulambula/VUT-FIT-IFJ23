@@ -280,14 +280,6 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);
-
-            if(temp_token == TOKEN_OPERATOR_DIVISION && right->type == TOKEN_LITERAL_INT){
-                temp_token = TOKEN_OPERATOR_I_DIVISION;
-            }
-            else if(temp_token == TOKEN_OPERATOR_PLUS && left->type == TOKEN_LITERAL_STRING && right->type == TOKEN_LITERAL_STRING){
-                temp_token = TOKEN_CONCATENATE;
-            }
-
             node = new_node(left, right, temp_token);
             if(node == NULL)
                 return ERR_INTERNAL;
