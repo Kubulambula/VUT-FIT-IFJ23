@@ -5,14 +5,62 @@
 #include "symtable.h"
 #include "lexer.h"
 #include "buffer_string.h"
-#include "semantic_expression.c"
+#include "semantic.h"
 
+Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,int scope)
+{
+    SymTable* global = tables;
+    while(global->previous != NULL)
+        global = global->previous;
+    
+    Symbol* target = SymTable_get(global,func->a);
+    if(target == NULL || target->type != FUNCTION)
+        return ERR_SEMATIC_UNDEFINED_FUNC;
+    const char*write="write";
+    if(strcmp(func->a,write))
+        return OK;
+    
+    ASTNode* arg = func->b;
+    FuncDefArg* symTable_arg=target->args;
+    while(arg != NULL && symTable_arg != NULL)
+    {
+        if(symTable_arg->name == NULL || ((ASTNode*)arg->a)->a == NULL)
+        {
+            if(symTable_arg->name != NULL || ((ASTNode*)arg->a)->a != NULL)
+                return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        }
+        else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
+            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        Type a;
+        Error err = handle_expression(((ASTNode*)arg->a)->b,tables,&a);
+        if(err != OK)
+            return err;
+        if (a != symTable_arg->type)
+            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        
+        symTable_arg = symTable_arg->next;
+        arg->b;
+    }
+    if(arg != NULL && symTable_arg != NULL)
+        return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
+    *returnType = target->type;
+    return OK;
 
+}
 
-
-
-
-
+Error appendScope(char*name,char**out,int scope,SymTable* tables)
+{
+    BufferString* nameScoped;
+        if(!BufferString_init_from(nameScoped,name))
+            return ERR_INTERNAL;
+        char integer[6];
+        integer[0]='$';
+        sprintf(integer+1, "%d", scope);
+        if(!BufferString_append_str(nameScoped,integer))
+            return ERR_INTERNAL;   
+        free(name);
+    *out = BufferString_get_as_string(nameScoped);
+}
 static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping)
 {
 
@@ -20,8 +68,8 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
     {
     case VAR_DEF:
     case LET_DEF:
+        //make symtable symbol for variable
         Symbol* var = Symbol_new();
-
         var->symbol_type=(statement->type == VAR_DEF)?VAR:LET;
         var->name=((ASTNode*)statement->b)->a;
         var->type=((ASTNode*)statement->a)->a;
@@ -33,20 +81,17 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
             free(var);
             return error;
         }
-
-        BufferString* nameScoped;
-        if(!BufferString_init_from(nameScoped,((ASTNode*)((ASTNode*)statement->a)->b)->a))
-            return ERR_INTERNAL;
-        char integer[6];
-        integer[0]='$';
-        sprintf(integer+1, "%d", scoping);
-        if(!BufferString_append_str(nameScoped,integer))
-            return ERR_INTERNAL;
-        ((ASTNode*)statement->b)->a = nameScoped;
+        //in ast, replace var name with varname$scope
+        char* namedScope;
+        Error err = appendScope(((ASTNode*)statement->b)->a,&namedScope,scoping,tables);
+        if (err != OK)
+            return err;
+        ((ASTNode*)statement->b)->a = namedScope;
+        //if in global, insert into code generator symtable
         if(expected_type == TYPE_NONE)
         {
             Symbol *generatedSymbol = Symbol_new();
-            generatedSymbol->name=nameScoped;
+            generatedSymbol->name=namedScope;
             SymTable_insert(codeTable,generatedSymbol);
         }
         // AMIDIATE ASIGN
@@ -91,10 +136,13 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         break;
 
     case ASSIGN:
+
         Symbol* target = SymTable_get_recurse(tables,statement->a);
-        if(target == NULL || target->symbol_type == FUNCTION)   //var/let exists check
-            return ERR_SEMATIC_UNDEFINED_VAR;
         
+        //var/let exists check
+        if(target == NULL || target->symbol_type == FUNCTION)   
+            return ERR_SEMATIC_UNDEFINED_VAR;
+        //check let init
         if(target->symbol_type == LET && target->initialized)  
             return ERR_SEMATIC_REDEFINED;
         
@@ -104,16 +152,15 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         Error error = handle_expression(statement->b,tables,&expReturnType);
         if (error != OK)
             return error;
+       
+        //in ast, replace var name with varname$scope
         BufferString* nameScoped;
-        if(!BufferString_init_from(nameScoped,((ASTNode*)((ASTNode*)statement->a)->b)->a))
-            return ERR_INTERNAL;
-        char integer[6];
-        integer[0]='$';
-        sprintf(integer+1, "%d", scoping);
-        if(!BufferString_append_str(nameScoped,integer))
-            return ERR_INTERNAL;
+        error = appendScope(statement->a,&nameScoped,target->scope,tables);
+        if(error != OK)
+            return error;
         statement->a=nameScoped;
-         
+
+
         if(expReturnType == TYPE_NIL && !target->nilable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         if(expReturnType == TYPE_NIL)
@@ -122,20 +169,22 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         break;
     case FUNC_CALL:
-        
+        //get func symbol from global symtable
         SymTable* global = tables;
         while(global->previous!=NULL)
             global = global->previous;
         Symbol* target = SymTable_get(tables,statement->a);
         if(target == NULL || target->symbol_type == VAR || target->symbol_type == LET)   
             return ERR_SEMATIC_UNDEFINED_FUNC;
+        //check function arguments and func body
         Type dump = TYPE_NONE;
-        Error err = funcCallCheck(statement->a,&dump,tables);
+        Error err = funcCallCheck(statement->a,&dump,tables,scoping);
         if (err !=OK)
             return err;
         return OK;
         break;
     case IFELSE:
+        //check condition
         Type condReturn=TYPE_NIL;
         Error err = handle_expression(statement->a,tables,&condReturn);
         if (err != OK)
