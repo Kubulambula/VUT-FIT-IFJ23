@@ -183,7 +183,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
-            if(a == TYPE_NIL || b == TYPE_NIL)
+            if((node->type != TOKEN_OPERATOR_EQUALS && node->type != TOKEN_OPERATOR_NOT_EQUALS) && (a == TYPE_NIL || b == TYPE_NIL))
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             if(a == TYPE_BOOL || b == TYPE_BOOL)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -221,4 +221,5 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             break;
         }
     }
+    return OK;
 }
