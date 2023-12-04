@@ -195,6 +195,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
                 
             *returnType = TYPE_BOOL;
+            
             return OK;
             break;
 
@@ -219,6 +220,11 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             *returnType = a;
             return OK;
             break;
+
+        default:
+            return ERR_INTERNAL;
+            break;
         }
     }
+    return OK;
 }

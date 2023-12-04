@@ -38,7 +38,7 @@ typedef enum{
     TOKEN_OPERATOR_MINUS, // -
     TOKEN_OPERATOR_MULTIPLICATION, // *
     TOKEN_OPERATOR_DIVISION, // /
-    TOKEN_OPERATOR_I_DIVISION,// internal token - division by integer
+	TOKEN_OPERATOR_I_DIVISION,// internal token - division by integer
     // Comparison operatos
     TOKEN_OPERATOR_LESS_THAN, // <
     TOKEN_OPERATOR_GREATER_THAN, // >

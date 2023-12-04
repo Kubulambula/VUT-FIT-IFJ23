@@ -75,7 +75,7 @@ void SymTable_free(SymTable* symTable)
         free(symTable->table[i]);
     
     free(symTable->table);
-    free(symTable);
+    // free(symTable); // do not free this - this is allocated by someone else - probably on stack
 }
 
 static bool SymTable_resize(SymTable* symTable)
