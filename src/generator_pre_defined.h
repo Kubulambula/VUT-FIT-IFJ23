@@ -39,20 +39,18 @@
 
 
 #define COALESTING \
-	"\n# === coalesting ==="\
 	"\nCREATEFRAME"\
-	"\nDEFVAR     TF@$temp"\
-	"\nPOPS      TF@$temp"\
-	"\nPUSHS        TF@$temp # now we have 1st operand an stack AND in TF@$temp"\
+	"\nDEFVAR		TF@$temp"\
+	"\nPOPS		TF@$temp"\
+	"\nPUSHS		TF@$temp # now we have 1st operand an stack AND in TF@$temp"\
 	"\n# Compare 1st operand with nil"\
-	"\nPUSHS	nil@nil"\
+	"\nPUSHS		nil@nil"\
 	"\nEQS"\
-	"\nPUSHS	bool@true"\
-	"\n# If 1st operand is nil, return (on stack is only 2nd operand)"\
-	"\nJUMPIFEQS	coalesting_return_%d"\
+	"\nPUSHS		bool@true"\
+	"\nJUMPIFEQS	coalesting_return_%d # If 1st operand is nil, return (on stack is only 2nd operand)"\
 	"\nCLEARS # Clear the 2nd operand from stack"\
-	"\nPUSHS	TF@$temp # Push the copy of the 1st operand"\
-	"\nLABEL	coalesting_return_%d"\
-	"\n# === coalesting end ===\n"
+	"\nPUSHS		TF@$temp # Push the copy of the 1st operand"\
+	"\nLABEL		coalesting_return_%d"\
+	"\n# === coalesting end ===\n\n"
 
 #endif
