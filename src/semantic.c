@@ -92,7 +92,7 @@ Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* cod
 
 Error appendScope(char**name,int scope)
 {
-    BufferString* nameScoped;
+    BufferString* nameScoped = malloc(sizeof(BufferString));
         if(!BufferString_init_from(nameScoped,*name))
             return ERR_INTERNAL;
         char integer[6];
@@ -139,7 +139,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         if(expected_type == TYPE_NONE)
         {
             generatedSymbol = Symbol_new();
-            generatedSymbol->name=namedScope;
+            generatedSymbol->name=((ASTNode*)statement->b)->a;
             SymTable_insert(codeTable,generatedSymbol);
         }
         // AMIDIATE ASIGN
@@ -305,8 +305,11 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
                 return OK;
                 break;
         }
+        return OK;
         break;
-
+        default:
+            return ERR_INTERNAL;
+            break;
     }
 
 }
@@ -352,7 +355,7 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
     SymTable_init(codeTable);
     codeTable->previous = NULL;
 
-    SymTable* globalTable;
+    SymTable* globalTable = malloc(sizeof(SymTable));
     SymTable_init(globalTable);
     
     //FUNCTIONS TO SYMTABLE
@@ -430,7 +433,6 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
     }
 
     //start body check
-    int scoping = 0;
     ASTNode *globalStatement = code_tree->b;
     while (globalStatement != NULL &&(globalStatement->type == LET_DEF || globalStatement->type == VAR_DEF))
         globalStatement = globalStatement->b;
@@ -499,7 +501,7 @@ Error sematic(ASTNode *code_tree,SymTable* codeTable)
     Error error = handle_statements(main,globalTable,TYPE_NONE);
 */
 
-
+return OK;
 }
 
 //funkce musí mít aspoň jeden statement? (return ?)
