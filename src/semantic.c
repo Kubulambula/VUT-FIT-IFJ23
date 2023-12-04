@@ -355,7 +355,7 @@ Error handle_statements(ASTNode*statement,SymTable* tables,SymTable*codeTable,Ty
 }
 
 
-Error semantic(ASTNode *code_tree,SymTable* codeTable)
+Error semantic(ASTNode *code_tree, SymTable* codeTable)
 {
     //GLOBAL SymTable
     
@@ -401,71 +401,18 @@ Error semantic(ASTNode *code_tree,SymTable* codeTable)
         }
        functions = functions->a;
     }
-   
+
+
+    ERR = rearrange_statements(code_tree, codeTable, globalTable);
+    if (ERR)
+        return ERR;
     
 
+    // print_
 
-    //statement must be pointer to pointer
-    //INIT GLOBAL VARIABLES
-    ASTNode** statement = (ASTNode**)&code_tree->b;
-    while(*statement!=NULL)
-    {
-        prin();
-        if (((ASTNode*)((*statement)->a))->type == VAR_DEF || ((ASTNode*)((*statement)->a))->type == LET_DEF)
-        {
-            //insert into symtable
-            exp_node* tempExp = ((ASTNode*)((ASTNode*)((*statement)->a))->b)->b;
-            ((ASTNode*)((ASTNode*)((*statement)->a))->b)->b = NULL;
-            bool dump;
-            Error err = handle_statement((*statement)->a,globalTable,codeTable,TYPE_NONE,0,&dump,false);
-            if(err != OK)
-                return err;    
-            //move def to root
-            //statement is first found defvar/letvar
-
-
-
-
-
-
-            ASTNode*newRoot = *statement;  //newRoot = root->right->right->left
-            ASTNode*tempRoot = code_tree->b; //tempRoot = root->right
-            code_tree->b= newRoot; // root->right = root->right->right->left       
-            //*statement=(*statement)->b; //statement = root->right->right->left->right 
-
-            //replace with assign if needed 
-            if(tempExp != NULL)   
-            {
-                ASTNode* newStatement = ASTNode_new(STATEMENT);
-                ASTNode* newAssign = ASTNode_new(ASSIGN);
-                newAssign->a=((ASTNode*)((ASTNode*)newRoot->a)->b)->a;
-                newAssign->b=tempExp;
-                newStatement->a = newAssign;
-                newStatement->b=newRoot->b;
-                //(*statement)->b= newRoot->b; //statement->b = root->right->left->right->left ?
-            } 
-            
-
-            newRoot->b=tempRoot;
-       
-       
-       
-       
-       
-        }
-       prin();
-        statement = (ASTNode**)&((*statement)->b);
-        prin();
-    }
-        
+    printf("im here\n");
     
-            
-            
-
     //start body check
-    ASTNode *globalStatement = code_tree->b;
-    while (globalStatement != NULL &&(globalStatement->type == LET_DEF || globalStatement->type == VAR_DEF))
-        globalStatement = globalStatement->b;
     bool returning=false;
     Error err = handle_statements(code_tree->b,globalTable,codeTable,TYPE_NONE,0,&returning,false);
     if (err != OK)
@@ -532,6 +479,67 @@ Error semantic(ASTNode *code_tree,SymTable* codeTable)
 */
 
 return OK;
+}
+
+
+
+Error rearrange_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable){
+    //statement must be pointer to pointer
+    //INIT GLOBAL VARIABLES
+    ASTNode** statement = (ASTNode**)&root->b;
+    while(*statement != NULL)
+    {
+        if (!(((ASTNode*)((*statement)->a))->type == VAR_DEF || ((ASTNode*)((*statement)->a))->type == LET_DEF)){
+            statement = (ASTNode**)&((*statement)->b);
+            continue;
+        }
+        
+        ASTNode* def_statement = *statement; // store the def statement
+
+        exp_node* tempExp = ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b; // expression of immideate assing
+        ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b = NULL; // throw it out the window
+
+        if(tempExp != NULL){
+            if ((Type)(((ASTNode*)(def_statement->a))->a) == TYPE_NIL){ // do inference
+                Type expType;
+                ERR = handle_expression(tempExp, globalTable, &expType, codeTable, 0);
+                if (ERR)
+                    return ERR;
+                if (expType == TYPE_NIL)
+                    return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+                // assign the inferred type
+                ((ASTNode*)(def_statement->a))->a = (void*)expType;
+            }
+
+            // create new assign statement if necessary
+            ASTNode* assign_statement = ASTNode_new(STATEMENT);
+            if (assign_statement == NULL)
+                return ERR_INTERNAL;
+            ASTNode* assign = ASTNode_new(ASSIGN);
+            if (assign == NULL){
+                free(assign_statement);
+                return ERR_INTERNAL;
+            }
+            
+            assign_statement->a = (void*)assign;
+            assign->a = ((ASTNode*)((ASTNode*)((*statement)->a))->b)->a; // assign the name of the declared variable
+            assign->b = (void*)tempExp; // assign the expression of the declared variable
+            
+            *statement = assign_statement;
+            assign_statement->b = def_statement->b;
+
+            // set statement to check to the next statement
+            statement = (ASTNode**)&(assign_statement->b);
+        }else{
+            // set statement to check after the original statement
+            statement = (ASTNode**)&(def_statement->b);
+        }
+
+        // insert def_statement as the first statement
+        def_statement->b = root->b;
+        root->b = def_statement; 
+    }
+    return OK;
 }
 
 //funkce musí mít aspoň jeden statement? (return ?)

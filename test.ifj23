@@ -1,1 +1,15 @@
-let x:Int = 1
+let x = 1
+func foo(){
+
+}
+
+let y: Int = 69
+
+foo()
+
+var a: String = "Hello"
+
+
+
+
+
