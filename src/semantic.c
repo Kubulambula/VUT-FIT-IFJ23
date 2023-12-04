@@ -261,7 +261,8 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
         break;
     case CHECK_IF_LET:
         target = SymTable_get_recurse(tables,statement->a);
-
+        if (target->symbol_type != LET)
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         break;
     case WHILE:
