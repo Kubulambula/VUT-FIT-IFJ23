@@ -10,6 +10,6 @@
 Error appendScope(char*name,char**out,int scope,SymTable* tables);
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* codeTable,int scope);
 
-Error handle_expression(exp_node* node,SymTable* tables,Type* returnType);
+Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping);
 Error handle_statements(ASTNode*statement,SymTable* tables,SymTable*codeTable,Type expected_type,int scoping,bool* returned);
 #endif

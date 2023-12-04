@@ -5,6 +5,7 @@
 #include "buffer_string.h"
 #include "syntax_ll.h"
 #include "ast.h"
+#include "semantic.h"
 
 
 

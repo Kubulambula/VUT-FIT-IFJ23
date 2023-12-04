@@ -7,11 +7,15 @@
 #include "buffer_string.h"
 #include "semantic.h"
 
+#include "syntax_ll.h"
+#include "syntax_precedent.h"
+
+
 static Token nonLiteral_in_exp(exp_node* node)
 {
     if(node == NULL)
         return TOKEN_KEYWORD_NIL;
-    if(node->type= TOKEN_KEYWORD_FUNC || node->type == TOKEN_IDENTIFIER)
+    if(node->type == TOKEN_KEYWORD_FUNC || node->type == TOKEN_IDENTIFIER)
         return TOKEN_KEYWORD_VAR;
 
     if(nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL)
@@ -24,14 +28,18 @@ static Token nonLiteral_in_exp(exp_node* node)
 
 
 
-Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTable *code_table, int scoping)
+Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping)
 {
     if(node != NULL){
+        Symbol *target;
+        Type out,a,b;
+        Error err, aEr, bEr;
+        char* dollar;
 
-        bool eq= false;  
+
         switch (node->type)
         {
-            
+
         //LITERALS
         case TOKEN_LITERAL_INT: //int
             *returnType = TYPE_INT;
@@ -52,18 +60,31 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTab
 
         //VARIABLES
         case TOKEN_IDENTIFIER:
-            Symbol* target = SymTable_get_recurse(tables,node->value.s);
+            dollar = strstr(node->value.s, "$");
+            if(dollar != NULL){   // if jmeno promene obsahuje $
+                *dollar = '\0';   // potom $ -> '\0'
+            }
+
+            target = SymTable_get_recurse(tables,node->value.s);
             if(target == NULL || target->symbol_type == FUNCTION)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             if (!target->initialized)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             *returnType = target->type;
+
+            if(dollar != NULL){
+                *dollar = '$';
+            }
+            else{
+                appendScope(node->value.s, scoping);
+            }
+            
             return OK;
             break;
 
-        case TOKEN_KEYWORD_FUNC:                                          
-            Type out = TYPE_NIL;
-            Error err = funcCallCheck(node->left,&out,tables);
+        case TOKEN_KEYWORD_FUNC: 
+            out = TYPE_NIL;
+            err = funcCallCheck(node->left, &out , tables, code_table, scoping);
             if(err != OK)
                 return err;
             if(out == TYPE_NIL)
@@ -75,11 +96,10 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTab
         //OPERATORS
         case TOKEN_OPERATOR_MINUS: // - 
         case TOKEN_OPERATOR_MULTIPLICATION: // *
-            Type a,b;
-            Error aEr = handle_expression(node->left,tables,&a);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping);
             if(aEr != OK)
                 return aEr;
-            Error bEr = handle_expression(node->right,tables,&b);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
             if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLETYPE_DOUBLE
@@ -87,12 +107,12 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTab
                 *returnType = a;
                 return OK;
             }
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL); // LITERAL INTTYPE_DOUBLE
+            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
             {
                 *returnType =TYPE_DOUBLE;
                 return OK;
             }
-            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL);//TYPE_DOUBLE LITERAL INT
+            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL)//TYPE_DOUBLE LITERAL INT
             {
                 *returnType =TYPE_DOUBLE;
                 return OK;
@@ -101,40 +121,57 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTab
             break;
 
         case TOKEN_OPERATOR_DIVISION: // /
-            Type a,b;
-            Error aEr = handle_expression(node->left,tables,&a);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping);
             if(aEr != OK)
                 return aEr;
-            Error bEr = handle_expression(node->right,tables,&b);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
-            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLETYPE_DOUBLE
+            if(a==TYPE_DOUBLE && b==TYPE_DOUBLE)  //TYPE_DOUBLE TYPE_DOUBLE
             {
+                *returnType = a;
+                return OK;
+            }
+            if(a == TYPE_INT && b == TYPE_INT){     // INT INT
+                node->type = TOKEN_OPERATOR_I_DIVISION;
                 *returnType = a;
                 return OK;
             }
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             break;
 
-        case TOKEN_OPERATOR_PLUS:   // +
-            Type a,b;
-            Error aEr = handle_expression(node->left,tables,&a);
+        case TOKEN_OPERATOR_I_DIVISION:
+            aEr = handle_expression(node->left,tables,&a, tables, scoping);
             if(aEr != OK)
                 return aEr;
-            Error bEr = handle_expression(node->right,tables,&b);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
-            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE)|| (a == TYPE_STRING && b == TYPE_STRING))  //INT INT ||TYPE_DOUBLETYPE_DOUBLE || STRING STRING
+            
+
+        case TOKEN_OPERATOR_PLUS:   // +
+            aEr = handle_expression(node->left,tables,&a, tables, scoping);
+            if(aEr != OK)
+                return aEr;
+            bEr = handle_expression(node->right,tables,&b, tables, scoping);
+            if(bEr != OK)
+                return bEr;
+            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
             {
                 *returnType = a;
                 return OK;
             }
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL); // LITERAL INTTYPE_DOUBLE
+            if(a == TYPE_STRING && b == TYPE_STRING){   // STRING STRING
+                node->type = TOKEN_CONCATENATE;
+                *returnType = TYPE_STRING;
+                return OK;
+            }
+            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
             {
                 *returnType =TYPE_DOUBLE;
                 return OK;
             }
-            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL);//TYPE_DOUBLE LITERAL INT
+            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL)//TYPE_DOUBLE LITERAL INT
             {
                 *returnType =TYPE_DOUBLE;
                 return OK;
@@ -143,33 +180,24 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTab
             break;
         
         //LOGICAL
-        case TOKEN_OPERATOR_NOT_EQUALS: // !=
-            eq=true;        
+        case TOKEN_OPERATOR_NOT_EQUALS: // !=       
         case TOKEN_OPERATOR_EQUALS: // ==
         case TOKEN_OPERATOR_LESS_THAN: // <
         case TOKEN_OPERATOR_GREATER_THAN:  // >
         case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
         case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
-            if(eq)
-            {
-                if(((exp_node*)node->left)->type==TOKEN_IDENTIFIER && node->right == NULL)
-                    *returnType = TYPE_BOOL;
-                    return OK;
-            }
-
-            Type a,b;
-            Error aEr = handle_expression(node->left,tables,&a);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping);
             if(aEr != OK)
                 return aEr;
-            Error bEr = handle_expression(node->right,tables,&b);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
             
             if(a == TYPE_BOOL ||b == TYPE_BOOL)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL); // LITERAL INTTYPE_DOUBLE
+            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL);//TYPE_DOUBLE LITERAL INT
+            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL) //TYPE_DOUBLE LITERAL INT
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             if (a != b)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -179,17 +207,17 @@ Error handle_expression(exp_node* node,SymTable* tables,Type* returnType, SymTab
             break;
 
         case TOKEN_NIL_COALESCING:  // ??
-            Type a,b;
-            Error aEr = handle_expression(node->left,tables,&a);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping);
             if(aEr != OK)
                 return aEr;
-            Error bEr = handle_expression(node->right,tables,&b);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
             
             if(a != b || a == TYPE_BOOL)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            
+            break;
+
         case TOKEN_EXCLAMATION:
             *returnType = ((exp_node*)node->left)->type;
             return OK;
