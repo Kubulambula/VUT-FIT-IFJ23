@@ -285,7 +285,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
                 temp_token = TOKEN_OPERATOR_I_DIVISION;
             }
             else if(temp_token == TOKEN_OPERATOR_PLUS && left->type == TOKEN_LITERAL_STRING && right->type == TOKEN_LITERAL_STRING){
-                temp_token == TOKEN_CONCATENATE;
+                temp_token = TOKEN_CONCATENATE;
             }
 
             node = new_node(left, right, temp_token);
