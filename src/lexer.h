@@ -34,10 +34,11 @@ typedef enum{
     TOKEN_BRACE_RIGHT, // }
     // Aritmethic operators
     TOKEN_OPERATOR_PLUS, // +
+    TOKEN_CONCATENATE, // internal token - concatenation
     TOKEN_OPERATOR_MINUS, // -
     TOKEN_OPERATOR_MULTIPLICATION, // *
     TOKEN_OPERATOR_DIVISION, // /
-    TOKEN_OPERATOR_CONCAT, // + (only for strings)
+	TOKEN_OPERATOR_I_DIVISION,// internal token - division by integer
     // Comparison operatos
     TOKEN_OPERATOR_LESS_THAN, // <
     TOKEN_OPERATOR_GREATER_THAN, // >
@@ -100,9 +101,11 @@ static inline void print_token_as_string(Token t){
         "TOKEN_BRACE_LEFT",
         "TOKEN_BRACE_RIGHT",
         "TOKEN_OPERATOR_PLUS",
+        "TOKEN_OPERATOR_CONCATENATE",
         "TOKEN_OPERATOR_MINUS",
         "TOKEN_OPERATOR_MULTIPLICATION",
         "TOKEN_OPERATOR_DIVISION",
+        "TOKEN_OPERATOR_I_DIVISION",
         "TOKEN_OPERATOR_LESS_THAN",
         "TOKEN_OPERATOR_GREATER_THAN",
         "TOKEN_OPERATOR_LESS_THAN_OR_EQUAL",

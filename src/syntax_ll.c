@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "syntax_ll.h"
 #include "syntax_precedent.h"
 #include "lexer.h"
@@ -15,6 +16,10 @@ Error syntax(ASTNode** tree){
 		return ERR_INTERNAL;
 	}
 
+	ERR = generate_built_in_function_definitions(*tree);
+	if (ERR)
+		return ERR;
+
 	ERR = ll_program(&buffer_string, *tree);
 	BufferString_free(&buffer_string);
 	if (ERR){
@@ -25,6 +30,381 @@ Error syntax(ASTNode** tree){
 
 	return OK;
 }
+
+
+// add built in function to AST to make semantic life easier
+Error generate_built_in_function_definitions(ASTNode* root){
+	ERR = generate_built_in_readString((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_readInt((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_readDouble((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_write((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_Int2Double((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_Double2Int((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_length((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_substring((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_ord((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+	ERR = generate_built_in_chr((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
+	if (ERR)
+		return ERR;
+
+	return OK;
+}
+
+
+Error generate_blank_function(ASTNode** func_defs, ASTNode** func_head, ASTNode** func_head_signature, ASTNode** func_type){
+	// create new FUNC_DEFS - add a function to LList of functions
+	*func_defs = ASTNode_new(FUNC_DEFS);
+	if (*func_defs == NULL)
+		return ERR_INTERNAL;
+	// create new FUNC_DEF - add a concrete function
+	ASTNode* func_def = ASTNode_new(FUNC_DEF);
+	if (func_def == NULL)
+		return ERR_INTERNAL;
+	(*func_defs)->b = func_def;
+	// create new FUNC_HEAD - concrete function head
+	*func_head = ASTNode_new(FUNC_HEAD);
+	if (*func_head == NULL)
+		return ERR_INTERNAL;
+	func_def->a = (void*)(*func_head);
+	// create new FUNC_SIGNATURE for the concrete function
+	*func_head_signature = ASTNode_new(FUNC_HEAD_SIGNATURE);
+	if (*func_head_signature == NULL)
+		return ERR_INTERNAL;
+	(*func_head)->a = (void*)(*func_head_signature);
+	// create new VAR_TYPE - return type of the concrete function
+	*func_type = ASTNode_new(VAR_TYPE);
+	if (*func_type == NULL)
+		return ERR_INTERNAL;
+	((ASTNode*)(*func_head))->b = (void*)(*func_type);
+	
+	return OK;
+}
+
+
+Error generate_built_in_readString(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 11);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "readString"); // func name
+	func_head_signature->b = NULL; // func args
+
+	func_type->a = (void*)TYPE_STRING; // func type
+	func_type->b = (void*)true; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_readInt(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 8);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "readInt"); // func name
+	func_head_signature->b = NULL; // func args
+
+	func_type->a = (void*)TYPE_INT; // func type
+	func_type->b = (void*)true; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_readDouble(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 11);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "readDouble"); // func name
+	func_head_signature->b = NULL; // func args
+
+	func_type->a = (void*)TYPE_DOUBLE; // func type
+	func_type->b = (void*)true; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_write(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 6);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "write"); // func name
+	func_head_signature->b = NULL; // func args - write is an exeption and in symtable it is storead as it has no args
+
+	func_type->a = (void*)TYPE_NIL; // func type
+	func_type->b = (void*)false; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_Int2Double(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 11);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "Int2Double"); // func name
+
+	func_head_signature->b = FuncDefArg_new(); // func args
+	if (func_head_signature->b == NULL)
+		return ERR_INTERNAL;
+	
+	((FuncDefArg*)(func_head_signature->b))->name = NULL; // arg name
+	((FuncDefArg*)(func_head_signature->b))->identifier = malloc(sizeof(char) * 5);
+	if (((FuncDefArg*)(func_head_signature->b))->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(((FuncDefArg*)(func_head_signature->b))->identifier, "term"); // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->type = TYPE_INT; // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->nilable = false; // arg identifier
+
+	func_type->a = (void*)TYPE_DOUBLE; // func type
+	func_type->b = (void*)false; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_Double2Int(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 11);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "Double2Int"); // func name
+
+	func_head_signature->b = FuncDefArg_new(); // func args
+	if (func_head_signature->b == NULL)
+		return ERR_INTERNAL;
+	
+	((FuncDefArg*)(func_head_signature->b))->name = NULL; // arg name
+	((FuncDefArg*)(func_head_signature->b))->identifier = malloc(sizeof(char) * 5);
+	if (((FuncDefArg*)(func_head_signature->b))->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(((FuncDefArg*)(func_head_signature->b))->identifier, "term"); // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->type = TYPE_DOUBLE; // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->nilable = false; // arg identifier
+	
+	func_type->a = (void*)TYPE_INT; // func type
+	func_type->b = (void*)false; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_length(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 7);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "length"); // func name
+
+	func_head_signature->b = FuncDefArg_new(); // func args
+	if (func_head_signature->b == NULL)
+		return ERR_INTERNAL;
+	
+	((FuncDefArg*)(func_head_signature->b))->name = NULL; // arg name
+	((FuncDefArg*)(func_head_signature->b))->identifier = malloc(sizeof(char) * 2);
+	if (((FuncDefArg*)(func_head_signature->b))->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(((FuncDefArg*)(func_head_signature->b))->identifier, "s"); // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->type = TYPE_STRING; // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->nilable = false; // arg identifier
+	
+
+	func_type->a = (void*)TYPE_INT; // func type
+	func_type->b = (void*)false; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_substring(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 10);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "substring"); // func name
+
+	FuncDefArg* arg1 = FuncDefArg_new();
+	if (arg1 == NULL)
+		return ERR_INTERNAL;
+	func_head_signature->b = arg1; // add 1st arg
+	
+	arg1->name = malloc(sizeof(char) * 3);
+	if (arg1->name == NULL)
+		return ERR_INTERNAL;
+	strcpy(arg1->name, "of"); // arg1 name
+	arg1->identifier = malloc(sizeof(char) * 2);
+	if (arg1->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(arg1->identifier, "s"); // arg1 identifier
+	arg1->type = TYPE_STRING; // arg1 identifier
+	arg1->nilable = false; // arg1 identifier
+
+	FuncDefArg* arg2 = FuncDefArg_new();
+	if (arg2 == NULL)
+		return ERR_INTERNAL;
+	arg1->next = arg2; // add 2nd arg
+
+	arg2->name = malloc(sizeof(char) * 11);
+	if (arg2->name == NULL)
+		return ERR_INTERNAL;
+	strcpy(arg2->name, "startingAt"); // arg2 name
+	arg2->identifier = malloc(sizeof(char) * 2);
+	if (arg2->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(arg2->identifier, "i"); // arg2 identifier
+	arg2->type = TYPE_INT; // arg2 identifier
+	arg2->nilable = false; // arg2 identifier
+
+	FuncDefArg* arg3 = FuncDefArg_new();
+	if (arg3 == NULL)
+		return ERR_INTERNAL;
+	arg2->next = arg3; // add 3rd arg
+
+	arg3->name = malloc(sizeof(char) * 13);
+	if (arg3->name == NULL)
+		return ERR_INTERNAL;
+	strcpy(arg3->name, "endingBefore"); // arg3 name
+	arg3->identifier = malloc(sizeof(char) * 2);
+	if (arg3->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(arg3->identifier, "j"); // arg3 identifier
+	arg3->type = TYPE_INT; // arg3 type
+	arg3->nilable = false; // arg3 nilable
+
+	func_type->a = (void*)TYPE_STRING; // func type
+	func_type->b = (void*)true; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_ord(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 4);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "ord"); // func name
+
+	func_head_signature->b = FuncDefArg_new(); // func args
+	if (func_head_signature->b == NULL)
+		return ERR_INTERNAL;
+	
+	((FuncDefArg*)(func_head_signature->b))->name = NULL; // arg name
+	((FuncDefArg*)(func_head_signature->b))->identifier = malloc(sizeof(char) * 2);
+	if (((FuncDefArg*)(func_head_signature->b))->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(((FuncDefArg*)(func_head_signature->b))->identifier, "c"); // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->type = TYPE_STRING; // arg type
+	((FuncDefArg*)(func_head_signature->b))->nilable = false; // arg nilable
+	
+
+	func_type->a = (void*)TYPE_INT; // func type
+	func_type->b = (void*)false; // func type nilable
+
+	return OK;
+}
+
+Error generate_built_in_chr(ASTNode** func_defs){
+	ASTNode* func_head;
+	ASTNode* func_head_signature;
+	ASTNode* func_type;
+	ERR = generate_blank_function(func_defs, &func_head, &func_head_signature, &func_type);
+	if (ERR)
+		return ERR;
+	// populate the blank function
+	func_head_signature->a = malloc(sizeof(char) * 4);
+	if (func_head_signature->a == NULL)
+		return ERR_INTERNAL;
+	strcpy(func_head_signature->a, "chr"); // func name
+
+	func_head_signature->b = FuncDefArg_new(); // func args
+	if (func_head_signature->b == NULL)
+		return ERR_INTERNAL;
+	
+	((FuncDefArg*)(func_head_signature->b))->name = NULL; // arg name
+	((FuncDefArg*)(func_head_signature->b))->identifier = malloc(sizeof(char) * 2);
+	if (((FuncDefArg*)(func_head_signature->b))->identifier == NULL)
+		return ERR_INTERNAL;
+	strcpy(((FuncDefArg*)(func_head_signature->b))->identifier, "i"); // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->type = TYPE_INT; // arg identifier
+	((FuncDefArg*)(func_head_signature->b))->nilable = false; // arg identifier
+	
+
+	func_type->a = (void*)TYPE_STRING; // func type
+	func_type->b = (void*)false; // func type nilable
+
+	return OK;
+}
+
+
 
 
 Error ll_program(BufferString* buffer_string, ASTNode* tree){
