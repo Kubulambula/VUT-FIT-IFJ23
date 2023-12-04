@@ -191,7 +191,7 @@ void FuncDefArg_free(FuncDefArg* arg){
     //return arg;
 //}
 
-
+// offset nastavte pri prvnim volani na 0
 void print_tree_string(char* string, int offset){
     for(int i = 0; i < offset; i++){
             printf("|   ");
@@ -199,6 +199,7 @@ void print_tree_string(char* string, int offset){
         printf("%s\n", string);
 }
 
+// offset nastavte pri prvnim volani na 0
 void print_ast_node(ASTNode *node, int offset){
     if(node != NULL){
         for(int i = 0; i < offset; i++){
@@ -241,6 +242,7 @@ void print_ast_node(ASTNode *node, int offset){
     }
 }
 
+// offset nastavte pri prvnim volani na 0
 void print_exp_node(exp_node *node, int offset){
     if(node != NULL){
         for(int i = 0; i < offset; i++){
