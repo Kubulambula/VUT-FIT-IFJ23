@@ -193,7 +193,7 @@ FuncDefArg** FuncDefArg_get_last_arg(FuncDefArg** arg){
 
 void print_tree_string(char* string, int offset){
     for(int i = 0; i < offset; i++){
-            printf("   ");
+            printf("|   ");
         }
         printf("%s\n", string);
 }
@@ -201,43 +201,39 @@ void print_tree_string(char* string, int offset){
 void print_ast_node(ASTNode *node, int offset){
     if(node != NULL){
         for(int i = 0; i < offset; i++){
-            printf("   ");
+            printf("|   ");
         }
         printf("( ");
         print_astnode_as_string(node->type);
+        printf(" )\n");
 
 
         switch(node->type){
-            case FUNC_HEAD:
             case FUNC_HEAD_SIGNATURE:
             case VAR_TYPE:
-                printf(" )\n");
                 break;
             case FUNC_CALL:
-                printf(" )\n");
                 print_tree_string((char*)node->a,offset+1);
                 print_ast_node(node->b, offset+1);
+                break;
             case VAR_HEAD:
             case ASSIGN:
             case FUNC_CALL_ARG:
-                printf(" )\n");
                 print_tree_string((char*)node->a,offset+1);
                 print_exp_node((exp_node*)node->b, offset+1);
                 break;
 
             case IFELSE:
             case WHILE:
-                printf(" )\n");
                 print_exp_node((exp_node*)node->a, offset+1);
                 print_ast_node(node->b, offset+1);
                 break;
 
             case EXPRESSION:
-                printf(" )\n");
                 print_exp_node((exp_node*)node->a, offset+1);
                 break;
+
             default:
-                printf(" )\n");
                 print_ast_node(node->a, offset+1);
                 print_ast_node(node->b, offset+1);
         }
@@ -247,7 +243,7 @@ void print_ast_node(ASTNode *node, int offset){
 void print_exp_node(exp_node *node, int offset){
     if(node != NULL){
         for(int i = 0; i < offset; i++){
-            printf("   ");
+            printf("|   ");
         }
         printf("[ ");
         print_token_as_string(node->type);

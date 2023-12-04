@@ -1,5 +1,6 @@
-if (n > 1) {
-    write(" n je vetsi nez jedna")
+foo(x : y, name : a)
+if n > 1 {
+    
 }
 else{
     
