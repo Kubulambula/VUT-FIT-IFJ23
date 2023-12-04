@@ -84,7 +84,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
 
         case TOKEN_KEYWORD_FUNC: 
             out = TYPE_NIL;
-            err = funcCallCheck(node->left, &out , tables, code_table, scoping);
+            err = funcCallCheck((ASTNode*)node->left, &out , tables, code_table, scoping);
             if(err != OK)
                 return err;
             if(out == TYPE_NIL)
@@ -213,7 +213,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             break;
 
         case TOKEN_EXCLAMATION:
-            *returnType = ((exp_node*)node->left)->type;
+            err = handle_expression(node->left, tables, &a, code_table, scoping);
+            if(err)
+                return err;
+            *returnType = a;
             return OK;
             break;
         }
