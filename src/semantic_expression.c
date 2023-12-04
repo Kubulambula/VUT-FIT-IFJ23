@@ -76,7 +76,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 *dollar = '$';
             }
             else{
-                appendScope(node->value.s, scoping);
+                appendScope(&node->value.s, scoping);
             }
             
             return OK;
@@ -138,16 +138,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 return OK;
             }
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            break;
-
-        case TOKEN_OPERATOR_I_DIVISION:
-            aEr = handle_expression(node->left,tables,&a, tables, scoping);
-            if(aEr != OK)
-                return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping);
-            if(bEr != OK)
-                return bEr;
-            
+            break; 
 
         case TOKEN_OPERATOR_PLUS:   // +
             aEr = handle_expression(node->left,tables,&a, tables, scoping);
