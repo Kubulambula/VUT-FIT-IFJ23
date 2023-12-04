@@ -34,8 +34,8 @@ bool BufferString_init_from(BufferString* buffer_string_p, char* str){
 		required_alloc_length = BUFFER_STRING_LENGTH_MINIMAL;
 	}
 
-	char* new_string = malloc(sizeof(char) * required_alloc_length);
-	if (new_string == NULL){
+	buffer_string_p->string = malloc(sizeof(char) * required_alloc_length);
+	if (buffer_string_p->string == NULL){
 		return false;
 	}
 

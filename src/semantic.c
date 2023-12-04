@@ -6,7 +6,7 @@
 #include "lexer.h"
 #include "buffer_string.h"
 #include "semantic.h"
-
+#include <stdio.h>
 
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* codeTable,int scope)
 {
@@ -93,14 +93,14 @@ Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* cod
 Error appendScope(char**name,int scope)
 {
     BufferString* nameScoped = malloc(sizeof(BufferString));
-        if(!BufferString_init_from(nameScoped,*name))
-            return ERR_INTERNAL;
-        char integer[6];
-        integer[0]='$';
-        sprintf(integer+1, "%d", scope);
-        if(!BufferString_append_str(nameScoped,integer))
-            return ERR_INTERNAL;   
-        free(*name);
+    if(!BufferString_init_from(nameScoped,*name))
+        return ERR_INTERNAL;
+    char integer[6];
+    integer[0]='$';
+    sprintf(integer+1, "%4d", scope);
+    if(!BufferString_append_str(nameScoped,integer))
+        return ERR_INTERNAL;   
+    free(*name);
     *name = BufferString_get_as_string(nameScoped);
     return OK;
 }
@@ -117,6 +117,7 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
     case LET_DEF:
         //make symtable symbol for variable
         generatedSymbol = Symbol_new();
+        
         generatedSymbol->symbol_type=(statement->type == VAR_DEF)?VAR:LET;
         generatedSymbol->name=((ASTNode*)statement->b)->a;
                               
@@ -130,24 +131,26 @@ static Error handle_statement(ASTNode* statement,SymTable* tables,SymTable*codeT
             return error;
         }
         //in ast, replace var name with varname$scope
-        
-        error = appendScope(((ASTNode*)statement->b)->a,scoping);
+        error = appendScope((char**)&((ASTNode*)statement->b)->a,scoping);
         if (error != OK)
             return error;
         //if in global, insert into code generator symtable
+            
         if(expected_type == TYPE_NONE)
         {
-            generatedSymbol = Symbol_new();
-            generatedSymbol->name=((ASTNode*)statement->b)->a;
-            SymTable_insert(codeTable,generatedSymbol);
+            target = Symbol_new();
+            target->name=((ASTNode*)statement->b)->a;
+            SymTable_insert(codeTable,target);
         }
         // AMIDIATE ASIGN
+       
         if (((ASTNode*)statement->b)->b == NULL)
         {
-            if (generatedSymbol->nilable ==false)
+            if (generatedSymbol->type == TYPE_NIL)
                 return ERR_SEMATIC_BAD_TYPE_INFERENCE;  //kills variables TYPE_NIL without infering
             else
                 return OK;
+            
         }
         
         error = handle_expression(((ASTNode*)statement->b)->b,tables,&expReturnType,codeTable,scoping);
@@ -393,25 +396,32 @@ Error semantic(ASTNode *code_tree,SymTable* codeTable)
         }
        functions = functions->a;
     }
+   
+
+
+
     //INIT GLOBAL VARIABLES
-    ASTNode** statement = (ASTNode**)&code_tree->b;
+    ASTNode* statement = (ASTNode*)code_tree->b;
     while(statement!=NULL)
     {
-        if (((ASTNode*)(*statement)->a)->type == VAR_DEF || ((ASTNode*)(*statement)->a)->type == LET_DEF)
+       
+        if (((ASTNode*)statement->a)->type == VAR_DEF || ((ASTNode*)statement->a)->type == LET_DEF)
         {
             //insert into symtable
-            exp_node* tempExp = ((ASTNode*)((ASTNode*)(*statement)->a)->b)->b;
-            ((ASTNode*)((ASTNode*)(*statement)->a)->b)->b = NULL;
+            exp_node* tempExp = ((ASTNode*)((ASTNode*)statement->a)->b)->b;
+            ((ASTNode*)((ASTNode*)statement->a)->b)->b = NULL;
             bool dump;
-            Error err = handle_statement((*statement)->a,globalTable,codeTable,TYPE_NONE,0,&dump,false);
+            Error err = handle_statement(statement->a,globalTable,codeTable,TYPE_NONE,0,&dump,false);
             if(err != OK)
                 return err;
-         
+            
 
+            printf("KOK\n");
+            fflush(stdout);
             //move def to root
             //statement is first found defvar/letvar
 
-            ASTNode*newRoot = *statement;  //newRoot = root->right->right->left
+            ASTNode*newRoot = statement;  //newRoot = root->right->right->left
             ASTNode*tempRoot = code_tree->b; //tempRoot = root->right
             code_tree->b= newRoot; // root->right = root->right->right->left       
             //*statement=(*statement)->b; //statement = root->right->right->left->right 
@@ -422,14 +432,20 @@ Error semantic(ASTNode *code_tree,SymTable* codeTable)
                 ASTNode* newAssign = ASTNode_new(ASSIGN);
                 newAssign->a=((ASTNode*)((ASTNode*)newRoot->a)->b)->a;
                 newAssign->b=tempExp;
-                (*statement)->a = newAssign;
+                statement->a = newAssign;
                 //(*statement)->b= newRoot->b; //statement->b = root->right->left->right->left ?
             } 
+            printf("KOK OK\n");
+            fflush(stdout);
             newRoot->b=tempRoot;
             
         }
-        statement = (ASTNode**)&(*statement)->b;
+        printf("kok\n");
+        fflush(stdout);
+        statement = (ASTNode*)statement->b;
     }
+    
+
 
     //start body check
     ASTNode *globalStatement = code_tree->b;
