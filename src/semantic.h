@@ -7,7 +7,7 @@
 
 
 
-Error appendScope(char*name,char**out,int scope,SymTable* tables);
+Error appendScope(char**name,int scope);
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* codeTable,int scope);
 
 Error handle_expression(exp_node* node,SymTable* tables,Type* returnType);
