@@ -21,7 +21,7 @@ static Token nonLiteral_in_exp(exp_node* node)
     return TOKEN_KEYWORD_NIL;
 }
 
-static Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
+Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
 {
     SymTable* global = tables;
     while(global->previous != NULL)
@@ -62,7 +62,7 @@ static Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables)
 
 }
 
-static Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
+Error handle_expression(exp_node* node,SymTable* tables,Type* returnType)
 {
     
     bool eq= false;  
