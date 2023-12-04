@@ -16,6 +16,12 @@ char* get_generated_literal_string(char* value);
 
 char* get_generated_literal_nil();
 
+Error generate_return(ASTNode* statement, SymTable* symtable);
+
+Error generate_assign(ASTNode* statement, SymTable* symtable);
+
+Error generate_var_def(ASTNode* statement, SymTable* symtable);
+
 Error generate_func_call(ASTNode* func_call, SymTable* symtable);
 
 Error generate_func_call_args(ASTNode* func_call_args, FuncDefArg* arg, SymTable* symtable);
@@ -26,7 +32,7 @@ Error generate_func_call_write_args(ASTNode* func_call_args, unsigned* args_on_s
 
 Error generate_assing(ASTNode* assign, SymTable* symtable);
 
-Error generate_user_functions(ASTNode* func_defs, SymTable* symtable);
+Error generate_user_functions(ASTNode* func_defs, SymTable* symtable, bool skip_built_in);
 
 Error generate_user_function(ASTNode* func_def, SymTable* symtable);
 
