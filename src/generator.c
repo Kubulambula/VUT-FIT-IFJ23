@@ -6,6 +6,7 @@
 #include "generator_pre_defined.h"
 #include "buffer_string.h"  
 
+// TODO: implicitni prirazeni nil
 
 unsigned LABEL_INDEX = 0;
 
