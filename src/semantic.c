@@ -347,20 +347,6 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     return ERR_INTERNAL;
 }
 
-
-// Ted to dela SymTable v SymTable_free() !!!
-//
-// static void error_free_all(SymTable* tables)
-// {
-//     while(tables !=NULL)
-//     {
-//         SymTable *temp=tables->previous;
-//         SymTable_free(tables);
-//         tables = temp;
-//     }
-// }
-
-
 Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool second_pass){
     SymTable* localTable = malloc(sizeof(SymTable));
     if(!SymTable_init(localTable)){
@@ -419,66 +405,6 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         SymTable_free(globalTable);
         return ERR;
     }
- 
-    /*  
-    //FUNC BODY CHECK
-    ASTNode *functions = code_tree->a;
-    while(functions)
-    {
-        //HANDLE FUNC BODY
-        ASTNode *func = functions->b;
-        Symbol* symbolFunc = SymTable_get(globalTable,((ASTNode*)(((ASTNode*)func->a)->a))->a);
-        
-        //extra symtable with args
-        SymTable *funcArgTable = malloc(sizeof(SymTable));
-        SymTable_init(funcArgTable);
-        funcArgTable->previous = globalTable;
-
-      
-      
-        FuncDefArg* arg = symbolFunc->args;
-        while(arg != NULL)
-        {
-            Symbol* symbolArg = Symbol_new();
-            symbolArg->initialized=true;
-            symbolArg->name=arg->identifier;
-            symbolArg->nilable=false;
-            symbolArg->symbol_type= LET;
-            symbolArg->type=arg->type;                       
-            Error error= SymTable_insert(funcArgTable,symbolArg);
-            if(error != OK)
-            {
-                error_free_all(funcArgTable);
-                Symbol_free(symbolArg);
-                return error;
-            }
-            arg = arg->next;
-        }
-
-        SymTable *funcBodyTable = malloc(sizeof(SymTable));
-        SymTable_init(funcBodyTable);
-        funcBodyTable->previous = funcArgTable;
-        
-        //func body code check
-        ASTNode *statement = func->b; 
-        Error error = handle_statements(func->b,funcBodyTable,symbolFunc->type);
-        if (error != OK)
-        {
-            error_free_all(funcBodyTable);
-            return error; 
-        }
-        SymTable_free(funcBodyTable);
-        SymTable_free(funcArgTable);
-
-        functions = functions->a;
-    }
-
-    ASTNode* main = code_tree->b;
-
-
-    //MAIN BODY
-    Error error = handle_statements(main,globalTable,TYPE_NONE);
-*/
 
 return OK;
 }
@@ -585,29 +511,5 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
     return OK;
 }
 
-//funkce musí mít aspoň jeden statement? (return ?)
-//zařídít fce body null
-
-//return v globalu? NESMÍ BÝT
 
 
-//typy u operátorů, (int opTYPE_DOUBLE ? )
-//string operátory
-
-
-//stránka 6, wtf nelze měnit hodnotu?
-//parametry jsou neměnné
-//můžou se předefinovat
-
-
-//funkce void nemusí mít return,
-
-
-//definice typu proměnné, not defined, a odvození typu při not defined
-
-// když při definici nelze odvodit, chyba 8 (např. hondnota nil.)
-//když nechybý typ, nemusí být = výraz
-//chyba 7, špatný typ výrazu při přiřazení // expression v if () není typu TYPE_BOOL
-
-
-//VOID FCE NESMÍ MÍT RETURN, JINAK ERR 4 (ERR 4 TAKY KDYŽ TYP RETURN NESEDÍ)
