@@ -126,10 +126,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             break;
 
         case TOKEN_OPERATOR_DIVISION: // /
-            aEr = handle_expression(node->left,tables,&a, tables, scoping);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
             if(aEr != OK)
                 return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
             if(bEr != OK)
                 return bEr;
 
@@ -148,10 +148,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             break; 
 
         case TOKEN_OPERATOR_PLUS:   // +
-            aEr = handle_expression(node->left,tables,&a, tables, scoping);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
             if(aEr != OK)
                 return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
             if(bEr != OK)
                 return bEr;
 
@@ -186,10 +186,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         case TOKEN_OPERATOR_GREATER_THAN:  // >
         case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
         case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
-            aEr = handle_expression(node->left,tables,&a, tables, scoping);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
             if(aEr != OK)
                 return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
             if(bEr != OK)
                 return bEr;
 
