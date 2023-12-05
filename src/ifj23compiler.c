@@ -24,8 +24,6 @@ int main(void) {
 		return err;
 	}
 
-    printf("syntax ok\n");
-
     SymTable *symtable = (SymTable*)malloc(sizeof(SymTable));
     if(symtable == NULL){
 		ASTNode_free(ast);
@@ -37,8 +35,6 @@ int main(void) {
 		return ERR_INTERNAL;
 	}
 
-    printf("symtable ok\n");
-
 
 	err = semantic(ast, symtable);
 	if (err){
@@ -48,17 +44,11 @@ int main(void) {
 		return err;
 	}
 
-    printf("semantic ok\n");
-
 
 	err = generate_code(ast, symtable);
 	if (err)
 		fprintf(stderr, "Code generation ERR: %d\n", err);
 	
-	
-    printf("codegen ok\n");
-    print_ast_node(ast, 0);
-
 	SymTable_free(symtable);
 	
 
