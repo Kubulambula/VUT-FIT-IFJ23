@@ -84,7 +84,6 @@ char* get_generated_literal_nil(){
 
 
 Error generate_expression(exp_node* expression, SymTable* symtable){
-    char frame_name[3]; // helper variable for getting variable frame
     char* literal_value; // helper variable for outputing literal values
 
     switch (expression->type){
