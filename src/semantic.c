@@ -371,7 +371,7 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     }
 
     // rearrange var definition statements and split them into declaration and assignment
-    ERR = rearrange_statements(code_tree, codeTable, globalTable);
+    ERR = rearrange_global_statements(code_tree, codeTable, globalTable);
     if (ERR){
         SymTable_free(globalTable);
         return ERR;
@@ -493,7 +493,7 @@ Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable*
 }
 
 
-Error rearrange_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable){
+Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable){
     ASTNode** statement = (ASTNode**)&root->b;
     while(*statement != NULL)
     {

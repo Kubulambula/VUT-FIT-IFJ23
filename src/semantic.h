@@ -11,7 +11,7 @@ Error appendScope(char**name,int scope);
 
 Error funcCallCheck(ASTNode*func,Type* returnType,SymTable* tables,SymTable* codeTable,int scope);
 
-Error rearrange_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable);
+Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable);
 
 Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable* code_table);
 
