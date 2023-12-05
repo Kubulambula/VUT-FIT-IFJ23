@@ -84,7 +84,6 @@ char* get_generated_literal_nil(){
 
 
 Error generate_expression(exp_node* expression, SymTable* symtable){
-    char frame_name[3]; // helper variable for getting variable frame
     char* literal_value; // helper variable for outputing literal values
 
     switch (expression->type){
@@ -106,13 +105,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-
-            // temp variables
-            printf("\nCREATEFRAME\nDEFVAR     TF@$temp1\nDEFVAR     TF@$temp2");
-            // get variales from stack to the temp variables
-            printf("\nPOPS    TF@$temp2\nPOPS      TF@temp1");
-            // concat them and push the result to stack
-            printf("\nCONCAT  TF@$temp1 TF@$temp1 TF@$temp2\nPUSHS   TF@$temp1");
+            
+            printf(CONCAT);
             return OK;
 
         case TOKEN_OPERATOR_MINUS:
@@ -185,31 +179,16 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             return generate_func_call((ASTNode*)(expression->left), symtable);
 
         case TOKEN_IDENTIFIER:
-            // detect the Frame
-            if (SymTable_get(symtable, (expression->value).s) == NULL)
-                strcpy(frame_name, "LF");
-            else
-                strcpy(frame_name, "GF");
-
-            printf("\nPUSHS		%s@%s", frame_name, (expression->value).s);
+            // check the frame with SymTable
+            printf("\nPUSHS		%s@%s", SymTable_get(symtable, (expression->value).s) ? "LF" : "GF", (expression->value).s);
             return OK;
         
         case TOKEN_LITERAL_INT:
-            literal_value = get_generated_literal_int((expression->value).i);
-            if (literal_value == NULL)
-                return ERR_INTERNAL;
-            
-            printf("\nPUSHS           %s", literal_value);
-            free(literal_value);
+            printf("\nPUSHS           int@%d", (expression->value).i);
             return OK;
         
         case TOKEN_LITERAL_DOUBLE:
-            literal_value = get_generated_literal_double((expression->value).d);
-            if (literal_value == NULL)
-                return ERR_INTERNAL;
-            
-            printf("\nPUSHS           %s", literal_value);
-            free(literal_value);
+            printf("\nPUSHS           float@%a", (expression->value).d);
             return OK;
         
         case TOKEN_LITERAL_STRING:
@@ -221,13 +200,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             free(literal_value);
             return OK;
         
-        case TOKEN_LITERAL_NIL:
-            literal_value = get_generated_literal_nil();
-            if (literal_value == NULL)
-                return ERR_INTERNAL;
-            
-            printf("\nPUSHS           %s", literal_value);
-            free(literal_value);
+        case TOKEN_LITERAL_NIL:     
+            printf("\nPUSHS           nil@nil");
             return OK;
         
         case TOKEN_OPERATOR_LESS_THAN:
@@ -477,12 +451,7 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
         
         printf("\nDEFVAR		LF@argCnt");
 
-        char* argCnt_value = get_generated_literal_int(args_on_stack);
-        if (argCnt_value == NULL)
-            return ERR_INTERNAL;
-
-        printf("\nMOVE		LF@argCnt %s", argCnt_value);
-        free(argCnt_value);
+        printf("\nMOVE		LF@argCnt int@%d", args_on_stack);
 
     } else {
         Symbol* func = SymTable_get(symtable, (char*)(func_call->a));
