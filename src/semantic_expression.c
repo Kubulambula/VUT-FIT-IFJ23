@@ -28,13 +28,14 @@ static Token nonLiteral_in_exp(exp_node* node)
 
 
 
-Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping)
+Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping, bool* nillable)
 {
     if(node != NULL){
         Symbol *target;
         Type out,a,b;
         Error err, aEr, bEr;
         char* dollar;
+        bool return_nillable_a, return_nillabel_b;
 
 
         switch (node->type)
@@ -42,18 +43,22 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
 
         //LITERALS
         case TOKEN_LITERAL_INT: //int
+            *nillable = false;
             *returnType = TYPE_INT;
             return OK;
             break;
         case TOKEN_LITERAL_DOUBLE: //double
+            *nillable = false;
             *returnType =TYPE_DOUBLE;
             return OK;
             break;
         case TOKEN_LITERAL_STRING:  //string
+            *nillable = false;
             *returnType = TYPE_STRING;
             return OK;
             break;
         case TOKEN_LITERAL_NIL: //nill
+            *nillable = true;
             *returnType = TYPE_NIL;
             return OK;
             break;
@@ -64,12 +69,15 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             if(dollar != NULL){   // if jmeno promene obsahuje $
                 *dollar = '\0';   // potom $ -> '\0'
             }
+
             target = SymTable_get_recurse(tables,node->value.s);
             if(target == NULL || target->symbol_type == FUNCTION)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             if (!target->initialized)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             *returnType = target->type;
+            *nillable = target->nilable;
+
             if(dollar != NULL){
                 *dollar = '$';
             }
@@ -82,11 +90,9 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
 
         case TOKEN_KEYWORD_FUNC: 
             out = TYPE_NIL;
-            err = funcCallCheck((ASTNode*)node->left, &out , tables, code_table, scoping);
+            err = funcCallCheck((ASTNode*)node->left, &out , tables, code_table, scoping, nillable);
             if(err != OK)
                 return err;
-            if(out == TYPE_NIL)
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             *returnType = out;
             return OK;
             break;
@@ -94,12 +100,13 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         //OPERATORS
         case TOKEN_OPERATOR_MINUS: // - 
         case TOKEN_OPERATOR_MULTIPLICATION: // *
-            aEr = handle_expression(node->left,tables,&a, tables, scoping);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
             if(aEr != OK)
                 return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
             if(bEr != OK)
                 return bEr;
+            *nillable = return_nillable_a || return_nillabel_b;
             if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLETYPE_DOUBLE
             {
                 *returnType = a;
@@ -125,6 +132,8 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
+
+            *nillable = return_nillable_a || return_nillabel_b;
             if(a==TYPE_DOUBLE && b==TYPE_DOUBLE)  //TYPE_DOUBLE TYPE_DOUBLE
             {
                 *returnType = a;
@@ -145,6 +154,8 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
+
+            *nillable = return_nillable_a || return_nillabel_b;
             if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE && b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
             {
                 *returnType = a;
@@ -181,6 +192,8 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
+
+            *nillable = return_nillable_a || return_nillabel_b;
             if(node->type != TOKEN_OPERATOR_EQUALS && node->type != TOKEN_OPERATOR_NOT_EQUALS && (a == TYPE_NIL || b == TYPE_NIL))
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             if(a == TYPE_BOOL || b == TYPE_BOOL)
@@ -198,21 +211,26 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             break;
 
         case TOKEN_NIL_COALESCING:  // ??
-            aEr = handle_expression(node->left,tables,&a, tables, scoping);
+            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
             if(aEr != OK)
                 return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping);
+            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
             if(bEr != OK)
                 return bEr;
-
-            if(a != b || a == TYPE_BOOL)   
+        
+            if(a != b || a == TYPE_BOOL || return_nillabel_b == true)   
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            *nillable = false;
             break;
 
         case TOKEN_EXCLAMATION:
-            err = handle_expression(node->left, tables, &a, code_table, scoping);
+            err = handle_expression(node->left, tables, &a, code_table, scoping, &return_nillable_a);
             if(err)
                 return err;
+            if(return_nillable_a == false){
+                return  ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            }
+            *nillable = false;
             *returnType = a;
             return OK;
             break;
