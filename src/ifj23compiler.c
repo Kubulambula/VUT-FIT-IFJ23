@@ -24,25 +24,33 @@ int main(void) {
 		return err;
 	}
 
-    SymTable *code_table = (SymTable*)malloc(sizeof(SymTable));
-
-    if(code_table == NULL){
+    SymTable *symtable = (SymTable*)malloc(sizeof(SymTable));
+    if(symtable == NULL){
+		ASTNode_free(ast);
         return ERR_INTERNAL;
     }
+	if (!SymTable_init(symtable)){
+		ASTNode_free(ast);
+		free(symtable);
+		return ERR_INTERNAL;
+	}
 
-	err = semantic(ast, code_table);
+
+	err = semantic(ast, symtable);
 	if (err){
 		fprintf(stderr, "Semantic ERR: %d\n", err);
 		ASTNode_free(ast);
+		SymTable_free(symtable);
 		return err;
 	}
 
 
-	err = generate_code(ast, code_table);
+	err = generate_code(ast, symtable);
 	if (err)
 		fprintf(stderr, "Code generation ERR: %d\n", err);
 	
-	SymTable_free(code_table);
+	
+	SymTable_free(symtable);
 	
 
 	ASTNode_free(ast);

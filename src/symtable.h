@@ -11,6 +11,7 @@
 
 
 typedef enum{
+    NONE, // this is an error
     FUNCTION, // func foo()
     VAR, // var foo
     LET, // let foo
@@ -18,8 +19,8 @@ typedef enum{
 
 
 typedef struct{
-    char* name;
     SymbolType symbol_type;
+    char* name;
     Type type; // type of variable or return type of a function
     bool nilable; // if true, nil is allowed for this type
     bool initialized; // if true, the variable was assigned a value at least once
@@ -30,6 +31,8 @@ typedef struct{
 
 
 Symbol* Symbol_new();
+
+Symbol* Symbol_copy(Symbol* to_copy);
 
 void Symbol_free(Symbol* symbol);
 

@@ -7,29 +7,48 @@
 Symbol* Symbol_new(){
     Symbol* symbol = (Symbol*)malloc(sizeof(Symbol));
     if(symbol != NULL){
-        symbol->type = TYPE_NIL;
+        symbol->symbol_type = NONE;
         symbol->name = NULL;
+        symbol->type = TYPE_NIL;
         symbol->nilable = false;
         symbol->initialized = false;
+        symbol->scope = 0;
         symbol->args = NULL;
-        symbol->scope=0;
+        symbol->func_def = NULL;
     }
+    return symbol;
+}
+
+
+Symbol* Symbol_copy(Symbol* to_copy){
+    Symbol* symbol = Symbol_new();
+    if (symbol != NULL){
+        symbol->symbol_type = to_copy->symbol_type;
+        symbol->name = to_copy->name;
+        symbol->type = to_copy->type;
+        symbol->nilable = to_copy->nilable;
+        symbol->initialized = to_copy->initialized;
+        symbol->scope = to_copy->scope;
+        symbol->args = to_copy->args;
+        symbol->func_def = to_copy->func_def;
+    }
+
     return symbol;
 }
 
 
 void Symbol_free(Symbol* symbol)
 {
-    free(symbol->name);
-    FuncDefArg* arg = symbol->args;
-    while (arg != NULL)
-    {
-        FuncDefArg*temp = arg->next;
-        FuncDefArg_free(arg);
-        arg = temp;
-    }
+    // stored in ast - DO NOT FREE HERE
+    // free(symbol->name);
+    // FuncDefArg* arg = symbol->args;
+    // while (arg != NULL)
+    // {
+        // FuncDefArg*temp = arg->next;
+        // FuncDefArg_free(arg);
+        // arg = temp;
+    // }
     free(symbol);
-
 }
 
 static unsigned hash(char* name,int size)
@@ -56,6 +75,8 @@ static bool SymTable_init_Spec(SymTable* symTable, int size)
     symTable->count=0;
     
     symTable->table = calloc(size, sizeof(Symbol*)); 
+
+    symTable->previous = NULL;
    
     return symTable->table != NULL;
 }
@@ -73,6 +94,9 @@ void SymTable_free(SymTable* symTable)
  
     for(int i=0; i<symTable->size; i++)
         free(symTable->table[i]);
+    
+    if(symTable->previous != NULL)
+        SymTable_free(symTable->previous);
     
     free(symTable->table);
     free(symTable);
