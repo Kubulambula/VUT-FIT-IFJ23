@@ -30,7 +30,7 @@ void prin()
 }
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
     
-    int scope=0;
+    int scope = 0;
     SymTable* global = tables;
     while(global->previous != NULL)
         global = global->previous;
@@ -41,20 +41,20 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
     //write() check
-    const char*write="write";
-    if(strcmp(func->a,write))
+    if(strcmp(func->a, "write"))
     {
         ASTNode* arg = func->b;
-        while(arg !=NULL)
+        while(arg != NULL)
         {
             if(((ASTNode*)arg->a)->a != NULL)
                 return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
-            bool dump;
-            ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &dump, codeTable, scope, &dump);
+            Type dump_type;
+            bool dump_nilable;
+            ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &dump_type, codeTable, scope, &dump_nilable);
             if(ERR)
                 return ERR;
         
-            arg=arg->b;
+            arg = arg->b;
         }
         return OK;
     }
