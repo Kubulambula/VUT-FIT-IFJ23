@@ -309,7 +309,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if(expReturnType == TYPE_NIL && !target->nilable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         else if(expReturnType == TYPE_NIL)
-            {}   
+            {}                                              //DISCUSTING  
         else if(target->type != expReturnType)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         else if(expNillable && !target->nilable)
