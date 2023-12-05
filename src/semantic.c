@@ -152,13 +152,15 @@ Error appendScope(char**name,int scope)
     BufferString* nameScoped = malloc(sizeof(BufferString));
     if(!BufferString_init_from(nameScoped,*name))
         return ERR_INTERNAL;
-    char integer[6];
-    integer[0]='$';
-    sprintf(integer+1, "%4d", scope);
+    unsigned length = snprintf(NULL,0, "$%d ", scope);
+    char* integer = malloc(length);
+    sprintf(integer, "$%d", scope);
+
     if(!BufferString_append_str(nameScoped,integer))
         return ERR_INTERNAL;   
     free(*name);
     *name = BufferString_get_as_string(nameScoped);
+    free(integer);
     return OK;
 }
 
