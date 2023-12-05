@@ -6,6 +6,7 @@
 #include "generator_pre_defined.h"
 #include "buffer_string.h"  
 
+// TODO: implicitni prirazeni nil
 
 unsigned LABEL_INDEX = 0;
 
@@ -95,16 +96,23 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (ERR)
                 return ERR;
             
-            printf("ADDS\n");
+            printf("\nADDS");
             return OK;
         
         case TOKEN_CONCATENATE: // fancy + for strings
+            ERR = generate_expression(expression->left, symtable);
+            if (ERR)
+                return ERR;
+            ERR = generate_expression(expression->right, symtable);
+            if (ERR)
+                return ERR;
+
             // temp variables
-            printf("CREATEFRAME\nDEFVAR     TF@$temp1\nDEFVAR     TF@$temp2\n");
+            printf("\nCREATEFRAME\nDEFVAR     TF@$temp1\nDEFVAR     TF@$temp2");
             // get variales from stack to the temp variables
-            printf("POPS    TF@$temp2\nPOPS      TF@temp1\n");
+            printf("\nPOPS    TF@$temp2\nPOPS      TF@temp1");
             // concat them and push the result to stack
-            printf("CONCAT  TF@$temp1 TF@$temp1 TF@$temp2\nPUSHS   TF@$temp1\n");
+            printf("\nCONCAT  TF@$temp1 TF@$temp1 TF@$temp2\nPUSHS   TF@$temp1");
             return OK;
 
         case TOKEN_OPERATOR_MINUS:
@@ -115,7 +123,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (ERR)
                 return ERR;
             
-            printf("SUBS\n");
+            printf("\nSUBS");
             return OK;
         
         case TOKEN_OPERATOR_MULTIPLICATION:
@@ -126,7 +134,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (ERR)
                 return ERR;
             
-            printf("MULS\n");
+            printf("\nMULS");
             return OK;
         
         case TOKEN_OPERATOR_DIVISION:
@@ -137,7 +145,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (ERR)
                 return ERR;
             
-            printf("DIVS\n");
+            printf("\nDIVS");
             return OK;
         
         case TOKEN_OPERATOR_I_DIVISION:
@@ -148,7 +156,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (ERR)
                 return ERR;
             
-            printf("IDIVS\n");
+            printf("\nIDIVS");
             return OK;
         
         case TOKEN_EXCLAMATION:
@@ -158,6 +166,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             return OK;
         
         case TOKEN_NIL_COALESCING:
+            printf("\n# === coalesting === - operands are in reverse order (2nd is on bottom and 1st is on top)");
             // evaluate right first so that the left operand is first on stack
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
@@ -167,7 +176,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
                 return ERR;
 
             unsigned available_label_index = LABEL_INDEX;
-            LABEL_INDEX += 2;
+            LABEL_INDEX++;
 
             printf(COALESTING, available_label_index, available_label_index);
             return OK;
@@ -182,7 +191,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             else
                 strcpy(frame_name, "GF");
 
-            printf("PUSHS   %s@%s\n", frame_name, (expression->value).s);
+            printf("\nPUSHS		%s@%s", frame_name, (expression->value).s);
             return OK;
         
         case TOKEN_LITERAL_INT:
@@ -190,7 +199,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (literal_value == NULL)
                 return ERR_INTERNAL;
             
-            printf("PUSHS   %s\n", literal_value);
+            printf("\nPUSHS           %s", literal_value);
             free(literal_value);
             return OK;
         
@@ -199,7 +208,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (literal_value == NULL)
                 return ERR_INTERNAL;
             
-            printf("PUSHS   %s\n", literal_value);
+            printf("\nPUSHS           %s", literal_value);
             free(literal_value);
             return OK;
         
@@ -208,7 +217,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (literal_value == NULL)
                 return ERR_INTERNAL;
             
-            printf("PUSHS   %s\n", literal_value);
+            printf("\nPUSHS           %s", literal_value);
             free(literal_value);
             return OK;
         
@@ -217,7 +226,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             if (literal_value == NULL)
                 return ERR_INTERNAL;
             
-            printf("PUSHS   %s\n", literal_value);
+            printf("\nPUSHS           %s", literal_value);
             free(literal_value);
             return OK;
         
@@ -228,7 +237,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-
+            
+            printf("\nLTS");
             return OK;
 
         case TOKEN_OPERATOR_GREATER_THAN:
@@ -238,7 +248,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-
+            
+            printf("\nGTS");
             return OK;
 
         case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:
@@ -248,7 +259,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-                
+            
+            printf("\nGTS\nNOTS");
             return OK;
 
         case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:
@@ -258,7 +270,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-                
+            
+            printf("\nLTS\nNOTS");
             return OK;
 
         case TOKEN_OPERATOR_EQUALS:
@@ -268,7 +281,8 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-                
+            
+            printf("\nEQS");
             return OK;
 
         case TOKEN_OPERATOR_NOT_EQUALS:
@@ -278,11 +292,12 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
             ERR = generate_expression(expression->right, symtable);
             if (ERR)
                 return ERR;
-                
+            
+            printf("\nEQS\nNOTS");
             return OK;
         
         default:
-            fprintf(stderr, "Bad expression\n");
+            fprintf(stderr, "Bad expression!\n");
             return ERR_INTERNAL;
     }
 }
@@ -313,9 +328,15 @@ Error generate_statements(ASTNode* statement, SymTable* symtable){
             break;
 
         case IFELSE:
+            ERR = generate_if_else((ASTNode*)(statement->a), symtable);
+            if (ERR)
+                return ERR;
             break;
 
         case WHILE:
+            ERR = generate_while((ASTNode*)(statement->a), symtable);
+            if (ERR)
+                return ERR;
             break;
 
         case RETURN:
@@ -333,16 +354,66 @@ Error generate_statements(ASTNode* statement, SymTable* symtable){
 }
 
 
+Error generate_if_else(ASTNode* if_else, SymTable* symtable){
+    printf("\n# ===== IF ELSE start =====");
+    ERR = generate_expression((exp_node*)(if_else->a), symtable);
+    if (ERR)
+        return ERR;
+    
+    ASTNode* if_else_bodies = (ASTNode*)(if_else->b);
+    
+    unsigned available_label_index = LABEL_INDEX;
+    LABEL_INDEX++;
+
+    printf(IF_ELSE_START, available_label_index);
+    // generate false (else) branch first
+    ERR = generate_statements((ASTNode*)(if_else_bodies->b), symtable);
+    if (ERR)
+        return ERR;
+
+    printf(IF_ELSE_MIDDLE, available_label_index, available_label_index);
+    // now generate true (if) branch
+    ERR = generate_statements((ASTNode*)(if_else_bodies->a), symtable);
+    if (ERR)
+        return ERR;
+    
+    printf(IF_ELSE_END, available_label_index);
+    return OK;
+}
+
+
+Error generate_while(ASTNode* _while, SymTable* symtable){
+    unsigned available_label_index = LABEL_INDEX;
+    LABEL_INDEX++;
+    
+    printf(WHILE_START, available_label_index);
+    // generate the condition expression
+    ERR = generate_expression((exp_node*)(_while->a), symtable);
+    if (ERR)
+        return ERR;
+
+    printf(WHILE_MIDDLE, available_label_index);
+
+    // generate the while body
+    ERR = generate_statements((ASTNode*)(_while->b), symtable);
+    if (ERR)
+        return ERR;
+
+    printf(WHILE_END, available_label_index, available_label_index);
+    return OK;
+}
+
+
 Error generate_return(ASTNode* ret, SymTable* symtable){
     if (ret->a != NULL)
         generate_expression((exp_node*)(ret->a), symtable); // values are returned on stack
 
-    printf("RETURN\n");
+    printf("\nRETURN");
     return OK;
 }
 
 Error generate_assign(ASTNode* assign, SymTable* symtable){
-    printf("# === assign to %s ===\n", (char*)(assign->a));
+    printf("\n# === assign to %s ===", (char*)(assign->a));
     
     // evaluate the expression to assign
     ERR = generate_expression((exp_node*)(assign->b), symtable);
@@ -357,7 +428,7 @@ Error generate_assign(ASTNode* assign, SymTable* symtable){
         strcpy(frame_name, "GF");
     
     // write the code - pop the value from stack
-    printf("POPS    %s@%s # pop the value to the variable\n# === assign to %s end ===\n", frame_name, (char*)(assign->a), (char*)(assign->a));
+    printf("\nPOPS		%s@%s # pop the value to the variable\n# === assign to %s end ===", frame_name, (char*)(assign->a), (char*)(assign->a));
     return OK;
 }
 
@@ -366,32 +437,36 @@ Error generate_var_def(ASTNode* var_let_def, SymTable* symtable){
     //ASTNode* type = (ASTNode*)(var_let_def->a); // I don't care about this
     ASTNode* head = (ASTNode*)(var_let_def->b);
     // create the variable
-    printf("# === Create var %s ===\n", (char*)(head->a));
+    printf("\n# === Create var %s ===", (char*)(head->a));
     // detect the frame
     char frame_name[3];
     if (SymTable_get(symtable, (char*)(head->a)) == NULL)
         strcpy(frame_name, "LF");
     else
         strcpy(frame_name, "GF");
-    printf("DEFVAR  %s@%s\n", frame_name, (char*)(head->a));
+    printf("\nDEFVAR		%s@%s", frame_name, (char*)(head->a));
 
     if (head->b == NULL)
         return OK; // no assignment expression
     
-    printf("# === inicialize var %s ===\n", (char*)(head->a));
+    if (head->b == NULL){
+        // TODO - check in symtable if type is nilable. If it is, init it implicitly to nil
+        return OK; // no initial expression
+    }
+    printf("\n# === inicialize var %s ===", (char*)(head->a));
     // evaluate the expression
     ERR = generate_expression((exp_node*)(head->b), symtable);
     if (ERR)
         return ERR;
     
     // assign the expression value to the variable
-    printf("POPS      %s@%s", frame_name, (char*)(head->a));
+    printf("\nPOPS		%s@%s", frame_name, (char*)(head->a));
 
     return OK;
 }
 
 Error generate_func_call(ASTNode* func_call, SymTable* symtable){
-    printf("\n# === call %s() ===\nCREATEFRAME\nPUSHFRAME\n", (char*)(func_call->a));
+    printf("\n# === call %s() ===\nCREATEFRAME\nPUSHFRAME", (char*)(func_call->a));
 
     // write() is a special little function with args on the stack
     if (strcmp((char*)(func_call->a), "write") == 0){
@@ -400,13 +475,13 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
         if (ERR)
             return ERR;
         
-        printf("DEFVAR      LF@argCnt\n");
+        printf("\nDEFVAR		LF@argCnt");
 
         char* argCnt_value = get_generated_literal_int(args_on_stack);
         if (argCnt_value == NULL)
             return ERR_INTERNAL;
 
-        printf("MOVE        LF@argCnt %s\n", argCnt_value);
+        printf("\nMOVE		LF@argCnt %s", argCnt_value);
         free(argCnt_value);
 
     } else {
@@ -418,7 +493,7 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
         generate_func_call_args((ASTNode*)(func_call->b), func->args, symtable);
     }
 
-    printf("CALL %s\nPOPFRAME\n# === end call %s() ===\n", (char*)(func_call->a), (char*)(func_call->a));
+    printf("\nCALL		%s\nPOPFRAME\n# === end call %s() ===", (char*)(func_call->a), (char*)(func_call->a));
     return OK;
 }
 
@@ -439,8 +514,8 @@ Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg, SymTable* 
     if (ERR)
         return ERR;
     
-    printf("DEFVAR  LF@%s\n", arg->identifier);
-    printf("POPS    LF@%s\n", arg->identifier);
+    printf("\nDEFVAR  LF@%s", arg->identifier);
+    printf("\nPOPS    LF@%s", arg->identifier);
     
     return OK;
 }
@@ -468,8 +543,12 @@ Error generate_func_call_write_args(ASTNode* func_call_args, unsigned* args_on_s
 
 Error generate_assing(ASTNode* assign, SymTable* symtable){
     bool is_global = symtable->previous == NULL;
+
+    ERR = generate_expression((exp_node*)(assign->b), symtable);
+    if (ERR)
+        return ERR;
     
-    printf((is_global ? "POPS        GF@" : "POPS        LF@"));
+    printf((is_global ? "\nPOPS        GF@%s" : "\nPOPS        LF@%s"), (char*)(assign->a));
     return OK;
 }
 
@@ -501,13 +580,13 @@ Error generate_user_function(ASTNode* func_def, SymTable* symtable){
     if (ERR)
         return ERR;
 
-    printf("LABEL           %s\n", (char*)(((ASTNode*)(((ASTNode*)(func_def->a))->a))->a));
+    printf("\nLABEL           %s", (char*)(((ASTNode*)(((ASTNode*)(func_def->a))->a))->a));
     
     ERR = generate_statements((ASTNode*)(func_def->b), symtable);
     if (ERR)
         return ERR;
         
-    printf("RETURN\n");
+    printf("\nRETURN # === Safeguard return ===");
     
     return OK;
 }
