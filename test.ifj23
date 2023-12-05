@@ -1,13 +1,2 @@
-var x: Int = 0
-
-while x != 5 {
-	write(x)
-
-	if(x == 3){
-		write("=3")
-	}else{}
-	
-	write("\n")
-
-	x = x + 1
-}
+var x: String? = readString()
+write(x)

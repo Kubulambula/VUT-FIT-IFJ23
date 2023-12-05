@@ -432,7 +432,8 @@ Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTabl
         // go to the next statement
         statement = (ASTNode*)(statement->b);
     }
-    SymTable_free(localTable);
+    if (!main)
+        SymTable_free(localTable);
     return OK;
 }
 
@@ -462,16 +463,15 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     }
     //start body check
     bool returning = false;
-    int scope=0;
+    int scope = 0;
     ERR = handle_statements(code_tree->b, globalTable, codeTable, TYPE_NONE, &scope, &returning, false,false,true);
-    if (ERR){
-        SymTable_free(globalTable);
+    
+    SymTable_free(globalTable);
+    if (ERR)
         return ERR;
-    }
 
     return OK;
 }
-
 
 
 Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable* code_table){
