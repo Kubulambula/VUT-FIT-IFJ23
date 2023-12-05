@@ -1,0 +1,62 @@
+<program> -> EOF
+<program> -> EOL <program>
+<program> -> <statement> <program>
+<program> -> <func_definition> <program>
+
+<type> -> Int
+<type> -> Int?
+<type> -> Double
+<type> -> Double?
+<type> -> String
+<type> -> String?
+
+<statements> -> <statement> <statements>
+<statements> -> EOL <statements>
+<statements> -> ε
+
+<statement> -> <var_declaration>
+<statement> -> <let_declaration>
+<statement> -> <if>
+<statement> -> <while>
+<statement> -> <return>
+<statement> -> <assign>
+<statement> -> <func_call>
+
+<let_var_declaration> -> $ID = $EXPRESSION
+<let_var_declaration> -> $ID : <type> = $EXPRESSION
+<let_var_declaration> -> $ID : <type>
+
+<var_declaration> -> var <let_var_declaration>
+<let_declaration> -> let <let_var_declaration>
+
+<if> -> if $EXPRESSION { <statements> } <else>
+<if> -> if let $ID { <statements> } <else>
+<else> -> else { <statements> }
+
+<while> -> while $EXPRESSION { <statements> }
+
+<return> -> return
+<return> -> return $EXPRESSION
+
+<assign> -> $ID = $EXPRESSION
+
+<func_call> -> $ID ( <func_call_args> )
+<func_call_arg_without_name> -> $EXPRESSION
+<func_call_arg_with_name> -> $ID : $EXPRESSION
+<func_call_arg> -> <func_call_arg_without_name>
+<func_call_arg> -> <func_call_arg_with_name>
+<func_call_args> -> ε
+<func_call_args> -> <func_call_arg>
+<func_call_args> -> <func_call_arg> , <func_call_args>
+
+<func_definition> -> <func_head> <func_body>
+
+<func_head> -> func $ID ( <func_head_args> ) -> <type>
+<func_head> -> func $ID ( <func_head_args> )
+
+<func_head_arg> -> $ID $ID : <type>
+<func_head_args> -> ε
+<func_head_args> -> <func_head_arg>
+<func_head_args> -> <func_head_arg> , <func_head_args>
+
+<func_body> -> { <statements> }
