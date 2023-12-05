@@ -49,6 +49,11 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         {
             if(((ASTNode*)arg->a)->a != NULL)
                 return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+            bool dump;
+            ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &dump, codeTable, scope, &dump);
+            if(ERR)
+                return ERR;
+        
             arg=arg->b;
         }
         return OK;
