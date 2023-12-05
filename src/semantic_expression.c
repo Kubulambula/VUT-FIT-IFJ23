@@ -11,32 +11,34 @@
 #include "syntax_precedent.h"
 
 
-static Token nonLiteral_in_exp(exp_node* node)
-{
+bool nonLiteral_in_exp(exp_node* node){
     if(node == NULL)
-        return TOKEN_KEYWORD_NIL;
+        return false;
+
     if(node->type == TOKEN_KEYWORD_FUNC || node->type == TOKEN_IDENTIFIER)
-        return TOKEN_KEYWORD_VAR;
+        return true;
+    
+    if(nonLiteral_in_exp(node->left))
+        return true;
+    if(nonLiteral_in_exp(node->right))
+        return true;
 
-    if(nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL)
-        return TOKEN_KEYWORD_VAR;
-    if(nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL)
-        return TOKEN_KEYWORD_VAR;
-
-    return TOKEN_KEYWORD_NIL;
+    return false;
 }
 
+
+bool is_litereal(exp_node* node){
+    return node->type == TOKEN_LITERAL_INT || node->type == TOKEN_LITERAL_DOUBLE || node->type == TOKEN_LITERAL_STRING || node->type == TOKEN_LITERAL_NIL;
+}
 
 
 Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping, bool* nillable)
 {
     if(node != NULL){
         Symbol *target;
-        Type out,a,b;
-        Error err, aEr, bEr;
+        Type aType, bType;
+        bool aNillable, bNillable;
         char* dollar;
-        bool return_nillable_a, return_nillabel_b;
-
 
         switch (node->type)
         {
@@ -46,198 +48,275 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             *nillable = false;
             *returnType = TYPE_INT;
             return OK;
-            break;
+
         case TOKEN_LITERAL_DOUBLE: //double
             *nillable = false;
-            *returnType =TYPE_DOUBLE;
+            *returnType = TYPE_DOUBLE;
             return OK;
-            break;
+
         case TOKEN_LITERAL_STRING:  //string
             *nillable = false;
             *returnType = TYPE_STRING;
             return OK;
-            break;
+
         case TOKEN_LITERAL_NIL: //nill
             *nillable = true;
             *returnType = TYPE_NIL;
             return OK;
-            break;
 
         //VARIABLES
         case TOKEN_IDENTIFIER:
             dollar = strstr(node->value.s, "$");
-            if(dollar != NULL){   // if jmeno promene obsahuje $
+            if(dollar != NULL)   // if jmeno promene obsahuje $
                 *dollar = '\0';   // potom $ -> '\0'
-            }
 
-            target = SymTable_get_recurse(tables,node->value.s);
+            target = SymTable_get_recurse(tables, node->value.s);
             if(target == NULL || target->symbol_type == FUNCTION)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             if (!target->initialized)
                 return ERR_SEMATIC_UNDEFINED_VAR;
+            
             *returnType = target->type;
             *nillable = target->nilable;
 
-            if(dollar != NULL){
+            if(dollar != NULL)
                 *dollar = '$';
-            }
-            else{
+            else
                 appendScope(&node->value.s, scoping);
-            }
             
             return OK;
-            break;
 
         case TOKEN_KEYWORD_FUNC: 
-            out = TYPE_NIL;
-            err = funcCallCheck((ASTNode*)node->left, &out , tables, code_table, scoping, nillable);
-            if(err != OK)
-                return err;
-            *returnType = out;
-            return OK;
-            break;
+            return funcCallCheck((ASTNode*)node->left, returnType, tables, code_table, scoping, nillable);
 
         //OPERATORS
         case TOKEN_OPERATOR_MINUS: // - 
         case TOKEN_OPERATOR_MULTIPLICATION: // *
-            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
-            if(aEr != OK)
-                return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
-            if(bEr != OK)
-                return bEr;
-            *nillable = return_nillable_a || return_nillabel_b;
-            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE&&b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLETYPE_DOUBLE
-            {
+            ERR = handle_expression(node->left,tables, &aType, tables, scoping, &aNillable);
+            if(ERR)
+                return ERR;
+            ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable);
+            if(ERR)
+                return ERR;
+            
+            if (aNillable || bNillable)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            
+            if((aType == TYPE_INT && bType == TYPE_INT) || (aType == TYPE_DOUBLE && bType == TYPE_DOUBLE)){ // INT INT || DOUBLE DOUBLE
                 *returnType = a;
+                *nillable = false;
                 return OK;
             }
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
-            {
-                *returnType =TYPE_DOUBLE;
+            if(aType == TYPE_INT && bType == TYPE_DOUBLE && is_litereal(node->left)){ // LITERAL_INT DOUBLE
+                // implicit conversion
+                node->left->type = TOKEN_LITERAL_DOUBLE;
+                node->left->value.d = (double)(node->left->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false
                 return OK;
             }
-            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL)//TYPE_DOUBLE LITERAL INT
-            {
-                *returnType =TYPE_DOUBLE;
+            if(aType == TYPE_DOUBLE && bType == TYPE_INT && is_litereal(node->right)){ // DOUBLE LITERAL_INT
+                // implicit conversion
+                node->right->type = TOKEN_LITERAL_DOUBLE;
+                node->right->value.d = (double)(node->right->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
                 return OK;
             }
             return ERR_SEMATIC_INCOMPATIBLE_TYPES ; //all other wrong types
-            break;
 
         case TOKEN_OPERATOR_DIVISION: // /
-            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
-            if(aEr != OK)
-                return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
-            if(bEr != OK)
-                return bEr;
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            if(ERR)
+                return ERR;
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            if(ERR)
+                return ERR;
 
-            *nillable = return_nillable_a || return_nillabel_b;
-            if(a==TYPE_DOUBLE && b==TYPE_DOUBLE)  //TYPE_DOUBLE TYPE_DOUBLE
-            {
-                *returnType = a;
+            if (return_nillable_a || return_nillable_b)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            
+            if (aType == TYPE_DOUBLE && bType == TYPE_DOUBLE){  //TYPE_DOUBLE TYPE_DOUBLE
+                *returnType = aType;
+                *nillable = false;
                 return OK;
             }
-            if(a == TYPE_INT && b == TYPE_INT){     // INT INT
+            if (aType == TYPE_INT && bType == TYPE_INT){ // INT INT
                 node->type = TOKEN_OPERATOR_I_DIVISION;
-                *returnType = a;
+                *returnType = aType;
+                *nillable = false;
                 return OK;
             }
+            // if (aType == TYPE_INT && bType == TYPE_DOUBLE && is_litereal(node->left)){
+            //     // implicit conversion
+            //     node->left->type = TOKEN_LITERAL_DOUBLE;
+            //     node->left->value.d = (double)(node->left->value.i);
+            //     *returnType = TYPE_DOUBLE;
+            //     *nillable = false;
+            //     return OK;
+            // }
+            // if (aType == TYPE_DOUBLE && bType == TYPE_INT && is_litereal(node->right)){
+            //     // implicit conversion
+            //     node->right->type = TOKEN_LITERAL_DOUBLE;
+            //     node->right->value.d = (double)(node->right->value.i);
+            //     *returnType = TYPE_DOUBLE;
+            //     *nillable = false;
+            //     return OK;
+            // }
+
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            break; 
 
         case TOKEN_OPERATOR_PLUS:   // +
-            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
-            if(aEr != OK)
-                return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
-            if(bEr != OK)
-                return bEr;
+            ERR = handle_expression(node->left,tables, &aType, tables, scoping);
+            if(ERR)
+                return ERR;
+            ERR = handle_expression(node->right,tables, &bType, tables, scoping);
+            if(ERR)
+                return ERR;
+            
+            if (aNillable || bNillable)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
-            *nillable = return_nillable_a || return_nillabel_b;
-            if((a == TYPE_INT && b == TYPE_INT)||(a==TYPE_DOUBLE && b==TYPE_DOUBLE))  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
-            {
+            if((aType == TYPE_INT && bType == TYPE_INT) || (a == TYPE_DOUBLE && b == TYPE_DOUBLE)){  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
                 *returnType = a;
+                *nillable = false;
                 return OK;
             }
-            if(a == TYPE_STRING && b == TYPE_STRING){   // STRING STRING
+            if(aType == TYPE_STRING && bType == TYPE_STRING){   // STRING STRING
+                if (aNillable || bNillable)
+                    return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+                
                 node->type = TOKEN_CONCATENATE;
                 *returnType = TYPE_STRING;
+                *nillable = false;
                 return OK;
             }
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) == TOKEN_KEYWORD_NIL) // LITERAL INT TYPE_DOUBLE
-            {
-                *returnType =TYPE_DOUBLE;
+            if(aType == TYPE_INT && bType == TYPE_DOUBLE && is_litereal(node->left)){ // LITERAL_INT TYPE_DOUBLE
+                // implicit conversion
+                node->left->type = TOKEN_LITERAL_DOUBLE;
+                node->left->value.d = (double)(node->left->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
                 return OK;
             }
-            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) == TOKEN_KEYWORD_NIL)//TYPE_DOUBLE LITERAL INT
-            {
-                *returnType =TYPE_DOUBLE;
+            if(aType == TYPE_DOUBLE && bType == TYPE_INT && is_litereal(node->right)){ // DOUBLE LITERAL_INT
+                node->right->type = TOKEN_LITERAL_DOUBLE;
+                node->right->value.d = (double)(node->right->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
                 return OK;
             }
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            break;
         
         //LOGICAL
         case TOKEN_OPERATOR_NOT_EQUALS: // !=       
         case TOKEN_OPERATOR_EQUALS: // ==
+           ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            if(ERR)
+                return ERR;
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            if(ERR)
+                return ERR;
+            
+            *returnType = TYPE_BOOL;
+            *nillable = false;
+            
+            if (aType == bType)
+                return OK;
+
+            if (aType == TYPE_INT && bType == TYPE_DOUBLE && is_litereal(node->left)){ // LITERAL_INT TYPE_DOUBLE
+                // implicit conversion
+                node->left->type = TOKEN_LITERAL_DOUBLE;
+                node->left->value.d = (double)(node->left->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
+                return OK;
+            }
+            if (aType == TYPE_DOUBLE && bType == TYPE_INT && is_litereal(node->right)){ // DOUBLE LITERAL_INT
+                node->right->type = TOKEN_LITERAL_DOUBLE;
+                node->right->value.d = (double)(node->right->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
+                return OK;
+            }
+
+            if (node->left->type == TOKEN_LITERAL_NIL && bNillable) // compare nil literal and nilable
+                return OK;
+
+            if (aNillable && node->right->type == TOKEN_LITERAL_NIL) // nilable and compare nil literal
+                return OK;
+
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+
         case TOKEN_OPERATOR_LESS_THAN: // <
         case TOKEN_OPERATOR_GREATER_THAN:  // >
         case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
         case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
-            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
-            if(aEr != OK)
-                return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
-            if(bEr != OK)
-                return bEr;
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            if(ERR)
+                return ERR;
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            if(ERR)
+                return ERR;
 
-            *nillable = return_nillable_a || return_nillabel_b;
-            if(node->type != TOKEN_OPERATOR_EQUALS && node->type != TOKEN_OPERATOR_NOT_EQUALS && (a == TYPE_NIL || b == TYPE_NIL))
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            if(a == TYPE_BOOL || b == TYPE_BOOL)
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            if(a == TYPE_INT && b ==TYPE_DOUBLE && nonLiteral_in_exp(node->left) != TOKEN_KEYWORD_NIL) // LITERAL INTTYPE_DOUBLE
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            if(a ==TYPE_DOUBLE && b == TYPE_INT && nonLiteral_in_exp(node->right) != TOKEN_KEYWORD_NIL) //TYPE_DOUBLE LITERAL INT
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            if (a != b)
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-                
             *returnType = TYPE_BOOL;
-            
-            return OK;
-            break;
+            *nillable = false;
+
+            if (aNillable || bNillable)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+
+            if (aType == bType)
+                return OK;
+
+            if (aType == TYPE_INT && bType == TYPE_DOUBLE && is_litereal(node->left)){ // LITERAL_INT TYPE_DOUBLE
+                // implicit conversion
+                node->left->type = TOKEN_LITERAL_DOUBLE;
+                node->left->value.d = (double)(node->left->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
+                return OK;
+            }
+            if (aType == TYPE_DOUBLE && bType == TYPE_INT && is_litereal(node->right)){ // DOUBLE LITERAL_INT
+                node->right->type = TOKEN_LITERAL_DOUBLE;
+                node->right->value.d = (double)(node->right->value.i);
+                *returnType = TYPE_DOUBLE;
+                *nillable = false;
+                return OK;
+            }
+
+            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         case TOKEN_NIL_COALESCING:  // ??
-            aEr = handle_expression(node->left,tables,&a, tables, scoping, &return_nillable_a);
-            if(aEr != OK)
-                return aEr;
-            bEr = handle_expression(node->right,tables,&b, tables, scoping, &return_nillabel_b);
-            if(bEr != OK)
-                return bEr;
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            if(ERR)
+                return ERR;
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            if(ERR)
+                return ERR;
         
-            if(a != b || a == TYPE_BOOL || return_nillabel_b == true)   
-                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            *returnType = aType;
             *nillable = false;
-            break;
+
+            if(aType != bType || aType == TYPE_BOOL)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+            
+            if (bNillable)
+                return ERR_SEMATIC_INCOMPATIBLE_TYPES;   
+            
+            return OK;
 
         case TOKEN_EXCLAMATION:
-            err = handle_expression(node->left, tables, &a, code_table, scoping, &return_nillable_a);
-            if(err)
-                return err;
-            if(return_nillable_a == false){
-                return  ERR_SEMATIC_INCOMPATIBLE_TYPES;
-            }
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            if(ERR)
+                return ERR;
+            
+            *returnType = aType;
             *nillable = false;
-            *returnType = a;
             return OK;
-            break;
 
         default:
+            fprintf(stderr, "Unhandled operator in expression\n");
             return ERR_INTERNAL;
-            break;
         }
     }
     return OK;
