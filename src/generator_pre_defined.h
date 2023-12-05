@@ -35,7 +35,20 @@
 // 		return err;
 
 #define FOOTER \
-	"\n\nEXIT		GF@$exitCode\n"\
+	"\n\nEXIT		GF@$exitCode\n"
+
+
+#define CONCAT \
+	"\n# === concat ==="\
+	"\nCREATEFRAME"\
+	"\nDEFVAR		TF@$temp1"\
+	"\nDEFVAR		TF@$temp2"\
+	"\nPOPS		TF@$temp2"\
+	"\nPOPS		TF@$temp1"\
+	"\nCONCAT 		TF@$temp1 TF@$temp1 TF@$temp2"\
+	"\nPUSHS		TF@$temp1"\
+	"\n# === concat end ==="\
+
 
 
 #define COALESTING \
