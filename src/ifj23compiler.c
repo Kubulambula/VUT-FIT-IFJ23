@@ -30,7 +30,6 @@ int main(void) {
         return ERR_INTERNAL;
     }
 
-
 	err = semantic(ast, code_table);
 	if (err){
 		fprintf(stderr, "Semantic ERR: %d\n", err);

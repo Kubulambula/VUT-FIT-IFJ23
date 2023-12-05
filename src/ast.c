@@ -199,8 +199,11 @@ void print_tree_string(char* string, int offset){
         printf("%s\n", string);
 }
 
+#ifndef NDEBUG
 // offset nastavte pri prvnim volani na 0
 void print_ast_node(ASTNode *node, int offset){
+    char* additional_info;
+    unsigned additional_info_length;
     if(node != NULL){
         for(int i = 0; i < offset; i++){
             printf("|   ");
@@ -235,7 +238,16 @@ void print_ast_node(ASTNode *node, int offset){
                 break;
             
             case VAR_TYPE:
-                printf("Type: %ld, Nilable: %ld\n", (long)node->a, (long)node->b);
+                additional_info_length = snprintf(NULL, 0, "VAR_TYPE Values: Type: %ld, Nilable %ld", (long)node->a, (long)node->b);
+                additional_info = (char*)malloc(additional_info_length + 1);
+                if (additional_info == NULL){
+                    print_tree_string("Cannot print VAR_TYPE values", offset+1);
+                    break;
+                }
+
+                sprintf(additional_info, "VAR_TYPE Values: Type: %ld, Nilable %ld", (long)node->a, (long)node->b);
+                print_tree_string(additional_info, offset+1);
+                free(additional_info);
                 break;
 
             default:
@@ -244,7 +256,12 @@ void print_ast_node(ASTNode *node, int offset){
         }
     }
 }
+#else
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void print_ast_node(ASTNode *node, int offset){}
+#endif
 
+#ifndef NDEBUG
 // offset nastavte pri prvnim volani na 0
 void print_exp_node(exp_node *node, int offset){
     if(node != NULL){
@@ -279,3 +296,7 @@ void print_exp_node(exp_node *node, int offset){
         }
     }
 }
+#else
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void print_exp_node(exp_node *node, int offset){}
+#endif
