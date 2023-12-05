@@ -87,7 +87,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             return OK;
 
         case TOKEN_KEYWORD_FUNC: 
-            return funcCallCheck((ASTNode*)node->left, returnType, tables, code_table, scoping, nillable);
+            return funcCallCheck((ASTNode*)node->left, returnType, tables, code_table, nillable);
 
         //OPERATORS
         case TOKEN_OPERATOR_MINUS: // - 

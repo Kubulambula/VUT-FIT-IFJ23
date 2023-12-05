@@ -137,7 +137,6 @@ Error appendScope(char**name,int scope)
 
 
 static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*codeTable, Type expected_type,int* scope, bool* returned, bool nilable_return,bool second_pass){
-    SymTable *global;
     Symbol *generatedSymbol, *target;
     Type expReturnType;
     bool expNillable;
@@ -271,7 +270,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if(!second_pass)
         {
             //in ast, replace var name with varname$scope
-            ERR = appendScope(&(statement->a),*scope);
+            ERR = appendScope((char**)&(statement->a), *scope);
             if (ERR)
                 return ERR;
         }
