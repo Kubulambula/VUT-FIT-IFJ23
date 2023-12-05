@@ -180,7 +180,7 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
 
         case TOKEN_IDENTIFIER:
             // check the frame with SymTable
-            printf("\nPUSHS		%s@%s", SymTable_get(symtable, (expression->value).s) ? "LF" : "GF", (expression->value).s);
+            printf("\nPUSHS		%s@%s", SymTable_get(symtable, (expression->value).s) ? "GF" : "LF", (expression->value).s);
             return OK;
         
         case TOKEN_LITERAL_INT:

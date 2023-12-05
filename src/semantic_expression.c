@@ -83,7 +83,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         if(dollar != NULL)
             *dollar = '$';
         else
-            appendScope(&node->value.s, scoping);
+            appendScope(&node->value.s, target->scope);
         
         return OK;
 
