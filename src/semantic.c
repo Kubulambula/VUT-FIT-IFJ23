@@ -10,7 +10,7 @@
 #include "semantic.h"
 
 
-Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable,bool*nillable){
+Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
     int scope=0;
     SymTable* global = tables;
     while(global->previous != NULL)
@@ -34,7 +34,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     }
     //arg check
     ASTNode* arg = func->b;
-    FuncDefArg* symTable_arg=target->args;
+    FuncDefArg* symTable_arg = target->args;
     while(arg != NULL && symTable_arg != NULL)
     {
         if(symTable_arg->name == NULL || ((ASTNode*)arg->a)->a == NULL)
@@ -44,22 +44,24 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         }
         else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
-        Type a;
-        ERR = handle_expression(((ASTNode*)arg->a)->b,tables,&a,codeTable,&scope);
-        if(ERR != OK)
+        Type a_type;
+        bool a_nilable;
+        ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &a_type, codeTable, scope, &a_nilable);
+        if(ERR)
             return ERR;
-        if (a != symTable_arg->type)
+        if (a_type != symTable_arg->type || a_nilable != symTable_arg->nilable)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         
         symTable_arg = symTable_arg->next;
-        arg= arg->b;
+        arg = arg->b;
     }
     if(arg != NULL && symTable_arg != NULL)
         return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
+    
     *returnType = target->type;
     *nillable = target->nilable;
     scope++;
-    symTable_arg=target->args;
+    symTable_arg = target->args;
     //check function body
     SymTable* argSymTable = malloc(sizeof(SymTable)); 
     if(argSymTable == NULL)
@@ -69,7 +71,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         free(argSymTable);
         return ERR_INTERNAL;
     }
-    argSymTable->previous= global;
+    argSymTable->previous = global;
     while (symTable_arg != NULL)
     {
         Symbol* argVar = Symbol_new();
@@ -138,6 +140,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     SymTable *global;
     Symbol *generatedSymbol, *target;
     Type expReturnType;
+    bool expNillable;
     bool aReturned, bReturned = false;
     char* dollar;
     switch (statement->type){

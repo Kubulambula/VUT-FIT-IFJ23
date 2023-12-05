@@ -103,7 +103,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             
             if((aType == TYPE_INT && bType == TYPE_INT) || (aType == TYPE_DOUBLE && bType == TYPE_DOUBLE)){ // INT INT || DOUBLE DOUBLE
-                *returnType = a;
+                *returnType = aType;
                 *nillable = false;
                 return OK;
             }
@@ -112,7 +112,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 node->left->type = TOKEN_LITERAL_DOUBLE;
                 node->left->value.d = (double)(node->left->value.i);
                 *returnType = TYPE_DOUBLE;
-                *nillable = false
+                *nillable = false;
                 return OK;
             }
             if(aType == TYPE_DOUBLE && bType == TYPE_INT && is_litereal(node->right)){ // DOUBLE LITERAL_INT
@@ -126,14 +126,14 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             return ERR_SEMATIC_INCOMPATIBLE_TYPES ; //all other wrong types
 
         case TOKEN_OPERATOR_DIVISION: // /
-            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
             if(ERR)
                 return ERR;
-            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
             if(ERR)
                 return ERR;
 
-            if (return_nillable_a || return_nillable_b)
+            if (aNillable || bNillable)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             
             if (aType == TYPE_DOUBLE && bType == TYPE_DOUBLE){  //TYPE_DOUBLE TYPE_DOUBLE
@@ -167,18 +167,18 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         case TOKEN_OPERATOR_PLUS:   // +
-            ERR = handle_expression(node->left,tables, &aType, tables, scoping);
+            ERR = handle_expression(node->left,tables, &aType, tables, scoping, &aNillable);
             if(ERR)
                 return ERR;
-            ERR = handle_expression(node->right,tables, &bType, tables, scoping);
+            ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable);
             if(ERR)
                 return ERR;
             
             if (aNillable || bNillable)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
-            if((aType == TYPE_INT && bType == TYPE_INT) || (a == TYPE_DOUBLE && b == TYPE_DOUBLE)){  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
-                *returnType = a;
+            if((aType == TYPE_INT && bType == TYPE_INT) || (aType == TYPE_DOUBLE && bType == TYPE_DOUBLE)){  //INT INT ||TYPE_DOUBLE TYPE_DOUBLE
+                *returnType = aType;
                 *nillable = false;
                 return OK;
             }
@@ -191,6 +191,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
                 *nillable = false;
                 return OK;
             }
+
             if(aType == TYPE_INT && bType == TYPE_DOUBLE && is_litereal(node->left)){ // LITERAL_INT TYPE_DOUBLE
                 // implicit conversion
                 node->left->type = TOKEN_LITERAL_DOUBLE;
@@ -211,10 +212,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         //LOGICAL
         case TOKEN_OPERATOR_NOT_EQUALS: // !=       
         case TOKEN_OPERATOR_EQUALS: // ==
-           ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+           ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
             if(ERR)
                 return ERR;
-            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
             if(ERR)
                 return ERR;
             
@@ -252,10 +253,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         case TOKEN_OPERATOR_GREATER_THAN:  // >
         case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
         case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
-            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
             if(ERR)
                 return ERR;
-            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
             if(ERR)
                 return ERR;
 
@@ -287,10 +288,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         case TOKEN_NIL_COALESCING:  // ??
-            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
             if(ERR)
                 return ERR;
-            ERR = handle_expression(node->right, tables, &bType, tables, scoping);
+            ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
             if(ERR)
                 return ERR;
         
@@ -306,7 +307,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             return OK;
 
         case TOKEN_EXCLAMATION:
-            ERR = handle_expression(node->left, tables, &aType, tables, scoping);
+            ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
             if(ERR)
                 return ERR;
             
