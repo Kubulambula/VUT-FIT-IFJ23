@@ -25,11 +25,9 @@ void print_symtable(SymTable* symtable)
 }
 void prin()
 {
-    printf("here\n");
-    fflush(stdout);
+    fprintf(stderr, "here\n");
 }
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
-    
     int scope = 0;
     SymTable* global = tables;
     while(global->previous != NULL)
@@ -59,8 +57,6 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         return OK;
     }
 
-
-   
     //arg check
     ASTNode* arg = func->b;
     FuncDefArg* symTable_arg = target->args;
@@ -94,7 +90,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     symTable_arg = target->args;
     
   
-    //check function body
+    //check function args
     SymTable* argSymTable = malloc(sizeof(SymTable)); 
     if(argSymTable == NULL)
         return ERR_INTERNAL;
@@ -133,6 +129,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         }
         symTable_arg= symTable_arg->next;
     }
+
     bool skip = false;
     const char predefined[10][11]= {"write","readString","readInt","readDouble","Int2Double","Double2Int","length","substring","ord","chr"};
     for (int i = 0; i < 11; i++)
@@ -159,7 +156,6 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     }
 
     target->initialized=true;
-    printf("end of function call\n");
     return OK;
 
 }
@@ -278,7 +274,6 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
 
         }
         
-
         return OK;
 
     case ASSIGN:
@@ -329,10 +324,8 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         }
         return OK;
     case FUNC_CALL:
-    
         ERR = funcCallCheck(statement,&expReturnType,tables,codeTable,&aReturned);
-        printf("end of calling function call\n");
-        fflush(stdout);
+        prin();
         if (ERR !=OK)
             return ERR;
         return OK;
@@ -425,12 +418,12 @@ Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTabl
     {
         localTable=tables;
     }
-    while(statement != NULL){  
-        
+    while(statement != NULL){
         bool statementReturned = false;
         ERR = handle_statement(statement->a, localTable, codeTable, expected_type, scope, &statementReturned, nilable_return,second_pass);
         if(ERR){
-            SymTable_free(localTable);
+            if (!main)
+                SymTable_free(localTable);
             return ERR;
         }
         if(statementReturned)
@@ -453,7 +446,7 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         free(globalTable);
         return ERR_INTERNAL;
     }
-    
+        
     // Add functions to symtables
     ERR = add_functions_to_symtable(code_tree, globalTable, codeTable);
     if (ERR){
@@ -467,7 +460,6 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         SymTable_free(globalTable);
         return ERR;
     }
-
     //start body check
     bool returning = false;
     int scope=0;
@@ -476,9 +468,8 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         SymTable_free(globalTable);
         return ERR;
     }
-   
 
-return OK;
+    return OK;
 }
 
 
