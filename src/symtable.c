@@ -48,6 +48,10 @@ void Symbol_free(Symbol* symbol)
         // FuncDefArg_free(arg);
         // arg = temp;
     // }
+    if(symbol->name != NULL)
+    {    free(symbol->name);
+        symbol->name = NULL;
+    }
     free(symbol);
 }
 
@@ -95,13 +99,11 @@ void SymTable_free(SymTable* symTable)
     for(int i=0; i<symTable->size; i++)
         free(symTable->table[i]);
     
-    if(symTable->previous != NULL)
-        SymTable_free(symTable->previous);
+    
     
     free(symTable->table);
     free(symTable);
 }
-
 static bool SymTable_resize(SymTable* symTable)
 {
     int newSize = symTable->size + SYMTABLE_EXPAND_SIZE;
