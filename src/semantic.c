@@ -376,7 +376,7 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         SymTable_free(globalTable);
         return ERR;
     }
-    
+
     //start body check
     bool returning = false;
     ERR = handle_statements(code_tree->b, globalTable, codeTable, TYPE_NONE, 0, &returning, false);
@@ -453,7 +453,7 @@ return OK;
 Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable* code_table){
     ASTNode* func_defs = root->a;
     while(func_defs != NULL){
-        ASTNode* func_def = (ASTNode*)(func_def->b);
+        ASTNode* func_def = (ASTNode*)(func_defs->b);
         ASTNode* func_head = (ASTNode*)(func_def->a);
         ASTNode* func_head_signature = (ASTNode*)(func_head->a);
 
@@ -461,7 +461,6 @@ Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable*
         Symbol* func_symbol = Symbol_new();
         if (func_symbol == NULL)
             return ERR_INTERNAL;
-        
         func_symbol->symbol_type = FUNCTION;
         func_symbol->func_def = func_def;
         func_symbol->name = (char*)(func_head_signature->a);
