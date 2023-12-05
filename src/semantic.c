@@ -144,7 +144,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized,false);
         SymTable_free(argSymTable);
         
-        if(ERR != OK)
+        if(ERR)
             return ERR;
 
 
@@ -182,7 +182,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     Symbol *generatedSymbol, *target;
     Type expReturnType;
     bool expNillable;
-    bool aReturned, bReturned = false;
+    bool aReturned, bReturned,nillable_modified = false;
     char* dollar;
     switch (statement->type){
     case VAR_DEF:
@@ -303,7 +303,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
 
 
         ERR = handle_expression(statement->b,tables,&expReturnType,codeTable,*scope,&expNillable);
-        if (ERR != OK)
+        if (ERR)
             return ERR;
        
         if(expReturnType == TYPE_NIL && !target->nilable)
@@ -326,25 +326,24 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     case FUNC_CALL:
         ERR = funcCallCheck(statement,&expReturnType,tables,codeTable,&aReturned);
         prin();
-        if (ERR !=OK)
+        if (ERR)
             return ERR;
         return OK;
     case IFELSE:
         //check condition
-        expReturnType =TYPE_NIL;
         ERR = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope,&expNillable);
-        if (ERR != OK)
+        if (ERR)
             return ERR;
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         //handle true branch
         ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
-        if(ERR != OK)
+        if(ERR)
             return ERR;
         //handle false branch
         ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass,false);
-        if(ERR != OK)
+        if(ERR)
             return ERR;
         
         if(aReturned && bReturned)
@@ -352,19 +351,43 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         return OK;
     case CHECK_IF_LET:
         target = SymTable_get_recurse(tables,statement->a);
-        if (target->symbol_type != LET)
-            return ERR_SEMATIC_INCOMPATIBLE_TYPES;
+        if (target == NULL || target->symbol_type != LET)   //CHECK WITH TEAM
+            return ERR_SEMATIC_UNDEFINED_VAR;
+        
+        ERR = appendScope(statement->a,target->scope);
+        if (ERR)
+            return ERR;
+        if(target->nilable)
+        {
+            target->nilable = false;
+            nillable_modified=true;    
+        }
+        //handle true branch    
+        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
+        if(ERR)
+            return ERR;
+        if(nillable_modified)
+        {
+            nillable_modified=false;
+            target->nilable=true;
+        }
+        //handle false branch
+        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass,false);
+        if(ERR)
+            return ERR;
+        if(aReturned && bReturned)
+            *returned = true;
         return OK;
     case WHILE:
         expReturnType=TYPE_NIL;
         ERR = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope,&expNillable);
-        if (ERR != OK)
+        if (ERR)
             return ERR;
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,returned,nilable_return,second_pass,false);
-        if (ERR != OK)
+        if (ERR)
             return ERR;
         return OK;
         break;
@@ -383,7 +406,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                 if (statement->a == NULL)
                     return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
                 ERR = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope,&expNillable);
-                if (ERR != OK)
+                if (ERR)
                     return ERR;
                 if(expReturnType == TYPE_NIL && !nilable_return)
                     return ERR_SEMATIC_BAD_FUNC_RETURN_TYPE;

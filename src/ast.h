@@ -53,7 +53,7 @@ typedef enum {
         IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are STATEMENTs
     WHILE, // a is expression condition and b is STATEMENT
 
-    CHECK_IF_LET, // a is variable name
+    CHECK_IF_LET, // a is variable name,b is IFELSE_BODIES
     // ^^^ o tomto se musime poradit na meetingu ^^^ - alternativy, jak to vyresit?
     
     RETURN, // a is expression - some operator & b is NULL
