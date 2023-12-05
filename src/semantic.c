@@ -41,7 +41,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
     //write() check
-    if(strcmp(func->a, "write"))
+    if(strcmp(func->a, "write")==0)
     {
         ASTNode* arg = func->b;
         while(arg != NULL)
@@ -60,7 +60,6 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     }
 
 
-   
    
     //arg check
     ASTNode* arg = func->b;
@@ -93,6 +92,8 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     *nillable = target->nilable;
     scope++;
     symTable_arg = target->args;
+    
+  
     //check function body
     SymTable* argSymTable = malloc(sizeof(SymTable)); 
     if(argSymTable == NULL)
@@ -132,22 +133,33 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         }
         symTable_arg= symTable_arg->next;
     }
-  
-    bool returning;
-    ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized,false);
-    SymTable_free(argSymTable);
-    if(ERR != OK)
-        return ERR;
-    
-    //returning check
-
-    if(target->type != TYPE_NIL)
+    bool skip = false;
+    const char predefined[10][11]= {"write","readString","readInt","readDouble","Int2Double","Double2Int","length","substring","ord","chr"};
+    for (int i = 0; i < 11; i++)
     {
-        if(!returning)
-            return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
+        if(strcmp(func->a,predefined[i]) == 0)
+            skip = true;
+    }
+    
+    if(!skip)
+    {
+        bool returning;
+        ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized,false);
+        SymTable_free(argSymTable);
         
-    }    
+        if(ERR != OK)
+            return ERR;
+
+
+
+        //returning check
+        if(target->type != TYPE_NIL)
+            if(!returning)
+                return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
+    }
+
     target->initialized=true;
+    printf("end of function call\n");
     return OK;
 
 }
@@ -317,7 +329,10 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         }
         return OK;
     case FUNC_CALL:
+    
         ERR = funcCallCheck(statement,&expReturnType,tables,codeTable,&aReturned);
+        printf("end of calling function call\n");
+        fflush(stdout);
         if (ERR !=OK)
             return ERR;
         return OK;
