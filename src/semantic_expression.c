@@ -64,14 +64,12 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             if(dollar != NULL){   // if jmeno promene obsahuje $
                 *dollar = '\0';   // potom $ -> '\0'
             }
-
             target = SymTable_get_recurse(tables,node->value.s);
             if(target == NULL || target->symbol_type == FUNCTION)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             if (!target->initialized)
                 return ERR_SEMATIC_UNDEFINED_VAR;
             *returnType = target->type;
-
             if(dollar != NULL){
                 *dollar = '$';
             }
@@ -183,7 +181,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             bEr = handle_expression(node->right,tables,&b, tables, scoping);
             if(bEr != OK)
                 return bEr;
-            if(a == TYPE_NIL || b == TYPE_NIL)
+            if(node->type != TOKEN_OPERATOR_EQUALS && node->type != TOKEN_OPERATOR_NOT_EQUALS && (a == TYPE_NIL || b == TYPE_NIL))
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             if(a == TYPE_BOOL || b == TYPE_BOOL)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -207,9 +205,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             if(bEr != OK)
                 return bEr;
 
-            
-            
-            if(a != b || a == TYPE_BOOL || b == TYPE_NIL)   
+            if(a != b || a == TYPE_BOOL)   
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             break;
 
