@@ -8,15 +8,36 @@
 #include "lexer.h"
 #include "buffer_string.h"
 #include "semantic.h"
-
-
+void print_symtable(SymTable* symtable)
+{
+    while(symtable != NULL)
+    {
+        printf("\n-------------\n");
+        for (int i = 0; i < symtable->size+1; i++)
+        {
+            if(symtable->table[i] != NULL)
+                printf("'%s'\n",symtable->table[i]->name);
+        }
+        printf("---------------\n");
+        fflush(stdout);
+        symtable = symtable->previous;
+    }
+}
+void prin()
+{
+    printf("here\n");
+    fflush(stdout);
+}
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
+    
     int scope=0;
     SymTable* global = tables;
     while(global->previous != NULL)
         global = global->previous;
     //check if function exists
+    
     Symbol* target = SymTable_get(global,func->a);
+    
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
     //write() check
@@ -32,6 +53,10 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         }
         return OK;
     }
+
+
+   
+   
     //arg check
     ASTNode* arg = func->b;
     FuncDefArg* symTable_arg = target->args;
@@ -55,6 +80,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         symTable_arg = symTable_arg->next;
         arg = arg->b;
     }
+     
     if(arg != NULL && symTable_arg != NULL)
         return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
     
@@ -102,18 +128,19 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         symTable_arg= symTable_arg->next;
     }
   
-  
     bool returning;
-    ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized);
+    ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized,false);
     SymTable_free(argSymTable);
     if(ERR != OK)
         return ERR;
     
     //returning check
+
     if(target->type != TYPE_NIL)
     {
         if(!returning)
             return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
+        
     }    
     target->initialized=true;
     return OK;
@@ -162,13 +189,13 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             generatedSymbol->type = (Type)(((ASTNode*)(statement->a))->a);
             generatedSymbol->nilable = (bool)(((ASTNode*)statement->a)->b);
             generatedSymbol->scope = *scope;
-
+            
             ERR = SymTable_insert(tables, generatedSymbol);
             if(ERR){
                 Symbol_free(generatedSymbol);
                 return ERR;
             }
-
+            
             // change the name to varname$scope
             ERR = appendScope((char**)&((ASTNode*)statement->b)->a, *scope);
             if (ERR)
@@ -198,38 +225,45 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             generatedSymbol = SymTable_get(tables,(char*)(((ASTNode*)statement->b)->a));
             *dollar = '$';
         }
-        
+
+
         // check valid inference
         if (((ASTNode*)statement->b)->b == NULL && generatedSymbol->type == TYPE_NIL) // if no expression and no specified type from syntax
             return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-
-        ERR = handle_expression((exp_node*)(((ASTNode*)statement->b)->b), tables, &expReturnType, codeTable, *scope,&expNillable);
-        if (ERR)
-            return ERR;
-        
-        if(generatedSymbol->type == TYPE_NIL){ // no type specified from syntax - inference   
-            if(expReturnType == TYPE_NIL || expReturnType == TYPE_BOOL) // if expression return is nil or bool
-                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-            else{
-                generatedSymbol->initialized = true;
-                generatedSymbol->type = expReturnType;
-                generatedSymbol->nilable=expNillable; 
+        if (((ASTNode*)statement->b)->b != NULL)
+        {
+            ERR = handle_expression((exp_node*)(((ASTNode*)statement->b)->b), tables, &expReturnType, codeTable, *scope,&expNillable);
+            if (ERR)
+                return ERR;
+            
+            if(generatedSymbol->type == TYPE_NIL){ // no type specified from syntax - inference   
+                if(expReturnType == TYPE_NIL || expReturnType == TYPE_BOOL) // if expression return is nil or bool
+                    return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+                else{
+                    generatedSymbol->initialized = true;
+                    generatedSymbol->type = expReturnType;
+                    generatedSymbol->nilable=expNillable; 
+                }
+            }else{ // type was specified from syntax - no inference
+                if(expReturnType == TYPE_NIL && !generatedSymbol->nilable) // if expression returned nil and type is not nilable
+                    return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+                else if(expReturnType == TYPE_NIL && generatedSymbol->nilable) // if expression returned nil and type is nilable
+                    generatedSymbol->initialized = true;
+                else if (generatedSymbol->type != expReturnType) // if expression returned differend type from specified type
+                    return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+                else if(expNillable && !generatedSymbol->nilable)// assigning nillable to not nillable
+                    return ERR_SEMATIC_BAD_TYPE_INFERENCE;
+                else //expression has same type as var/let
+                    generatedSymbol->initialized = true;
             }
-        }else{ // type was specified from syntax - no inference
-            if(expReturnType == TYPE_NIL && !generatedSymbol->nilable) // if expression returned nil and type is not nilable
-                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-            else if(expReturnType == TYPE_NIL && generatedSymbol->nilable) // if expression returned nil and type is nilable
-                generatedSymbol->initialized = true;
-            else if (generatedSymbol->type != expReturnType) // if expression returned differend type from specified type
-                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-            else if(expNillable && !generatedSymbol->nilable)// assigning nillable to not nillable
-                return ERR_SEMATIC_BAD_TYPE_INFERENCE;
-            else //expression has same type as var/let
-                generatedSymbol->initialized = true;
+
         }
+
+
         return OK;
 
     case ASSIGN:
+      
         if(second_pass)
         {
             dollar = strstr(statement->a, "$");
@@ -242,7 +276,6 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         }
         else
             target = SymTable_get_recurse(tables,statement->a);
-
         
         
         //var/let exists check
@@ -277,7 +310,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
 
         return OK;
     case FUNC_CALL:
-        ERR = funcCallCheck(statement->a,&expReturnType,tables,codeTable,&aReturned);
+        ERR = funcCallCheck(statement,&expReturnType,tables,codeTable,&aReturned);
         if (ERR !=OK)
             return ERR;
         return OK;
@@ -291,11 +324,11 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         //handle true branch
-        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass);
+        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
         if(ERR != OK)
             return ERR;
         //handle false branch
-        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass);
+        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass,false);
         if(ERR != OK)
             return ERR;
         
@@ -315,7 +348,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
-        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,returned,nilable_return,second_pass);
+        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,returned,nilable_return,second_pass,false);
         if (ERR != OK)
             return ERR;
         return OK;
@@ -354,15 +387,22 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     return ERR_INTERNAL;
 }
 
-Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool second_pass){
-    SymTable* localTable = malloc(sizeof(SymTable));
-    if(!SymTable_init(localTable)){
-        free(localTable);
-        return ERR_INTERNAL;
-    }
-    localTable->previous = tables;
+Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool second_pass,bool main){
+    
+    SymTable* localTable;
+    if(!main)
+    {
+        localTable = malloc(sizeof(SymTable));
+        if(!SymTable_init(localTable)){
+            free(localTable);
+            return ERR_INTERNAL;
+        }
+        localTable->previous = tables;
+    }else
+        localTable=tables;
     (*scope)++;
-    while(statement != NULL){   
+    while(statement != NULL){  
+        
         bool statementReturned = false;
         ERR = handle_statement(statement->a, localTable, codeTable, expected_type, scope, &statementReturned, nilable_return,second_pass);
         if(ERR){
@@ -407,7 +447,7 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     //start body check
     bool returning = false;
     int scope=0;
-    ERR = handle_statements(code_tree->b, globalTable, codeTable, TYPE_NONE, &scope, &returning, false,false);
+    ERR = handle_statements(code_tree->b, globalTable, codeTable, TYPE_NONE, &scope, &returning, false,false,true);
     if (ERR){
         SymTable_free(globalTable);
         return ERR;
@@ -432,8 +472,8 @@ Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable*
         func_symbol->symbol_type = FUNCTION;
         func_symbol->func_def = func_def;
         func_symbol->name = (char*)(func_head_signature->a);
-        func_symbol->type = (Type)(((ASTNode*)(func_head->a))->a);
-        func_symbol->nilable = (bool)(((ASTNode*)(func_head->a))->b);
+        func_symbol->type = (Type)(((ASTNode*)(func_head->b))->a);
+        func_symbol->nilable = (bool)(((ASTNode*)(func_head->b))->b);
         func_symbol->args = (FuncDefArg*)(func_head_signature->b);
 
         ERR = SymTable_insert(global_table, func_symbol);
@@ -450,7 +490,7 @@ Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable*
             FuncDefArg* compared_argument = argument->next;
             while(compared_argument != NULL)
             {
-                if(strcmp(argument->identifier,compared_argument->identifier) != 0)
+                if(strcmp(argument->identifier,compared_argument->identifier) == 0)
                     return ERR_SEMATIC_REDEFINED;
                 compared_argument = compared_argument->next;
             }
@@ -515,7 +555,9 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
             }
             
             assign_statement->a = (void*)assign;
-            assign->a = ((ASTNode*)((ASTNode*)((*statement)->a))->b)->a; // assign the name of the declared variable
+
+            assign->a = malloc(strlen(((ASTNode*)((ASTNode*)((*statement)->a))->b)->a)+1);
+            strcpy(assign->a,((ASTNode*)((ASTNode*)((*statement)->a))->b)->a);  // assign the name of the declared variable
             assign->b = (void*)tempExp; // assign the expression of the declared variable
             
             *statement = assign_statement;
