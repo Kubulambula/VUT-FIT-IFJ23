@@ -10,13 +10,8 @@
 #include "semantic.h"
 
 
-void prin(){
-    fprintf(stderr, "KOK OK\n");
-    fflush(stderr);
-}
-
-
-Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, int scope,bool*nillable){
+Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable,bool*nillable){
+    int scope=0;
     SymTable* global = tables;
     while(global->previous != NULL)
         global = global->previous;
@@ -50,9 +45,9 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         Type a;
-        Error err = handle_expression(((ASTNode*)arg->a)->b,tables,&a,codeTable,scope);
-        if(err != OK)
-            return err;
+        ERR = handle_expression(((ASTNode*)arg->a)->b,tables,&a,codeTable,&scope);
+        if(ERR != OK)
+            return ERR;
         if (a != symTable_arg->type)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         
@@ -67,11 +62,22 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     symTable_arg=target->args;
     //check function body
     SymTable* argSymTable = malloc(sizeof(SymTable)); 
-    SymTable_init(argSymTable);
+    if(argSymTable == NULL)
+        return ERR_INTERNAL;
+    if(!SymTable_init(argSymTable))
+    {
+        free(argSymTable);
+        return ERR_INTERNAL;
+    }
     argSymTable->previous= global;
     while (symTable_arg != NULL)
     {
         Symbol* argVar = Symbol_new();
+        if(argVar == NULL)
+        {
+            SymTable_free(argSymTable);
+            return ERR_INTERNAL;
+        }
         argVar->initialized=true;
         argVar->name= symTable_arg->name;
         ERR = appendScope(&(argVar->name),0);
@@ -84,16 +90,22 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         argVar->scope=scope;
         argVar->symbol_type=LET;
         argVar->type=symTable_arg->type;
-        SymTable_insert(argSymTable,argVar);
+        ERR = SymTable_insert(argSymTable,argVar);
+        if(ERR)
+        {
+            Symbol_free(argVar);
+            SymTable_free(argSymTable);
+            return ERR;
+        }
         symTable_arg= symTable_arg->next;
     }
   
   
     bool returning;
-    Error err = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,scope+1,&returning,target->nilable,target->initialized);
+    ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized);
     SymTable_free(argSymTable);
-    if(err != OK)
-        return err;
+    if(ERR != OK)
+        return ERR;
     
     //returning check
     if(target->type != TYPE_NIL)
@@ -123,9 +135,8 @@ Error appendScope(char**name,int scope)
 
 
 static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*codeTable, Type expected_type,int* scope, bool* returned, bool nilable_return,bool second_pass){
-    SymTable *localTable, *global;
+    SymTable *global;
     Symbol *generatedSymbol, *target;
-    Error error;
     Type expReturnType;
     bool aReturned, bReturned = false;
     char* dollar;
@@ -211,10 +222,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             else // expression returned correct type
                 generatedSymbol->initialized = true;
         }
-        
-
         return OK;
-        break;
 
     case ASSIGN:
         if(second_pass)
@@ -242,9 +250,9 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         target->initialized=true;
 
 
-        error = handle_expression(statement->b,tables,&expReturnType,codeTable,*scope);
-        if (error != OK)
-            return error;
+        ERR = handle_expression(statement->b,tables,&expReturnType,codeTable,*scope);
+        if (ERR != OK)
+            return ERR;
        
         if(expReturnType == TYPE_NIL && !target->nilable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -262,65 +270,48 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         }
 
         return OK;
-        break;
     case FUNC_CALL:
-        error = funcCallCheck(statement->a,&expReturnType,tables,codeTable,scope,&aReturned);
-        if (error !=OK)
-            return error;
+        ERR = funcCallCheck(statement->a,&expReturnType,tables,codeTable,&aReturned);
+        if (ERR !=OK)
+            return ERR;
         return OK;
-        break;
     case IFELSE:
         //check condition
         expReturnType =TYPE_NIL;
-        error = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope);
-        if (error != OK)
-            return error;
+        ERR = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope);
+        if (ERR != OK)
+            return ERR;
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         //handle true branch
-        localTable = malloc(sizeof(SymTable));
-        SymTable_init(localTable);
-        localTable->previous=tables;
-        (*scope)++;
-        error = handle_statements(((ASTNode*)statement->b)->a,localTable,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass);
-        SymTable_free(localTable);
-        if(error != OK)
-            return error;
+        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass);
+        if(ERR != OK)
+            return ERR;
         //handle false branch
-        localTable = malloc(sizeof(SymTable));
-        SymTable_init(localTable);
-        localTable->previous=tables;
-        (*scope)++;
-        error = handle_statements(((ASTNode*)statement->b)->b,localTable,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass);
-        SymTable_free(localTable);
-        if(error != OK)
-            return error;
+        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass);
+        if(ERR != OK)
+            return ERR;
         
         if(aReturned && bReturned)
             *returned = true;
-        
         return OK;
-        break;
     case CHECK_IF_LET:
         target = SymTable_get_recurse(tables,statement->a);
         if (target->symbol_type != LET)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         return OK;
-        break;
     case WHILE:
         expReturnType=TYPE_NIL;
-        error = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope);
-        if (error != OK)
-            return error;
+        ERR = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope);
+        if (ERR != OK)
+            return ERR;
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
-        (*scope)++;
-        error = handle_statements(statement->b,localTable,codeTable,expected_type,scope,returned,nilable_return,second_pass);
-        SymTable_free(localTable);
-        if (error != OK)
-            return error;
+        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,returned,nilable_return,second_pass);
+        if (ERR != OK)
+            return ERR;
         return OK;
         break;
     case RETURN:
@@ -338,9 +329,9 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                 if (statement->a == NULL)
                     return ERR_SEMATIC_NON_VOID_FUNC_DOESNT_RETURN_VALUE;
                 expReturnType=TYPE_NIL;
-                error = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope);
-                if (error != OK)
-                    return error;
+                ERR = handle_expression(statement->a,tables,&expReturnType,codeTable,*scope);
+                if (ERR != OK)
+                    return ERR;
                 if(expReturnType == TYPE_NIL && !nilable_return)
                     return ERR_SEMATIC_BAD_FUNC_RETURN_TYPE;
                 if(expReturnType == TYPE_NIL)
@@ -350,10 +341,8 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                 break;
         }
         return OK;
-        break;
     default:
         return ERR_INTERNAL;
-        break;
     }
     return ERR_INTERNAL;
 }
