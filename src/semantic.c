@@ -41,7 +41,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
     //write() check
-    if(strcmp(func->a, "write"))
+    if(strcmp(func->a, "write") == 0)
     {
         ASTNode* arg = func->b;
         while(arg != NULL)

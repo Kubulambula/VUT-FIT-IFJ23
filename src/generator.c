@@ -278,53 +278,54 @@ Error generate_expression(exp_node* expression, SymTable* symtable){
 
 
 Error generate_statements(ASTNode* statement, SymTable* symtable){
-    if (statement == NULL)
-        return OK;
-    
-    switch (((ASTNode*)(statement->a))->type){
-        case VAR_DEF:
-        case LET_DEF:
-            ERR = generate_var_def((ASTNode*)(statement->a), symtable);
-            if (ERR)
-                return ERR;
-            break;
+    while(statement != NULL){
+        switch (((ASTNode*)(statement->a))->type){
+            case VAR_DEF:
+            case LET_DEF:
+                ERR = generate_var_def((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                break;
 
-        case ASSIGN:
-            ERR = generate_assign((ASTNode*)(statement->a), symtable);
-            if (ERR)
-                return ERR;
-            break;
+            case ASSIGN:
+                ERR = generate_assign((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                break;
 
-        case FUNC_CALL:
-            ERR = generate_func_call((ASTNode*)(statement->a), symtable);
-            if (ERR)
-                return ERR;
-            break;
+            case FUNC_CALL:
+                ERR = generate_func_call((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                printf("\nCLEARS # The function was called outside an expression - clear the stact just in case it was a non-void function");
+                break;
 
-        case IFELSE:
-            ERR = generate_if_else((ASTNode*)(statement->a), symtable);
-            if (ERR)
-                return ERR;
-            break;
+            case IFELSE:
+                ERR = generate_if_else((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                break;
 
-        case WHILE:
-            ERR = generate_while((ASTNode*)(statement->a), symtable);
-            if (ERR)
-                return ERR;
-            break;
+            case WHILE:
+                ERR = generate_while((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                break;
 
-        case RETURN:
-            ERR = generate_return((ASTNode*)(statement->a), symtable);
-            if (ERR)
-                return ERR;
-            break;
-        
-        default:
-            fprintf(stderr, "Invalid statement!\n");
-            return ERR_INTERNAL;
+            case RETURN:
+                ERR = generate_return((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                break;
+            
+            default:
+                fprintf(stderr, "Invalid statement!\n");
+                return ERR_INTERNAL;
+            
+        }
+        statement = (ASTNode*)(statement->b);
     }
-
-    return generate_statements((ASTNode*)(statement->b), symtable);
+    return OK;
 }
 
 
