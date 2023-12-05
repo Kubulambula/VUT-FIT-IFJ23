@@ -51,6 +51,36 @@
 	"\nCLEARS # Clear the 2nd operand from stack"\
 	"\nPUSHS		TF@$temp # Push the copy of the 1st operand"\
 	"\nLABEL		coalesting_return_%d"\
-	"\n# === coalesting end ===\n\n"
+	"\n# === coalesting end ==="
+
+
+#define IF_ELSE_START \
+	"\nPUSHS			bool@true"\
+	"\nJUMPIFEQS		if_else_true_branch_%d"\
+	"\n# == false branch (else) =="
+
+#define IF_ELSE_MIDDLE \
+	"\nJUMP			if_else_end_%d"\
+	"\n# == true branch (if) =="\
+	"\nLABEL			if_else_true_branch_%d"
+
+#define IF_ELSE_END \
+	"\nLABEL			if_else_end_%d"\
+	"\n# ===== IF ELSE end ====="
+
+
+#define WHILE_START \
+	"\n# ===== WHILE start ====="\
+	"\nLABEL		while_start_%d"
+
+#define WHILE_MIDDLE \
+	"\nPUSHS		bool@false"\
+	"\nJUMPIFEQS	while_end_%d"
+
+#define WHILE_END \
+	"\nJUMP			while_start_%d"\
+	"\nLABEL		while_end_%d"\
+	"\n# ===== WHILE end ====="
+
 
 #endif
