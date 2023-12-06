@@ -30,15 +30,27 @@ void prin()
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
    
     int scope = 0;
+    
     // get the global table
     SymTable* global = tables;
     while(global->previous != NULL)
         global = global->previous;
+
     //check if function exists
-    
     Symbol* target = SymTable_get(global, (char*)(func->a));
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
+    
+
+    // init argument symtable
+    scope++;
+    SymTable* argSymTable = malloc(sizeof(SymTable)); 
+    if(argSymTable == NULL)
+        return ERR_INTERNAL;
+    if(!SymTable_init(argSymTable)){
+        free(argSymTable);
+        return ERR_INTERNAL;
+    }
     
     // check if function is write() - it is an exception with variable number of args
     if(strcmp(func->a, "write") == 0){
@@ -51,14 +63,16 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
             bool dump_nilable;
             ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &dump_type, codeTable, scope, &dump_nilable);
             if(ERR)
-                return ERR;
-        
+                return ERR;    
+
             arg = arg->b;
         }
         *returnType = TYPE_NIL;
         *nillable = true;
         return OK;
     }
+
+
 
     // arg check for other functions
     ASTNode* arg = func->b;
@@ -99,17 +113,10 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     *returnType = target->type;
     *nillable = target->nilable;
 
-    scope++;
-    symTable_arg = target->args; // set arg to the first one again
+    
     
     //check function args
-    SymTable* argSymTable = malloc(sizeof(SymTable)); 
-    if(argSymTable == NULL)
-        return ERR_INTERNAL;
-    if(!SymTable_init(argSymTable)){
-        free(argSymTable);
-        return ERR_INTERNAL;
-    }
+  
     argSymTable->previous = global;
     while (symTable_arg != NULL)
     {
@@ -208,9 +215,17 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     switch (statement->type){
     case VAR_DEF:
     case LET_DEF:
-        if(!second_pass)
-        {
-            //make symtable symbol for variable
+
+         
+        dollar = strstr((char*)(((ASTNode*)statement->b)->a), "$");
+        if(dollar != NULL)   // if jmeno promene obsahuje $
+            {
+                *dollar = '\0';   // potom $ -> '\0'
+                generatedSymbol = SymTable_get(tables,(char*)(((ASTNode*)statement->b)->a));
+                *dollar = '$';
+            }
+        else
+        {   //make symtable symbol for variable
             generatedSymbol = Symbol_new();
             if (generatedSymbol == NULL)
                 return ERR_INTERNAL;
@@ -220,7 +235,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             generatedSymbol->name = malloc(strlen((char*)(((ASTNode*)statement->b)->a))+1);
             if(generatedSymbol->name== NULL)
                 return ERR_INTERNAL;
-            strcpy(generatedSymbol->name,(char*)(((ASTNode*)statement->b)->a));                       
+            strcpy(generatedSymbol->name,(char*)( ((ASTNode*)statement->b)->a ));                       
             generatedSymbol->type = (Type)(((ASTNode*)(statement->a))->a);
             generatedSymbol->nilable = (bool)(((ASTNode*)statement->a)->b);
             
@@ -254,18 +269,10 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                     return ERR;
                 }
             }
-
-            
-        }else
-        {
-            dollar = strstr((char*)(((ASTNode*)statement->b)->a), "$");
-            if(dollar != NULL)   // if jmeno promene obsahuje $
-                *dollar = '\0';   // potom $ -> '\0'
-            else
-                return ERR_INTERNAL;
-            generatedSymbol = SymTable_get(tables,(char*)(((ASTNode*)statement->b)->a));
-            *dollar = '$';
         }
+               
+            
+        
 
 
         // check valid inference
@@ -609,14 +616,6 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
         exp_node* tempExp = ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b; // expression of immideate assing
         ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b = NULL; // throw it out the window
 
-        //insert into global table
-        bool dump;
-        int scope = 0;
-        ERR = handle_statement(def_statement->a,globalTable,codeTable,TYPE_NONE,&scope,&dump,false,false);
-        if(ERR)
-            return ERR;
-
-
         if(tempExp != NULL){
            
             if ((Type)(((ASTNode*)(((ASTNode*)(def_statement->a))->a))->a) == TYPE_NIL){ // do inference
@@ -658,6 +657,16 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
             // set statement to check after the original statement
             statement = (ASTNode**)&(def_statement->b);
         }
+
+        //insert into global table
+        bool dump;
+        int scope = 0;
+        ERR = handle_statement(def_statement->a,globalTable,codeTable,TYPE_NONE,&scope,&dump,false,false);
+        if(ERR)
+            return ERR;
+
+
+
 
         // insert def_statement as the first statement
         def_statement->b = root->b;
