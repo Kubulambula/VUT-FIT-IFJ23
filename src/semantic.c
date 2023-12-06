@@ -781,7 +781,9 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
                 *statement = assign_statement;
                 assign_statement->b = def_statement->b;
                 statement = (ASTNode**)&(assign_statement->b);
-               
+                def_statement->b = root->b;
+                root->b = def_statement;
+
 
             }else
             {
@@ -791,8 +793,26 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
 
 
         }else{
+
+
+
+
             // set statement to check after the original statement
-            *statement = (def_statement->b);
+            if(!recursive && *statement == root->b)
+            {
+                statement = (ASTNode**)&(def_statement->b);   
+            }else if (!recursive)
+            {
+                *statement = def_statement->b;
+                def_statement->b = root->b;
+                root->b = def_statement;
+            }else
+            {
+             statement = (ASTNode**)&(def_statement->b);    
+            }
+           
+
+
         }
 
         //insert into global table
@@ -806,15 +826,11 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
         
 
         // insert def_statement as the first statement
-        if(!recursive)
-        {
-            def_statement->b = root->b;
-            root->b = def_statement; 
+       
 
-        }
 
         
-
+        prin();
 
 
 
