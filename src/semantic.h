@@ -15,7 +15,7 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
 
 Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable* code_table);
 
-Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping, bool* nillable);
+Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping, bool* nillable, bool *init);
 
 Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool main);
 #endif
