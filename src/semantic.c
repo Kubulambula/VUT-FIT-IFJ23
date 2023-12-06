@@ -334,8 +334,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                     generatedSymbol->initialized = true;
             }
 
-        }else if (generatedSymbol->nilable)
-            generatedSymbol->initialized=true;
+        }
         
         return OK;
 
