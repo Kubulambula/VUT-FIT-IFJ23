@@ -13,7 +13,7 @@ TEST_DIR = .testdir
 
 # make - compiles ifj23compiler
 default:
-	$(CC) $(CFLAGS) -o $(EXECUTABLE) ./*.c
+	$(CC) $(CFLAGS) -o $(EXECUTABLE) ./src/*.c
 
 src:
 	$(CC) $(CFLAGS) -o $(EXECUTABLE) ./src/*.c
