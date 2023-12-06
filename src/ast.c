@@ -223,13 +223,15 @@ void print_ast_node(ASTNode *node, int offset){
             case FUNC_HEAD_SIGNATURE:
                                 break;
             case FUNC_CALL:
-                print_tree_string((char*)node->a,offset+1);
+                if(node->a != NULL)
+                    print_tree_string((char*)node->a,offset+1);
                 print_ast_node(node->b, offset+1);
                 break;
             case VAR_HEAD:
             case ASSIGN:
             case FUNC_CALL_ARG:
-                print_tree_string((char*)node->a,offset+1);
+                if(node->a != NULL)
+                    print_tree_string((char*)node->a,offset+1);
                 print_exp_node((exp_node*)node->b, offset+1);
                 break;
 
