@@ -28,6 +28,7 @@ void prin()
     fprintf(stderr, "here\n");
 }
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
+   
     int scope = 0;
     // get the global table
     SymTable* global = tables;
@@ -339,14 +340,17 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         else if(expNillable && !target->nilable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
-        if(!second_pass)
-        {
+        
+        dollar = strstr(statement->a, "$");
+        if(dollar == NULL)   // if jmeno promene obsahuje $
+        { 
             //in ast, replace var name with varname$scope
             
             ERR = appendScope((char**)&(statement->a), target->scope);
             if (ERR)
                 return ERR;
         }
+
         return OK;
     case FUNC_CALL:
         ERR = funcCallCheck(statement,&expReturnType,tables,codeTable,&aReturned);
