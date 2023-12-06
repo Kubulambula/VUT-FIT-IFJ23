@@ -106,6 +106,8 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         if(ERR)
             return ERR;
         
+        *init = true;
+        
         if(!(aInit && bInit))
             return ERR_SEMATIC_UNDEFINED_VAR;
 
@@ -142,6 +144,8 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
+        
+        *init = true;
         
         if(!(aInit && bInit))
             return ERR_SEMATIC_UNDEFINED_VAR;
@@ -186,6 +190,8 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
+        
+        *init = true;
         
         if(!(aInit && bInit))
             return ERR_SEMATIC_UNDEFINED_VAR;
@@ -240,6 +246,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         
         *returnType = TYPE_BOOL;
         *nillable = false;
+        *init = true;
         
         if (aType == bType)
             return OK;
@@ -281,6 +288,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
 
         *returnType = TYPE_BOOL;
         *nillable = false;
+        *init = true;
         
         if(!(aInit && bInit))
             return ERR_SEMATIC_UNDEFINED_VAR;
@@ -319,6 +327,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
     
         *returnType = aType;
         *nillable = false;
+        *init = true;
 
         if(aType != bType || aType == TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -338,18 +347,21 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         
         *returnType = aType;
         *nillable = false;
+        *init = true;
         return OK;
     
     case TOKEN_CONCATENATE:
         // concatenate was already checked
         *returnType = TYPE_STRING;
         *nillable = false;
+        *init = true;
         return OK;
     
     case TOKEN_OPERATOR_I_DIVISION:
         // IDIV was already checked
         *returnType = TYPE_INT;
         *nillable = false;
+        *init = true;
         return OK;
 
     default:
