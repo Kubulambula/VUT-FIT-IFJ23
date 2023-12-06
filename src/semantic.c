@@ -12,14 +12,13 @@ void print_symtable(SymTable* symtable)
 {
     while(symtable != NULL)
     {
-        printf("\n-------------\n");
+        fprintf(stderr, "\n-------------\n");
         for (int i = 0; i < symtable->size+1; i++)
         {
             if(symtable->table[i] != NULL)
-                printf("%d:'%s'\n",symtable->table[i]->scope,symtable->table[i]->name);
+                fprintf(stderr, "%d:'%s'\n",symtable->table[i]->scope,symtable->table[i]->name);
         }
-        printf("---------------\n");
-        fflush(stdout);
+        fprintf(stderr, "---------------\n");
         symtable = symtable->previous;
     }
 }
@@ -205,8 +204,6 @@ Error appendScope(char**name,int scope)
 
 
 static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*codeTable, Type expected_type,int* scope, bool* returned, bool nilable_return,bool second_pass){
-    printf("%d\n",statement->type);
-    fflush(stdout);
     Symbol *generatedSymbol, *target;
     Type expReturnType;
     bool expNillable;
