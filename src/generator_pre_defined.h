@@ -53,6 +53,7 @@
 #define COALESTING \
 	"\nCREATEFRAME"\
 	"\nDEFVAR		TF@$temp"\
+	"\nDEFVAR		TF@$garbage"\
 	"\nPOPS		TF@$temp"\
 	"\nPUSHS		TF@$temp # now we have 1st operand an stack AND in TF@$temp"\
 	"\n# Compare 1st operand with nil"\
@@ -60,7 +61,7 @@
 	"\nEQS"\
 	"\nPUSHS		bool@true"\
 	"\nJUMPIFEQS	coalesting_return_%d # If 1st operand is nil, return (on stack is only 2nd operand)"\
-	"\nCLEARS # Clear the 2nd operand from stack"\
+	"\nPOPS		TF@$garbage # POP the 2nd operand to garbage"\
 	"\nPUSHS		TF@$temp # Push the copy of the 1st operand"\
 	"\nLABEL		coalesting_return_%d"\
 	"\n# === coalesting end ==="
