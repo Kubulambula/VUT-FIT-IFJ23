@@ -50,7 +50,6 @@
 	"\n# === concat end ==="\
 
 
-
 #define COALESTING \
 	"\nCREATEFRAME"\
 	"\nDEFVAR		TF@$temp"\
@@ -80,6 +79,23 @@
 #define IF_ELSE_END \
 	"\nLABEL			if_else_end_%d"\
 	"\n# ===== IF ELSE end ====="
+
+
+#define IF_LET_START \
+	"\n# ===== IF LET start ====="\
+	"\nPUSHS		%s"\
+	"\nPUSHS		nil@nil"\
+	"\nJUMPIFNEQS		if_let_true_branch_%d"\
+	"\n# == false branch (is nil) =="
+
+#define IF_LET_MIDDLE \
+	"\nJUMP		if_let_end_%d"\
+	"\n# == true branch (is not nil) =="\
+	"\nLABEL		if_let_true_branch_%d"\
+
+#define IF_LET_END \
+	"\nLABEL		if_let_end_%d"\
+	"\n# ===== if_let_end ====="
 
 
 #define WHILE_START \

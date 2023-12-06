@@ -18,6 +18,8 @@ char* get_generated_literal_nil();
 
 Error generate_if_else(ASTNode* if_else, SymTable* symtable);
 
+Error generate_if_let(ASTNode* if_else, SymTable* symtable);
+
 Error generate_while(ASTNode* _while, SymTable* symtable);
 
 Error generate_return(ASTNode* statement, SymTable* symtable);
