@@ -45,9 +45,11 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     
     // check if function is write() - it is an exception with variable number of args
     if(strcmp(func->a, "write") == 0){
-
         ASTNode* arg = func->b;
         while(arg != NULL){
+
+            if(strcmp(((exp_node*)((ASTNode*)arg->a)->b)->value.s,"x") == 0)
+            fprintf(stderr,"!%s! %d\n",((exp_node*)((ASTNode*)arg->a)->b)->value.s,SymTable_get_recurse(tables,((exp_node*)((ASTNode*)arg->a)->b)->value.s)->nilable) ;
             if(((ASTNode*)arg->a)->a != NULL) // if name is not NULL (write function cannot have named args)
                 return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
             Type dump_type;
@@ -206,7 +208,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     Symbol *generatedSymbol, *target;
     Type expReturnType;
     bool expNillable;
-    bool aReturned, bReturned,nillable_modified = false;
+    bool aReturned, bReturned,nillable_modified,init_modified = false;
     char* dollar;
     switch (statement->type){
     case VAR_DEF:
@@ -415,30 +417,41 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         return OK;
     case CHECK_IF_LET:
         target = SymTable_get_recurse(tables,statement->a);
+    
         if (target == NULL || target->symbol_type != LET)   //CHECK WITH TEAM
             return ERR_SEMATIC_UNDEFINED_VAR;
         
         ERR = appendScope((char**)&statement->a,target->scope);
         if (ERR)
             return ERR;
-        if(target->nilable)
+
+        if(!target->nilable)
         {
-            target->nilable = false;
+            target->nilable = true;
             nillable_modified=true;    
         }
         //handle true branch    
         ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&aReturned,nilable_return,false);
         if(ERR)
             return ERR;
-        if(nillable_modified)
+        target->nilable = false;
+        if(!target->initialized)
         {
-            nillable_modified=false;
-            target->nilable=true;
+            target->initialized = true;
+            init_modified = true;
         }
         //handle false branch
         ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&bReturned,nilable_return,false);
         if(ERR)
             return ERR;
+        if(!nillable_modified)
+        {
+            target->nilable=true;
+        }
+        if(init_modified)
+        {
+            target->initialized = false;
+        }
         if(aReturned && bReturned)
             *returned = true;
         return OK;
@@ -566,7 +579,6 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     if (ERR)
         return ERR;
 
-    print_symtable(codeTable);
     return OK;
 }
 
@@ -693,7 +705,13 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
         }
         if(((ASTNode*)((*statement)->a))->type == CHECK_IF_LET)
         {
-
+            bool modified_nillable,init_modified = false;
+            Symbol* target = SymTable_get(globalTable,((ASTNode*)(*statement)->a)->a);
+            if(!target->nilable)
+            {
+                target->nilable = true;
+                modified_nillable = true;
+            }
             SymTable* localTable = malloc(sizeof(SymTable));
             if(!SymTable_init(localTable)){
                 free(localTable);
@@ -705,7 +723,12 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
             SymTable_free(localTable);
             if (ERR)
                 return ERR;
-            
+            target->nilable = false;
+            if(!target->initialized)
+            {
+                target->initialized = true;
+                init_modified = true;
+            }
             (*scope)++;
             localTable = malloc(sizeof(SymTable));
             if(!SymTable_init(localTable)){
@@ -720,8 +743,14 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
             SymTable_free(localTable);
             if (ERR)
                 return ERR;
-            
-            
+            if(!modified_nillable)
+            {
+                target->nilable = true;
+            }
+            if(init_modified)
+            {
+                target->initialized = false;
+            }
             statement = (ASTNode**)&((*statement)->b);
             continue;
         }
@@ -826,10 +855,6 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
 
         // insert def_statement as the first statement
        
-
-
-        
-        prin();
 
 
 
