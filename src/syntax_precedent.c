@@ -183,25 +183,42 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
     switch(token2index(shift_type)){
 
         case 0: // i
-            if(token2index(token) != 0)
+            //tokenStack
+            if(token != TOKEN_IDENTIFIER)
                 return ERR_SYNTAX;
-            //valueStack handle
+            Stack_Pop(tokenStack);
+            data.token = PRECEDENT_E;
+            Stack_Push(tokenStack, data);
+            //valueStack
             Stack_Top_Value(valueStack, &value);
             Stack_Pop(valueStack);
-            //nodeStack handle
+            //nodeStack
             node = new_leaf(token, value);
             if(node == NULL)
                 return ERR_INTERNAL;
             data.node = node;
             Stack_Push(nodeStack, data);
-            //tokenStack handle
+            return OK;
+
+        case 1:
+            if(token2index(token) != 1)
+                return ERR_SYNTAX;
             Stack_Pop(tokenStack);
             data.token = PRECEDENT_E;
             Stack_Push(tokenStack, data);
+            //valueStack
+            Stack_Top_Value(valueStack, &value);
+            Stack_Pop(valueStack);
+            //nodeStack
+            node = new_leaf(token, value);
+            if(node == NULL)
+                return ERR_INTERNAL;
+            data.node = node;
+            Stack_Push(nodeStack, data);
             return OK;
 
-        case 2: // )
-            //tokenStack handle
+        case 3: // )
+            //tokenStack
             if(token != TOKEN_PARENTHESIS_RIGHT)
                 return ERR_SYNTAX;
             Stack_Pop(tokenStack);
@@ -217,7 +234,7 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             Stack_Push(tokenStack, data);
             return OK;
 
-        case 3: // !
+        case 4: // !
             //tokenStack
             if(token != TOKEN_EXCLAMATION)
                 return ERR_SYNTAX;
@@ -237,51 +254,36 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             Stack_Push(nodeStack, data);
             return OK;
 
-        case 4: case 5: case 6: case 7: // + - * / == <= >= < > ??
+        case 5: case 6: case 7: case 8: // + - * / == <= >= < > ??
             //tokenStack
+                //right operand
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
             Stack_Pop(tokenStack);
             Stack_Top_Token(tokenStack, &token);
-            switch(token2index(shift_type)){
-                case 4:
-                    if(token2index(token) != 4)
-                        return ERR_SYNTAX;
-                    break;
-                case 5:
-                    if(token2index(token) != 5)
-                        return ERR_SYNTAX;
-                    break;
-                case 6:
-                    if(token2index(token) != 6)
-                        return ERR_SYNTAX;
-                    break;
-                case 7:
-                    if(token2index(token) != 7)
-                        return ERR_SYNTAX;
-                    break;
-                default:
-                    return ERR_SYNTAX;
-            }
+                // operator
+            if(token2index(shift_type) != token2index(token))
+                return ERR_SYNTAX;
             temp_token = token;
             Stack_Pop(tokenStack);
             Stack_Top_Token(tokenStack, &token);
+                // left operand
             if(token != PRECEDENT_E)
                 return ERR_SYNTAX;
             //nodeStack
-            //right
+                //right
             Stack_Top_Node(nodeStack, &right);
             if(right == NULL)
                 return ERR_INTERNAL;
             Stack_Pop(nodeStack);
-            //left
+                //left
             Stack_Top_Node(nodeStack, &left);
             if(left == NULL){
                 exp_node_purge(right);
                 return ERR_INTERNAL;
             }
             Stack_Pop(nodeStack);
-            //operator
+                //operator
             node = new_node(left, right, temp_token);
             if(node == NULL)
                 return ERR_INTERNAL;
@@ -289,8 +291,8 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
             Stack_Push(nodeStack, data);
             return OK;
 
-        case 8: //$
-        case 9:
+        case 9: //$
+        case 10:
         default:
             return ERR_SYNTAX;
     }
@@ -300,36 +302,44 @@ Error shift_end(Stack *tokenStack, Stack *nodeStack, Stack *valueStack, Token sh
 int token2index(Token token){
     switch(token){
         case TOKEN_IDENTIFIER:
+        case PRECEDENT_E:
+            return 0;   // i
+
         case TOKEN_LITERAL_DOUBLE:
         case TOKEN_LITERAL_INT:
         case TOKEN_LITERAL_STRING:
-
         case TOKEN_KEYWORD_NIL:
         case TOKEN_LITERAL_NIL:
+            return 1;   // lit
 
-        case PRECEDENT_E:
-            return 0;   // i
         case TOKEN_PARENTHESIS_LEFT:
-            return 1;   // (
+            return 2;   // (
+
         case TOKEN_PARENTHESIS_RIGHT:
-            return 2;   // )
+            return 3;   // )
+
         case TOKEN_EXCLAMATION:
-            return 3;   // !
+            return 4;   // !
+
         case TOKEN_OPERATOR_MULTIPLICATION:
         case TOKEN_OPERATOR_DIVISION:
-            return 4;   // * /
+            return 5;   // * /
+
         case TOKEN_OPERATOR_PLUS:
         case TOKEN_OPERATOR_MINUS:
-            return 5;   // + -
+            return 6;   // + -
+
         case TOKEN_OPERATOR_EQUALS:
         case TOKEN_OPERATOR_GREATER_THAN:
         case TOKEN_OPERATOR_LESS_THAN:
         case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL:
         case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:
         case TOKEN_OPERATOR_NOT_EQUALS:
-            return 6;   // == > < >= <=
+            return 7;   // == > < >= <=
+
         case TOKEN_NIL_COALESCING:
-            return 7;   // ??
+            return 8;   // ??
+
         case TOKEN_EOL:
         case TOKEN_EOF:
         case TOKEN_BRACE_LEFT:
@@ -343,26 +353,28 @@ int token2index(Token token){
         case TOKEN_KEYWORD_RETURN:
         case TOKEN_KEYWORD_LET:
         case TOKEN_KEYWORD_VAR:
-            return 8;   // EOF EOL { } , PRECEDENT_END
+            return 9;   // EOF EOL { } , PRECEDENT_END
 
         default:
-            return 9;
+            return 10;
     }
 }
 
 
 int precedent_table(Token stack_top_token, Token current_precedent_token){
-    int  table[10][10] = {
-    { 5, 4, 2, 2, 2, 2, 2, 2, 2, 0},   // i wish there was some easier way to do this :')
-    { 1, 1, 3, 1, 1, 1, 1, 1, 0, 0},   // 0 -> error
-    { 5, 0, 2, 2, 2, 2, 2, 2, 2, 0},   // 1 -> <
-    { 5, 0, 2, 2, 2, 2, 2, 2, 2, 0},   // 2 -> >
-    { 1, 1, 2, 1, 2, 2, 2, 2, 2, 0},   // 3 -> =
-    { 1, 1, 2, 1, 1, 2, 2, 2, 2, 0},   // 4 -> func()
-    { 1, 1, 2, 1, 1, 1, 2, 2, 2, 0},   // 5 -> 
-    { 1, 1, 2, 1, 1, 1, 1, 2, 2, 0},
-    { 1, 1, 5, 1, 1, 1, 1, 1, 0, 0},
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    int  table[11][11] = {
+    { 5, 0, 4, 2, 2, 2, 2, 2, 2, 2,   0}, // i wish there was some easier way to do this :')
+    { 5, 0, 0, 2, 2, 2, 2, 2, 2, 2,   0}, // 0 -> error
+    { 1, 1, 1, 3, 1, 1, 1, 1, 1, 0,   0}, // 1 -> <
+    { 5, 0, 0, 2, 2, 2, 2, 2, 2, 2,   0}, // 2 -> >  
+    { 5, 0, 0, 2, 2, 2, 2, 2, 2, 2,   0}, // 3 -> =
+    { 1, 1, 1, 2, 1, 2, 2, 2, 2, 2,   0}, // 4 -> func()
+    { 1, 1, 1, 2, 1, 1, 2, 2, 2, 2,   0}, // 5 -> e
+    { 1, 1, 1, 2, 1, 1, 1, 2, 2, 2,   0},
+    { 1, 1, 1, 2, 1, 1, 1, 1, 2, 2,   0},
+    { 1, 1, 1, 5, 1, 1, 1, 1, 1, 0,   0},
+
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   0},
     };
     return table[token2index(stack_top_token)][token2index(current_precedent_token)];
 }
@@ -382,7 +394,7 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
     CURRENT_TOKEN = get_token(buffer_string, true);
 
     //checks for empty expression
-    if(token2index(CURRENT_TOKEN) > 7 && !allow_empty)
+    if(token2index(CURRENT_TOKEN) > 8 && !allow_empty)
         return ERR_SYNTAX;
 
     //stack inicialization
@@ -397,7 +409,7 @@ Error precedent(BufferString* buffer_string, exp_node **node, bool allow_empty){
     Stack_Top_Token_Literal(&tokenStack, &top);
 
 
-    while(top != PRECEDENT_END || token2index(CURRENT_TOKEN) != 8){
+    while(top != PRECEDENT_END || token2index(CURRENT_TOKEN) != 9){
         state = precedent_table(top, CURRENT_TOKEN);
 
         #if !defined NDEBUG && VERBOSE
