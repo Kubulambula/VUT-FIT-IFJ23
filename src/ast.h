@@ -84,6 +84,7 @@ static inline void print_astnode_as_string(ASTNodeType t){
         "IFELSE",
         "IFELSE_BODIES",
         "WHILE",
+        "CHECK_IF_LET",
         "RETURN",
         "EXPRESSION",
     };

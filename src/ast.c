@@ -214,8 +214,14 @@ void print_ast_node(ASTNode *node, int offset){
 
 
         switch(node->type){
-            case FUNC_HEAD_SIGNATURE:
+            case FUNC_HEAD:
+                print_ast_node(node->a,offset+1);
                 break;
+            case RETURN:
+                print_exp_node(node->a,offset+1);
+                break;
+            case FUNC_HEAD_SIGNATURE:
+                                break;
             case FUNC_CALL:
                 print_tree_string((char*)node->a,offset+1);
                 print_ast_node(node->b, offset+1);
@@ -231,10 +237,6 @@ void print_ast_node(ASTNode *node, int offset){
             case WHILE:
                 print_exp_node((exp_node*)node->a, offset+1);
                 print_ast_node(node->b, offset+1);
-                break;
-
-            case EXPRESSION:
-                print_exp_node((exp_node*)node->a, offset+1);
                 break;
             
             case VAR_TYPE:
