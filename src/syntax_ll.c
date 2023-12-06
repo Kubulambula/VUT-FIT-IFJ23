@@ -687,21 +687,27 @@ Error ll_statements(BufferString* buffer_string, ASTNode** tree){
 			name = BufferString_get_as_string(buffer_string);
 			if (name == NULL)
 				return ERR_INTERNAL;
-			
-			GET_TOKEN(true); // either TOKEN_ASSING or TOKEN_PARENTHESIS_LEFT
+
+			// magic to free name if an error occurs inside lexer
+			CURRENT_TOKEN = get_token(buffer_string, true);
+			if (CURRENT_TOKEN == TOKEN_ERR_INTERNAL || CURRENT_TOKEN == TOKEN_ERR_LEXICAL){
+				free(name);
+				return CURRENT_TOKEN == TOKEN_ERR_INTERNAL ? ERR_INTERNAL : ERR_LEXICAL;
+			}
+
+			// GET_TOKEN(true); // either TOKEN_ASSING or TOKEN_PARENTHESIS_LEFT
 			unget_token();
 			if (CURRENT_TOKEN == TOKEN_ASSIGN){
 				ERR = ll_assign(buffer_string, (ASTNode**)(&((*tree)->a)), name);
 				return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 			}
-
 			else if (CURRENT_TOKEN == TOKEN_PARENTHESIS_LEFT){
 				ERR = ll_func_call(buffer_string, (ASTNode**)(&((*tree)->a)), name);
 				return ERR ? ERR : ll_statements(buffer_string, (ASTNode**)(&((*tree)->b)));
 			}
 
-			else
-				return ERR_SYNTAX;
+			free(name);
+			return ERR_SYNTAX;
 		
 		default: // <statement> -> E
 			// remove the empty STATEMENT
@@ -716,8 +722,10 @@ Error ll_statements(BufferString* buffer_string, ASTNode** tree){
 
 Error ll_func_call(BufferString* buffer_string, ASTNode** tree, char* func_name){
 	*tree = ASTNode_new(FUNC_CALL);
-	if (*tree == NULL)
+	if (*tree == NULL){
+		free(func_name);
 		return ERR_INTERNAL;
+	}
 	
 	// assign func name
 	(*tree)->a = (void*)func_name;
@@ -840,8 +848,10 @@ Error ll_func_call_arg_without_name(BufferString* buffer_string, ASTNode* tree){
 
 Error ll_assign(BufferString* buffer_string, ASTNode** tree, char* var_name){
 	*tree = ASTNode_new(ASSIGN);
-	if (*tree == NULL)
+	if (*tree == NULL){
+		free(var_name);
 		return ERR_INTERNAL;
+	}
 
 	(*tree)->a = var_name;
 
