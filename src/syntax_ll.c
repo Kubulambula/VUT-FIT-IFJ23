@@ -991,15 +991,10 @@ Error ll_return(BufferString* buffer_string, ASTNode** tree){
 }
 
 Error ll_if(BufferString* buffer_string, ASTNode** tree){
-	*tree = ASTNode_new(IFELSE);
-	if (*tree == NULL)
-		return ERR_INTERNAL;
-	
 	// put it in a helper variable so that we don't need to use that casting hell
 	ASTNode* bodies = ASTNode_new(IFELSE_BODIES);
 	if (bodies == NULL)
 		return ERR_INTERNAL;	
-	(*tree)->b = (void*)bodies;
 
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN != TOKEN_KEYWORD_IF)
@@ -1011,6 +1006,11 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_KEYWORD_LET){
+		*tree = ASTNode_new(CHECK_IF_LET);
+		if (*tree == NULL)
+			return ERR_INTERNAL;
+		(*tree)->b = (void*)bodies;
+
 		GET_TOKEN(true);
 		if (CURRENT_TOKEN != TOKEN_IDENTIFIER)
 			return ERR_SYNTAX;
@@ -1018,25 +1018,14 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 		char* id = BufferString_get_as_string(buffer_string);
 		if (id == NULL)
 			return ERR_INTERNAL;
-
-		ERR = let_nil((exp_node**)(&((*tree)->a)), id);
-		if (ERR)
-			return ERR;
-
-		// GET_TOKEN(true);
-		// if (CURRENT_TOKEN != TOKEN_PARENTHESIS_RIGHT)
-		// 	return ERR_SYNTAX;
+		
+		(*tree)->a = (void*)id;
 		
 		GET_TOKEN(true);
 		if (CURRENT_TOKEN != TOKEN_BRACE_LEFT)
 			return ERR_SYNTAX;
 
-		ERR = generate_if_let_declaration_override_statement((ASTNode**)(&(bodies->a)), id);
-		if (ERR)
-			return ERR;
-		
-		// add statements behind the generated one
-		ERR = ll_statements(buffer_string, (ASTNode**)(&(((ASTNode*)(bodies->a))->b)));
+		ERR = ll_statements(buffer_string, (ASTNode**)(&(bodies->a)));
 		if (ERR)
 			return ERR;
 
@@ -1044,7 +1033,12 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 		if (CURRENT_TOKEN != TOKEN_BRACE_RIGHT)
 			return ERR_SYNTAX;
 
-	} else {
+	} else { // normal if
+		*tree = ASTNode_new(IFELSE);
+		if (*tree == NULL)
+			return ERR_INTERNAL;
+		(*tree)->b = (void*)bodies;
+
 		unget_token();
 		ERR = precedent(buffer_string, (exp_node**)(&((*tree)->a)), false);
 		if (ERR)
