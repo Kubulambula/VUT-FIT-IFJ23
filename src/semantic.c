@@ -109,13 +109,21 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
             return ERR_INTERNAL;
         }
         argVar->initialized=true;
-        argVar->name= symTable_arg->name;
-        ERR = appendScope(&(argVar->name),0);
-        if(ERR)
+        
+        
+        char* dollar = strstr(symTable_arg->name, "$");
+        if(dollar != NULL)   // if jmeno promene obsahuje $
+            *dollar = '\0';   // potom $ -> '\0'
+        else
         {
+            Symbol_free(argVar);
             SymTable_free(argSymTable);
-            return ERR;
+            return ERR_INTERNAL;
         }
+        argVar->name = malloc(strlen(symTable_arg->name)+1);
+        strcpy(argVar->name,symTable_arg->name);
+        *dollar = '$';
+
         argVar->nilable=symTable_arg->nilable;
         argVar->scope=scope;
         argVar->symbol_type=LET;
@@ -165,6 +173,7 @@ Error appendScope(char**name,int scope)
     BufferString* nameScoped = malloc(sizeof(BufferString));
     if(!BufferString_init_from(nameScoped,*name))
         return ERR_INTERNAL;
+    
     unsigned length = snprintf(NULL,0, "$%d ", scope);
     char* integer = malloc(length);
     sprintf(integer, "$%d", scope);
@@ -197,7 +206,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             generatedSymbol->symbol_type = (statement->type == VAR_DEF)? VAR : LET;
 
 
-            generatedSymbol->name = malloc(strlen((char*)(((ASTNode*)statement->b)->a)));
+            generatedSymbol->name = malloc(strlen((char*)(((ASTNode*)statement->b)->a))+1);
             if(generatedSymbol->name== NULL)
                 return ERR_INTERNAL;
             strcpy(generatedSymbol->name,(char*)(((ASTNode*)statement->b)->a));                       
@@ -216,20 +225,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             if (ERR)
                 return ERR;
 
-             // if in global, insert into code generator symtable
-            if(expected_type == TYPE_NONE){
-                target = Symbol_copy(generatedSymbol);
-                if (target == NULL)
-                    return ERR_INTERNAL;
-                //into code table insert name$scope
-                target->name = (char*)(((ASTNode*)statement->b)->a);
-
-                ERR = SymTable_insert(codeTable, target);
-                if (ERR){
-                    Symbol_free(target);
-                    return ERR;
-                }
-            }
+            
         }else
         {
             dollar = strstr((char*)(((ASTNode*)statement->b)->a), "$");
@@ -272,7 +268,8 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                     generatedSymbol->initialized = true;
             }
 
-        }
+        }else if (generatedSymbol->nilable)
+            generatedSymbol->initialized=true;
         
         return OK;
 
@@ -354,7 +351,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if (target == NULL || target->symbol_type != LET)   //CHECK WITH TEAM
             return ERR_SEMATIC_UNDEFINED_VAR;
         
-        ERR = appendScope(statement->a,target->scope);
+        ERR = appendScope((char**)&statement->a,target->scope);
         if (ERR)
             return ERR;
         if(target->nilable)
@@ -426,7 +423,6 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
 }
 
 Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool second_pass,bool main){
-    
     SymTable* localTable;
     if(!main)
     {
@@ -442,6 +438,8 @@ Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTabl
         localTable=tables;
     }
     while(statement != NULL){
+        printf("%d\n",((ASTNode*)statement->a)->type);
+        fflush(stdout);
         bool statementReturned = false;
         ERR = handle_statement(statement->a, localTable, codeTable, expected_type, scope, &statementReturned, nilable_return,second_pass);
         if(ERR){
@@ -470,7 +468,6 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         free(globalTable);
         return ERR_INTERNAL;
     }
-        
     // Add functions to symtables
     ERR = add_functions_to_symtable(code_tree, globalTable, codeTable);
     if (ERR){
@@ -478,12 +475,17 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
         return ERR;
     }
 
+    
+    
     // rearrange var definition statements and split them into declaration and assignment
     ERR = rearrange_global_statements(code_tree, codeTable, globalTable);
     if (ERR){
         SymTable_free(globalTable);
         return ERR;
     }
+    ASTNode* main_body = code_tree->b;
+    while(main_body != NULL && (((ASTNode*)main_body->a)->type == VAR_DEF || ((ASTNode*)main_body->a)->type == LET_DEF))
+        main_body=main_body->b;
     //start body check
     bool returning = false;
     int scope = 0;
@@ -533,6 +535,11 @@ Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable*
                     return ERR_SEMATIC_REDEFINED;
                 compared_argument = compared_argument->next;
             }
+
+            ERR = appendScope(argument->identifier,1);
+            if (ERR)
+                return ERR;
+
             argument = argument->next;
         }
 
@@ -569,11 +576,59 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
         exp_node* tempExp = ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b; // expression of immideate assing
         ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b = NULL; // throw it out the window
 
+       
+
+        //make symtable symbol for variable
+        Symbol* generatedSymbol = Symbol_new();
+        if (generatedSymbol == NULL)
+            return ERR_INTERNAL;
+        
+        generatedSymbol->symbol_type = (((ASTNode*)def_statement->a)->type == VAR_DEF)? VAR : LET;
+
+        generatedSymbol->name = malloc(strlen(((ASTNode*)((ASTNode*)(def_statement->a))->b)->a)+1);
+        if(generatedSymbol->name== NULL)
+            return ERR_INTERNAL;
+        strcpy(generatedSymbol->name,((ASTNode*)((ASTNode*)(def_statement->a))->b)->a);                       
+        generatedSymbol->type = (Type)(((ASTNode*)((ASTNode*)(def_statement->a))->a)->a);
+        generatedSymbol->nilable = (bool)(((ASTNode*)((ASTNode*)(def_statement->a))->a)->b);
+        generatedSymbol->scope = 0;
+        
+        ERR = SymTable_insert(globalTable, generatedSymbol);
+        if(ERR){
+            Symbol_free(generatedSymbol);
+            return ERR;
+        }
+        // change the name to varname$scope
+        ERR = appendScope((char**)&((ASTNode*)((ASTNode*)(def_statement->a))->b)->a, 0);
+        if (ERR)
+            return ERR;
+        
+
+        //insert into code generator symtable
+
+        Symbol* target = Symbol_copy(generatedSymbol);
+        if (target == NULL)
+            return ERR_INTERNAL;
+        //into code table insert name$scope
+        target->name = (char*)(((ASTNode*)((ASTNode*)(def_statement->a))->b)->a);
+
+        ERR = SymTable_insert(codeTable, target);
+        if (ERR){
+            Symbol_free(target);
+            return ERR;
+        }
+        
+
+
+
+
         if(tempExp != NULL){
+            print_symtable(globalTable);
             if ((Type)(((ASTNode*)(((ASTNode*)(def_statement->a))->a))->a) == TYPE_NIL){ // do inference
                 Type expType;
                 bool expNillable;
                 ERR = handle_expression(tempExp, globalTable, &expType, codeTable, 0,&expNillable);
+                prin();
                 if (ERR)
                     return ERR;
                 if (expType == TYPE_NIL)
