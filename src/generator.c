@@ -305,6 +305,12 @@ Error generate_statements(ASTNode* statement, SymTable* symtable){
                 if (ERR)
                     return ERR;
                 break;
+            
+            case CHECK_IF_LET:
+                ERR = generate_if_let((ASTNode*)(statement->a), symtable);
+                if (ERR)
+                    return ERR;
+                break;
 
             case WHILE:
                 ERR = generate_while((ASTNode*)(statement->a), symtable);
@@ -353,6 +359,31 @@ Error generate_if_else(ASTNode* if_else, SymTable* symtable){
         return ERR;
     
     printf(IF_ELSE_END, available_label_index);
+    return OK;
+}
+
+
+Error generate_if_let(ASTNode* if_let, SymTable* symtable){
+    unsigned available_label_index = LABEL_INDEX;
+    LABEL_INDEX++;
+
+    ASTNode* if_else_bodies = (ASTNode*)(if_let->b);
+
+    printf(IF_LET_START, (char*)(if_let->a), available_label_index);
+
+    // generate false (else) branch first
+    ERR = generate_statements((ASTNode*)(if_else_bodies->b), symtable);
+    if (ERR)
+        return ERR;
+
+    printf(IF_LET_MIDDLE, available_label_index, available_label_index);
+
+    // now generate true (if) branch
+    ERR = generate_statements((ASTNode*)(if_else_bodies->a), symtable);
+    if (ERR)
+        return ERR;
+    
+    printf(IF_LET_END, available_label_index);
     return OK;
 }
 
