@@ -168,7 +168,7 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     if(!skip)
     {
         bool returning;
-        ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized,false);
+        ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,false);
         SymTable_free(argSymTable);
         if(ERR)
             return ERR;
@@ -212,16 +212,39 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     case VAR_DEF:
     case LET_DEF:
 
-         
+        
+
+
         dollar = strstr((char*)(((ASTNode*)statement->b)->a), "$");
         if(dollar != NULL)   // if jmeno promene obsahuje $
             {
                 *dollar = '\0';   // potom $ -> '\0'
+
                 generatedSymbol = SymTable_get(tables,(char*)(((ASTNode*)statement->b)->a));
+                              
                 *dollar = '$';
             }
         else
-        {   //make symtable symbol for variable
+        {   
+            //insert into code table if comming from rearange
+            if(*scope == 0 || second_pass)
+            {
+                //insert into code generator symtable
+
+                Symbol* target = Symbol_copy(generatedSymbol);
+                if (target == NULL)
+                    return ERR_INTERNAL;
+                //into code table insert name$scope
+                target->name = (char*)(((ASTNode*)statement->b)->a);
+
+                ERR = SymTable_insert(codeTable, target);
+                if (ERR){
+                    Symbol_free(target);
+                    return ERR;
+                }
+            }
+            
+            //make symtable symbol for variable
             generatedSymbol = Symbol_new();
             if (generatedSymbol == NULL)
                 return ERR_INTERNAL;
@@ -247,24 +270,6 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             ERR = appendScope((char**)&((ASTNode*)statement->b)->a, *scope);
             if (ERR)
                 return ERR;
-
-
-            if(*scope == 0)
-            {
-                //insert into code generator symtable
-
-                Symbol* target = Symbol_copy(generatedSymbol);
-                if (target == NULL)
-                    return ERR_INTERNAL;
-                //into code table insert name$scope
-                target->name = (char*)(((ASTNode*)statement->b)->a);
-
-                ERR = SymTable_insert(codeTable, target);
-                if (ERR){
-                    Symbol_free(target);
-                    return ERR;
-                }
-            }
         }
                
             
@@ -370,11 +375,11 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
         //handle true branch
-        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
+        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,false);
         if(ERR)
             return ERR;
         //handle false branch
-        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass,false);
+        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,false);
         if(ERR)
             return ERR;
         
@@ -395,7 +400,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             nillable_modified=true;    
         }
         //handle true branch    
-        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
+        ERR = handle_statements(((ASTNode*)statement->b)->a,tables,codeTable,expected_type,scope,&aReturned,nilable_return,false);
         if(ERR)
             return ERR;
         if(nillable_modified)
@@ -404,7 +409,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
             target->nilable=true;
         }
         //handle false branch
-        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,second_pass,false);
+        ERR = handle_statements(((ASTNode*)statement->b)->b,tables,codeTable,expected_type,scope,&bReturned,nilable_return,false);
         if(ERR)
             return ERR;
         if(aReturned && bReturned)
@@ -418,7 +423,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
-        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
+        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,&aReturned,nilable_return,false);
         if (ERR)
             return ERR;
         return OK;
@@ -461,7 +466,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
     return ERR_INTERNAL;
 }
 
-Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool second_pass,bool main){
+Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool main){
   
     SymTable* localTable;
     if(!main)
@@ -479,7 +484,7 @@ Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTabl
     }
     while(statement != NULL){
         bool statementReturned = false;
-        ERR = handle_statement(statement->a, localTable, codeTable, expected_type, scope, &statementReturned, nilable_return,second_pass);
+        ERR = handle_statement(statement->a, localTable, codeTable, expected_type, scope, &statementReturned, nilable_return,false);
         if(ERR){
             if (!main)
                 SymTable_free(localTable);
@@ -516,7 +521,8 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     
     
     // rearrange var definition statements and split them into declaration and assignment
-    ERR = rearrange_global_statements(code_tree, codeTable, globalTable);
+    int scope = 0;
+    ERR = rearrange_global_statements(code_tree, codeTable, globalTable,&scope,false);
     if (ERR){
         SymTable_free(globalTable);
         return ERR;
@@ -528,7 +534,7 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     //start body check
     bool returning = false;
     int scope = 0;
-    ERR = handle_statements(main_body, globalTable, codeTable, TYPE_NONE, &scope, &returning, false,false,true);
+    ERR = handle_statements(main_body, globalTable, codeTable, TYPE_NONE, &scope, &returning, false,true);
     
     SymTable_free(globalTable);
     if (ERR)
@@ -601,15 +607,96 @@ Error add_functions_to_symtable(ASTNode* root, SymTable* global_table, SymTable*
 }
 
 
-Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable){
+Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* globalTable,int*scope,bool recursive){
     ASTNode** statement = (ASTNode**)&root->b;
     while(*statement != NULL)
     {
-        if (!(((ASTNode*)((*statement)->a))->type == VAR_DEF || ((ASTNode*)((*statement)->a))->type == LET_DEF)){
+        if(((ASTNode*)((*statement)->a))->type == WHILE)
+        {
+            SymTable* localTable = malloc(sizeof(SymTable));
+            if(!SymTable_init(localTable)){
+                free(localTable);
+                return ERR_INTERNAL;
+            }
+            localTable->previous = globalTable;
+            (*scope)++;
+
+            ERR = rearrange_global_statements(((ASTNode*)(*statement)->a)->b,codeTable,localTable,scope,true);
+            SymTable_free(localTable);
+            if (ERR)
+                return ERR;
+            statement = (ASTNode**)&((*statement)->b);
+            continue;
+        }
+        if(((ASTNode*)((*statement)->a))->type == IFELSE)
+        {
+            SymTable* localTable = malloc(sizeof(SymTable));
+            if(!SymTable_init(localTable)){
+                free(localTable);
+                return ERR_INTERNAL;
+            }
+            localTable->previous = globalTable;
+            (*scope)++;
+
+            ERR = rearrange_global_statements(((ASTNode*)((ASTNode*)(*statement)->a)->b)->a,codeTable,localTable,scope,true);
+            SymTable_free(localTable);
+            if (ERR)
+                return ERR;
+            
+            (*scope)++;
+            localTable = malloc(sizeof(SymTable));
+            if(!SymTable_init(localTable)){
+                free(localTable);
+                return ERR_INTERNAL;
+            }
+            localTable->previous = globalTable;
+            
+            ERR = rearrange_global_statements(((ASTNode*)((ASTNode*)(*statement)->a)->b)->b,codeTable,localTable,scope,true);
+            SymTable_free(localTable);
+            if (ERR)
+                return ERR;
+            
+            statement = (ASTNode**)&((*statement)->b);
+            continue;
+        }
+        if(((ASTNode*)((*statement)->a))->type == CHECK_IF_LET)
+        {
+            SymTable* localTable = malloc(sizeof(SymTable));
+            if(!SymTable_init(localTable)){
+                free(localTable);
+                return ERR_INTERNAL;
+            }
+            localTable->previous = globalTable;
+            (*scope)++;
+
+            ERR = rearrange_global_statements(((ASTNode*)((ASTNode*)(*statement)->a)->b)->a,codeTable,localTable,scope,true);
+            SymTable_free(localTable);
+            if (ERR)
+                return ERR;
+            
+            (*scope)++;
+            localTable = malloc(sizeof(SymTable));
+            if(!SymTable_init(localTable)){
+                free(localTable);
+                return ERR_INTERNAL;
+            }
+            localTable->previous = globalTable;
+            
+            ERR = rearrange_global_statements(((ASTNode*)((ASTNode*)(*statement)->a)->b)->b,codeTable,localTable,scope,true);
+            SymTable_free(localTable);
+            if (ERR)
+                return ERR;
+            
             statement = (ASTNode**)&((*statement)->b);
             continue;
         }
         
+        if (!(((ASTNode*)((*statement)->a))->type == VAR_DEF || ((ASTNode*)((*statement)->a))->type == LET_DEF)){
+            statement = (ASTNode**)&((*statement)->b);
+            continue;
+        }
+                // is var/let def
+
         ASTNode* def_statement = *statement; // store the def statement
 
         exp_node* tempExp = ((ASTNode*)((ASTNode*)(def_statement->a))->b)->b; // expression of immideate assing
@@ -631,27 +718,33 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
                 (((ASTNode*)(((ASTNode*)(def_statement->a))->a))->b) = (void*)expNillable;
             }
 
-            // create new assign statement if necessary
-            ASTNode* assign_statement = ASTNode_new(STATEMENT);
-            if (assign_statement == NULL)
-                return ERR_INTERNAL;
-            ASTNode* assign = ASTNode_new(ASSIGN);
-            if (assign == NULL){
-                free(assign_statement);
-                return ERR_INTERNAL;
+            if(!recursive)
+            {
+                // create new assign statement if necessary
+                ASTNode* assign_statement = ASTNode_new(STATEMENT);
+                if (assign_statement == NULL)
+                    return ERR_INTERNAL;
+                ASTNode* assign = ASTNode_new(ASSIGN);
+                if (assign == NULL){
+                    free(assign_statement);
+                    return ERR_INTERNAL;
+                }
+                assign_statement->a = (void*)assign;
+
+                assign->a = malloc(strlen(((ASTNode*)((ASTNode*)((*statement)->a))->b)->a)+1);
+                strcpy(assign->a,((ASTNode*)((ASTNode*)((*statement)->a))->b)->a);  // assign the name of the declared variable
+                assign->b = (void*)tempExp; // assign the expression of the declared variable
+                
+                *statement = assign_statement;
+                assign_statement->b = def_statement->b;
+
+                // set statement to check to the next statement
+                statement = (ASTNode**)&(assign_statement->b);
             }
-            
-            assign_statement->a = (void*)assign;
 
-            assign->a = malloc(strlen(((ASTNode*)((ASTNode*)((*statement)->a))->b)->a)+1);
-            strcpy(assign->a,((ASTNode*)((ASTNode*)((*statement)->a))->b)->a);  // assign the name of the declared variable
-            assign->b = (void*)tempExp; // assign the expression of the declared variable
-            
-            *statement = assign_statement;
-            assign_statement->b = def_statement->b;
 
-            // set statement to check to the next statement
-            statement = (ASTNode**)&(assign_statement->b);
+
+
         }else{
             // set statement to check after the original statement
             *statement = (def_statement->b);
@@ -660,7 +753,7 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
         //insert into global table
         bool dump;
         int scope = 0;
-        ERR = handle_statement(def_statement->a,globalTable,codeTable,TYPE_NONE,&scope,&dump,false,false);
+        ERR = handle_statement(def_statement->a,globalTable,codeTable,TYPE_NONE,&scope,&dump,false,recursive);
         if(ERR)
             return ERR;
 
