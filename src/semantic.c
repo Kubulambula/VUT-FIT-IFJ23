@@ -29,22 +29,21 @@ void prin()
 }
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
     int scope = 0;
+    // get the global table
     SymTable* global = tables;
     while(global->previous != NULL)
         global = global->previous;
     //check if function exists
     
-    Symbol* target = SymTable_get(global,func->a);
-    
+    Symbol* target = SymTable_get(global, (char*)(func->a));
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
-    //write() check
-    if(strcmp(func->a, "write") == 0)
-    {
+    
+    // check if function is write() - it is an exception with variable number of args
+    if(strcmp(func->a, "write") == 0){
         ASTNode* arg = func->b;
-        while(arg != NULL)
-        {
-            if(((ASTNode*)arg->a)->a != NULL)
+        while(arg != NULL){
+            if(((ASTNode*)arg->a)->a != NULL) // if name is not NULL (write function cannot have named args)
                 return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
             Type dump_type;
             bool dump_nilable;
@@ -54,12 +53,15 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         
             arg = arg->b;
         }
+        *returnType = TYPE_NIL;
+        *nillable = true;
         return OK;
     }
 
-    //arg check
+    // arg check for other functions
     ASTNode* arg = func->b;
     FuncDefArg* symTable_arg = target->args;
+    // check the number of args and their types
     while(arg != NULL && symTable_arg != NULL)
     {
         if(symTable_arg->name == NULL || ((ASTNode*)arg->a)->a == NULL)
@@ -69,33 +71,37 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         }
         else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
-        Type a_type;
-        bool a_nilable;
-        ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &a_type, codeTable, scope, &a_nilable);
+        Type arg_type;
+        bool arg_nilable;
+        ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &arg_type, codeTable, scope, &arg_nilable);
         if(ERR)
             return ERR;
-        if (a_type != symTable_arg->type || (a_nilable != !symTable_arg->nilable))
+
+        if (arg_type != symTable_arg->type)  // check arg type
+            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+        
+        if (arg_nilable && !symTable_arg->nilable) // check if expression is nilable, but arg isnt
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         
         symTable_arg = symTable_arg->next;
         arg = arg->b;
     }
+
      
-    if(arg != NULL && symTable_arg != NULL)
+    if(arg != NULL || symTable_arg != NULL)
         return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
     
     *returnType = target->type;
     *nillable = target->nilable;
+
     scope++;
-    symTable_arg = target->args;
+    symTable_arg = target->args; // set arg to the first one again
     
-  
     //check function args
     SymTable* argSymTable = malloc(sizeof(SymTable)); 
     if(argSymTable == NULL)
         return ERR_INTERNAL;
-    if(!SymTable_init(argSymTable))
-    {
+    if(!SymTable_init(argSymTable)){
         free(argSymTable);
         return ERR_INTERNAL;
     }
@@ -103,20 +109,18 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
     while (symTable_arg != NULL)
     {
         Symbol* argVar = Symbol_new();
-        if(argVar == NULL)
-        {
+        if(argVar == NULL){
             SymTable_free(argSymTable);
             return ERR_INTERNAL;
         }
-        argVar->initialized=true;
-        argVar->name= symTable_arg->name;
-        ERR = appendScope(&(argVar->name),0);
-        if(ERR)
-        {
+        argVar->initialized = true;
+        argVar->name = symTable_arg->identifier;
+        ERR = appendScope(&(argVar->name), 1);
+        if(ERR){
             SymTable_free(argSymTable);
             return ERR;
         }
-        argVar->nilable=symTable_arg->nilable;
+        argVar->nilable = symTable_arg->nilable;
         argVar->scope=scope;
         argVar->symbol_type=LET;
         argVar->type=symTable_arg->type;
