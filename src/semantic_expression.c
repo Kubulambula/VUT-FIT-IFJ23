@@ -32,35 +32,39 @@ bool is_litereal(exp_node* node){
 }
 
 
-Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping, bool* nillable)
+Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymTable *code_table, int scoping, bool* nillable, bool *init)
 {
     if(node == NULL)
         return ERR_INTERNAL;
     
     Symbol *target;
     Type aType, bType;
-    bool aNillable, bNillable;
+    bool aNillable, bNillable, aInit, bInit;
     char* dollar;
 
     switch (node->type){
 
     //LITERALS
     case TOKEN_LITERAL_INT: //int
+        *init = true;
         *nillable = false;
         *returnType = TYPE_INT;
         return OK;
 
     case TOKEN_LITERAL_DOUBLE: //double
+        *init = true;
         *nillable = false;
         *returnType = TYPE_DOUBLE;
         return OK;
 
     case TOKEN_LITERAL_STRING:  //string
+        *init = true;
         *nillable = false;
         *returnType = TYPE_STRING;
         return OK;
 
     case TOKEN_LITERAL_NIL: //nill
+        *init = true;
         *nillable = true;
         *returnType = TYPE_NIL;
         return OK;
@@ -77,6 +81,7 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         if (!target->initialized)
             return ERR_SEMATIC_UNDEFINED_VAR;
         
+        *init = target->initialized;
         *returnType = target->type;
         *nillable = target->nilable;
 
@@ -87,19 +92,23 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         
         return OK;
 
-    case TOKEN_KEYWORD_FUNC: 
+    case TOKEN_KEYWORD_FUNC:
+        *init = true; 
         return funcCallCheck((ASTNode*)(node->left), returnType, tables, code_table, nillable);
 
     //OPERATORS
     case TOKEN_OPERATOR_MINUS: // - 
     case TOKEN_OPERATOR_MULTIPLICATION: // *
-        ERR = handle_expression(node->left,tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left,tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
-        ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable);
+        ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
         
+        if(!(aInit && bInit))
+            return ERR_SEMATIC_UNDEFINED_VAR;
+
         if (aNillable || bNillable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         
@@ -127,12 +136,15 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         return ERR_SEMATIC_INCOMPATIBLE_TYPES ; //all other wrong types
 
     case TOKEN_OPERATOR_DIVISION: // /
-        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
-        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
+        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
+        
+        if(!(aInit && bInit))
+            return ERR_SEMATIC_UNDEFINED_VAR;
 
         if (aNillable || bNillable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
@@ -168,13 +180,16 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
     case TOKEN_OPERATOR_PLUS:   // +
-        ERR = handle_expression(node->left,tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left,tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
-        ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable);
+        ERR = handle_expression(node->right,tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
         
+        if(!(aInit && bInit))
+            return ERR_SEMATIC_UNDEFINED_VAR;
+
         if (aNillable || bNillable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
@@ -184,6 +199,9 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
             return OK;
         }
         if(aType == TYPE_STRING && bType == TYPE_STRING){   // STRING STRING
+            if(!(aInit && bInit))
+                return ERR_SEMATIC_UNDEFINED_VAR;
+
             if (aNillable || bNillable)
                 return ERR_SEMATIC_INCOMPATIBLE_TYPES;
             
@@ -213,10 +231,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
     //LOGICAL
     case TOKEN_OPERATOR_NOT_EQUALS: // !=       
     case TOKEN_OPERATOR_EQUALS: // ==
-        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
-        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
+        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
         
@@ -254,16 +272,19 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
     case TOKEN_OPERATOR_GREATER_THAN:  // >
     case TOKEN_OPERATOR_LESS_THAN_OR_EQUAL:  // <=
     case TOKEN_OPERATOR_GREATER_THAN_OR_EQUAL: // >=
-        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
-        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
+        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
 
         *returnType = TYPE_BOOL;
         *nillable = false;
-
+        
+        if(!(aInit && bInit))
+            return ERR_SEMATIC_UNDEFINED_VAR;
+        
         if (aNillable || bNillable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
@@ -289,10 +310,10 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
     case TOKEN_NIL_COALESCING:  // ??
-        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
-        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable);
+        ERR = handle_expression(node->right, tables, &bType, tables, scoping, &bNillable, &bInit);
         if(ERR)
             return ERR;
     
@@ -302,13 +323,16 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         if(aType != bType || aType == TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
         
+        if(!bInit)
+            return ERR_SEMATIC_UNDEFINED_VAR;
+
         if (bNillable)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;   
         
         return OK;
 
     case TOKEN_EXCLAMATION:
-        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable);
+        ERR = handle_expression(node->left, tables, &aType, tables, scoping, &aNillable, &aInit);
         if(ERR)
             return ERR;
         

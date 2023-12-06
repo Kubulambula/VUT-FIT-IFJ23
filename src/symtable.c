@@ -3,6 +3,20 @@
 #include "symtable.h"
 #include <stdio.h>
 
+void print_symtable(SymTable* symtable)
+{
+    while(symtable != NULL)
+    {
+        fprintf(stderr, "\n-------------\n");
+        for (int i = 0; i < symtable->size+1; i++)
+        {
+            if(symtable->table[i] != NULL)
+                fprintf(stderr, "%d:'%s'\n",symtable->table[i]->scope,symtable->table[i]->name);
+        }
+        fprintf(stderr, "---------------\n");
+        symtable = symtable->previous;
+    }
+}
 
 Symbol* Symbol_new(){
     Symbol* symbol = (Symbol*)malloc(sizeof(Symbol));

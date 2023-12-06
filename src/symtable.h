@@ -36,6 +36,7 @@ Symbol* Symbol_copy(Symbol* to_copy);
 
 void Symbol_free(Symbol* symbol);
 
+void print_symtable(SymTable* symtable);
 
 typedef struct SymTable_t{
     Symbol** table;  // pointer to symbol table
