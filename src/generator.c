@@ -369,7 +369,7 @@ Error generate_if_let(ASTNode* if_let, SymTable* symtable){
 
     ASTNode* if_else_bodies = (ASTNode*)(if_let->b);
 
-    printf(IF_LET_START, (char*)(if_let->a), available_label_index);
+    printf(IF_LET_START, SymTable_get(symtable, (char*)(if_let->a)) == NULL ? "LF" : "GF" , (char*)(if_let->a), available_label_index);
 
     // generate false (else) branch first
     ERR = generate_statements((ASTNode*)(if_else_bodies->b), symtable);
