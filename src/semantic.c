@@ -203,7 +203,6 @@ Error appendScope(char**name,int scope)
 
 
 static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*codeTable, Type expected_type,int* scope, bool* returned, bool nilable_return,bool second_pass){
-    fprintf(stderr,"%d %s\n",statement->type,((ASTNode*)statement->b)->a);
     Symbol *generatedSymbol, *target;
     Type expReturnType;
     bool expNillable;
@@ -558,7 +557,6 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     ASTNode* main_body = code_tree->b;
     while(main_body != NULL && (((ASTNode*)main_body->a)->type == VAR_DEF || ((ASTNode*)main_body->a)->type == LET_DEF))
         main_body=main_body->b;
-    print_symtable(codeTable);
     //start body check
     bool returning = false;
     scope = 0;
@@ -568,6 +566,7 @@ Error semantic(ASTNode *code_tree, SymTable* codeTable){
     if (ERR)
         return ERR;
 
+    print_symtable(codeTable);
     return OK;
 }
 
