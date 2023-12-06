@@ -315,6 +315,18 @@ Error handle_expression(exp_node* node, SymTable* tables, Type* returnType, SymT
         *returnType = aType;
         *nillable = false;
         return OK;
+    
+    case TOKEN_CONCATENATE:
+        // concatenate was already checked
+        *returnType = TYPE_STRING;
+        *nillable = false;
+        return OK;
+    
+    case TOKEN_OPERATOR_I_DIVISION:
+        // IDIV was already checked
+        *returnType = TYPE_INT;
+        *nillable = false;
+        return OK;
 
     default:
         fprintf(stderr, "Unhandled operator in expression\n");
