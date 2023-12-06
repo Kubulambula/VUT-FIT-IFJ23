@@ -32,7 +32,7 @@ verbose:
 
 
 run:
-	./$(EXECUTABLE)
+	make && ./$(EXECUTABLE) < test.ifj23 > code.ifjcode && ./external/ic23int_linux/ic23int ./code.ifjcode && echo
 
 
 # make test - runs all tests
