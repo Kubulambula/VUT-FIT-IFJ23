@@ -386,7 +386,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if(expReturnType != TYPE_BOOL)
             return ERR_SEMATIC_INCOMPATIBLE_TYPES;
 
-        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,returned,nilable_return,second_pass,false);
+        ERR = handle_statements(statement->b,tables,codeTable,expected_type,scope,&aReturned,nilable_return,second_pass,false);
         if (ERR)
             return ERR;
         return OK;
