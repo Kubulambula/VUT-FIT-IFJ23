@@ -72,54 +72,55 @@
 
 // ----- CONVERSION FUNCTIONS ------
 #define FUNC_Int2Double \
-	"\n\n# Function Int2Double(_ term: Int)->Double (built-in)"\
+	"\n\n# Function Int2Double(_ term$1: Int)->Double (built-in)"\
 	"\nLABEL		Int2Double"\
 	"\nDEFVAR		LF@valDouble"\
-	"\nINT2FLOAT	LF@valDouble LF@term"\
+	"\nINT2FLOAT	LF@valDouble LF@term$1"\
 	"\nPUSHS		LF@valDouble"\
 	"\nRETURN\n"
 
 #define FUNC_Double2Int \
-	"\n\n# Function Double2Int(_ term: Double)->Int (built-in)"\
+	"\n\n# Function Double2Int(_ term$1: Double)->Int (built-in)"\
 	"\nLABEL		Double2Int"\
 	"\nDEFVAR		LF@valInt"\
-	"\nFLOAT2INT	LF@valInt LF@term"\
+	"\nFLOAT2INT	LF@valInt LF@term$1"\
 	"\nPUSHS		LF@valInt"\
 	"\nRETURN\n"
 
 // ----- STRING FUNCTIONS -----
 #define FUNC_length \
-	"\n\n# Function length(_ s: String)->Int (built-in)"\
+	"\n\n# Function length(_ s$1: String)->Int (built-in)"\
 	"\nLABEL		length"\
 	"\nDEFVAR		LF@len"\
-	"\nSTRLEN		LF@len LF@s"\
+	"\nSTRLEN		LF@len LF@s$1"\
 	"\nPUSHS		LF@len"\
 	"\nRETURN\n"
 
 #define FUNC_substring \
-	"\n\n# Function substring(of s: String, startingAt i: Int, endingBefore j: Int)->String? (built-in)"\
+	"\n\n# Function substring(of s$1: String, startingAt i$1: Int, endingBefore j$1: Int)->String? (built-in)"\
 	"\nLABEL		substring"\
 	"\n# Check for initial conditions to determine if we should return nil"\
 	"\nDEFVAR		LF@condition"\
-	"\nLT		LF@condition LF@i int@0 # Check if i < 0"\
+	"\nLT		LF@condition LF@i$1 int@0 # Check if i < 0"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
-	"\nLT		LF@condition LF@j int@0 # Check if j < 0"\
+	"\nLT		LF@condition LF@j$1 int@0 # Check if j < 0"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
-	"\nGT		LF@condition LF@i LF@j # Check if i > j"\
+	"\nGT		LF@condition LF@i$1 LF@j$1 # Check if i > j"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\nDEFVAR		LF@len"\
-	"\nSTRLEN		LF@len LF@s # don't call length() for simplicity"\
-	"\nLT		LF@condition LF@i LF@len # Check if i < len"\
+	"\nSTRLEN		LF@len LF@s$1 # don't call length() for simplicity"\
+	"\nLT		LF@condition LF@i$1 LF@len # Check if i < len"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@false # Invert the condition to i >= len"\
-	"\nGT		LF@condition LF@j LF@len # Check if j > len"\
+	"\nGT		LF@condition LF@j$1 LF@len # Check if j > len"\
 	"\nJUMPIFEQ	substring_return_nil LF@condition bool@true"\
 	"\n# Initial conditions passed. Now run the substring"\
 	"\nDEFVAR		LF@substr # Variable with the substring to be returned"\
+	"\nMOVE		LF@substr string@"\
 	"\nDEFVAR		LF@c # Helper variable with current char"\
 	"\nLABEL		substringWhile"\
-	"\nJUMPIFEQ	substringWhileBreak LF@i LF@j # if i == j goto substringWhileBreak"\
-	"\nGETCHAR		LF@c LF@s LF@i # c = s[i]"\
-	"\nADD		LF@i LF@i int@1 # i++"\
+	"\nJUMPIFEQ	substringWhileBreak LF@i$1 LF@j$1 # if i == j goto substringWhileBreak"\
+	"\nGETCHAR		LF@c LF@s$1 LF@i$1 # c = s[i]"\
+	"\nADD		LF@i$1 LF@i$1 int@1 # i++"\
 	"\nCONCAT		LF@substr LF@substr LF@c # substr = substr + c"\
 	"\nJUMP		substringWhile"\
 	"\nLABEL		substringWhileBreak"\
@@ -130,13 +131,13 @@
 	"\nRETURN\n"
 
 #define FUNC_ord \
-	"\n\n# Function ord(_ c: String)->Int (built-in)"\
+	"\n\n# Function ord(_ c$1: String)->Int (built-in)"\
 	"\nLABEL		ord"\
 	"\nDEFVAR		LF@len"\
-	"\nSTRLEN		LF@len LF@c"\
+	"\nSTRLEN		LF@len LF@c$1"\
 	"\nJUMPIFEQ	ord_return_zero LF@len int@0"\
 	"\nDEFVAR		LF@ordVal"\
-	"\nSTRI2INT	LF@ordVal LF@c int@0"\
+	"\nSTRI2INT	LF@ordVal LF@c$1 int@0"\
 	"\nPUSHS		LF@ordVal"\
 	"\nRETURN"\
 	"\nLABEL		ord_return_zero"\
@@ -144,10 +145,10 @@
 	"\nRETURN\n"
 
 #define FUNC_chr \
-	"\n\n# Function chr(_ i: Int)->String (built-in)"\
+	"\n\n# Function chr(_ i$1: Int)->String (built-in)"\
 	"\nLABEL		chr"\
 	"\nDEFVAR		LF@chrVal"\
-	"\nINT2CHAR	LF@chrVal LF@i"\
+	"\nINT2CHAR	LF@chrVal LF@i$1"\
 	"\nPUSHS		LF@chrVal"\
 	"\nRETURN\n"
 
