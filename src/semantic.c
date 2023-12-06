@@ -443,13 +443,17 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                 if(expReturnType == TYPE_NIL && !nilable_return)
                     return ERR_SEMATIC_BAD_FUNC_RETURN_TYPE;
                 if(expReturnType == TYPE_NIL)
+                {
+                    *returned = true;
                     return OK;
+                }
                 if(expReturnType != expected_type)
                     return ERR_SEMATIC_BAD_FUNC_RETURN_TYPE;
                 if(expNillable && !nilable_return)
                     return ERR_SEMATIC_BAD_FUNC_RETURN_TYPE;
                 break;
         }
+        *returned = true;
         return OK;
     default:
         return ERR_INTERNAL;
