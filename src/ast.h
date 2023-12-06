@@ -1,7 +1,6 @@
 #ifndef AST_H
 #define AST_H
 
-// #include "symtable.h"
 #include "lexer.h"
 #include "syntax_precedent.h"
 
@@ -45,16 +44,14 @@ typedef enum {
     ASSIGN, // a is variable name & b is EXPRESSION
     
     FUNC_CALL, // a is funcion name and b is FUNC_ARGS
-        // >>>>> This could be reworked to be the same as FuncDefArg <<<<<
         FUNC_CALL_ARGS, // a is FUNC_ARG & b is FUNC_ARGS or NULL if this was the last arg
             FUNC_CALL_ARG, // a is name b is expression with value
     
     IFELSE, // a is expression condition, b IFELSE_BODIES
+    IF_LET, // a is variable name, b is IFELSE_BODIES
         IFELSE_BODIES, // a is true branch & b is false (else) branch. a & b are STATEMENTs
     WHILE, // a is expression condition and b is STATEMENT
 
-    CHECK_IF_LET, // a is variable name,b is IFELSE_BODIES
-    // ^^^ o tomto se musime poradit na meetingu ^^^ - alternativy, jak to vyresit?
     
     RETURN, // a is expression - some operator & b is NULL
 
@@ -96,9 +93,6 @@ static inline void print_astnode_as_string(ASTNodeType t){}
 #endif
 
 
-
-
-
 // One magical struct to rule them all
 typedef struct{
     ASTNodeType type;
@@ -107,31 +101,9 @@ typedef struct{
 } ASTNode;
 
 
-// // Union literalu
-// union literalValue{
-//     int i;
-//     double d;
-//     char* s;
-//     Token t;
-// };
-
-
-// // Struktura uzlu výrazu
-// typedef struct{
-//     Token type;                 // typ uzlu
-//     union literalValue value;   // hodnota uzlu, v případě že jde o literál
-//     exp_node* left;             // levý potomek
-//     exp_node* right;            // pravý potomek
-// } exp_node;
-
-
 FuncDefArg* FuncDefArg_new();
 
 void FuncDefArg_free(FuncDefArg* arg);
-
-// FuncDefArg** Symbol_get_free_arg_p(Symbol* symbol);
-// FuncDefArg* FuncDefArg_get_last_arg(FuncDefArg* arg);
-
 
 ASTNode* ASTNode_new(ASTNodeType type);
 

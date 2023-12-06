@@ -32,7 +32,7 @@ Error syntax(ASTNode** tree){
 }
 
 
-// add built in function to AST to make semantic life easier
+// add built-in function to AST to make semantic easier
 Error generate_built_in_function_definitions(ASTNode* root){
 	ERR = generate_built_in_readString((ASTNode**)&(ASTNode_find_leftmost_node(root)->a));
 	if (ERR)
@@ -1016,7 +1016,7 @@ Error ll_if(BufferString* buffer_string, ASTNode** tree){
 	
 	GET_TOKEN(true);
 	if (CURRENT_TOKEN == TOKEN_KEYWORD_LET){
-		*tree = ASTNode_new(CHECK_IF_LET);
+		*tree = ASTNode_new(IF_LET);
 		if (*tree == NULL)
 			return ERR_INTERNAL;
 		(*tree)->b = (void*)bodies;

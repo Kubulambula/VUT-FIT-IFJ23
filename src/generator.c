@@ -306,7 +306,7 @@ Error generate_statements(ASTNode* statement, SymTable* symtable){
                     return ERR;
                 break;
             
-            case CHECK_IF_LET:
+            case IF_LET:
                 ERR = generate_if_let((ASTNode*)(statement->a), symtable);
                 if (ERR)
                     return ERR;

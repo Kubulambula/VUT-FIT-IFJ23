@@ -5,7 +5,6 @@
 #include "buffer_string.h"
 #include "ast.h"
 #include "semantic.h"
-
 #include "lexer.h"
 #include "syntax_ll.h"
 #include "generator.h"
@@ -14,17 +13,16 @@
 int main(void) {
 	initLexer(stdin);
 	
-	Error err = OK;
 	ASTNode* ast;
+    SymTable *symtable;
 
-	err = syntax(&ast);
-	if (err){
-		fprintf(stderr, "Syntax ERR: %d\n", err);
+	ERR = syntax(&ast);
+	if (ERR){
 		// syntax() frees the ast if it encounters an error automatically
-		return err;
+		return ERR;
 	}
 
-    SymTable *symtable = (SymTable*)malloc(sizeof(SymTable));
+	symtable = (SymTable*)malloc(sizeof(SymTable));
     if(symtable == NULL){
 		ASTNode_free(ast);
         return ERR_INTERNAL;
@@ -35,28 +33,18 @@ int main(void) {
 		return ERR_INTERNAL;
 	}
 
-
-	err = semantic(ast, symtable);
-	if (err){
-		fprintf(stderr, "Semantic ERR: %d\n", err);
+	ERR = semantic(ast, symtable);
+	if (ERR){
 		ASTNode_free(ast);
 		SymTable_free(symtable);
-		return err;
+		// free(symtable) // SymTable_free() frees the pointer as well
+		return ERR;
 	}
 
-
-	err = generate_code(ast, symtable);
-	if (err)
-		fprintf(stderr, "Code generation ERR: %d\n", err);
+	ERR = generate_code(ast, symtable);
 	
 	SymTable_free(symtable);
-	
-
 	ASTNode_free(ast);
-	if (err == OK)
-		fprintf(stderr, "ERR: %d - good job!\n", err); // should be ok
-	else
-		fprintf(stderr, "ERR: %d\n", err);
 
-	return OK;
+	return ERR;
 }

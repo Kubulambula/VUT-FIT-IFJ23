@@ -36,7 +36,6 @@ Symbol* Symbol_copy(Symbol* to_copy);
 
 void Symbol_free(Symbol* symbol);
 
-void print_symtable(SymTable* symtable);
 
 typedef struct SymTable_t{
     Symbol** table;  // pointer to symbol table
@@ -54,6 +53,8 @@ typedef struct SymTable_t{
  * @returns true/false if the allocation was successfull 
 */
 bool SymTable_init(SymTable* symTable);
+
+void SymTable_print(SymTable* symtable);
 
 /**
  * Deletes all symbols in table and frees the memory 
@@ -82,4 +83,5 @@ Error SymTable_insert(SymTable* symTable, Symbol* symbol);
 Symbol* SymTable_get(SymTable* symTable, char* name);
 
 Symbol* SymTable_get_recurse(SymTable* symTable,char*name);
+
 #endif
