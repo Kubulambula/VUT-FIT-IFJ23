@@ -275,6 +275,11 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                 return ERR;
             }
             
+            // change the name to varname$scope
+            ERR = appendScope((char**)&((ASTNode*)statement->b)->a, *scope);
+            if (ERR)
+                return ERR;
+            
             //insert into code table if comming from rearange
             if(*scope == 0 || second_pass)
             {
@@ -293,10 +298,6 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
                 }
             }
 
-            // change the name to varname$scope
-            ERR = appendScope((char**)&((ASTNode*)statement->b)->a, *scope);
-            if (ERR)
-                return ERR;
         }
                
             
