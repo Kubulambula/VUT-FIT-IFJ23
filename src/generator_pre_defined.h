@@ -26,14 +26,6 @@
 	"\nLABEL		$main\n"
 
 
-// #define FUNC_DEFINITIONS
-// 	"\n# Built-in function definitnions:"
-// 	FUNCTIONS_BUILT_IN
-// 	"\n# User function definitions:"
-// 	Err err = generate_user_functions();
-// 	if (err)
-// 		return err;
-
 #define FOOTER \
 	"\n\nEXIT		GF@$exitCode\n"
 

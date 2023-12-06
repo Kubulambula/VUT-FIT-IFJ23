@@ -396,7 +396,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
         if(aReturned && bReturned)
             *returned = true;
         return OK;
-    case CHECK_IF_LET:
+    case IF_LET:
         target = SymTable_get_recurse(tables,statement->a);
     
         if (target == NULL || target->symbol_type != LET)   //CHECK WITH TEAM
@@ -685,7 +685,7 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
             statement = (ASTNode**)&((*statement)->b);
             continue;
         }
-        if(((ASTNode*)((*statement)->a))->type == CHECK_IF_LET)
+        if(((ASTNode*)((*statement)->a))->type == IF_LET)
         {
             bool modified_nillable,init_modified = false;
             Symbol* target = SymTable_get(globalTable,((ASTNode*)(*statement)->a)->a);

@@ -3,7 +3,8 @@
 #include "symtable.h"
 #include <stdio.h>
 
-void print_symtable(SymTable* symtable)
+#ifndef NDEBUG
+void SymTable_print(SymTable* symtable)
 {
     while(symtable != NULL)
     {
@@ -17,6 +18,10 @@ void print_symtable(SymTable* symtable)
         symtable = symtable->previous;
     }
 }
+#else
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void SymTable_print(SymTable* symtable){}
+#endif
 
 Symbol* Symbol_new(){
     Symbol* symbol = (Symbol*)malloc(sizeof(Symbol));
@@ -192,6 +197,8 @@ Symbol* SymTable_get(SymTable* symTable, char* name)
    
     return NULL;
 }
+
+
 Symbol* SymTable_get_recurse(SymTable* symTable,char*name)
 {
     while(symTable != NULL)

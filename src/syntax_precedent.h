@@ -4,15 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "lexer.h"
-// #include "ast.h"
-// #include "syntax_ll.h"
 
-// Union literálů
-// union literalValue{
-//     int i;      
-//     double d;
-//     char* s;
-// };
 
 // Union literalu
 union literalValue{

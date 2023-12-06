@@ -5,6 +5,7 @@
 #include "lexer.h"
 
 #define STACK_SIZE 10
+
 bool ENDING_IDENTIFIER_FLAG = false;
 Token TEMP_TOKEN;
 
