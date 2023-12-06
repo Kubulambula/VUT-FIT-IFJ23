@@ -535,7 +535,7 @@ Error generate_assing(ASTNode* assign, SymTable* symtable){
     if (ERR)
         return ERR;
     
-    printf((is_global ? "\nPOPS        GF@%s" : "\nPOPS        LF@%s"), (char*)(assign->a));
+    printf(is_global ? "\nPOPS        GF@%s" : "\nPOPS        LF@%s", (char*)(assign->a));
     return OK;
 }
 
