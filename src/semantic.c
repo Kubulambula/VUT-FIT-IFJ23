@@ -27,29 +27,21 @@ void prin()
     fprintf(stderr, "here\n");
 }
 Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable* codeTable, bool* nillable){
-   
+    
     int scope = 0;
     
+
     // get the global table
     SymTable* global = tables;
     while(global->previous != NULL)
         global = global->previous;
 
-    //check if function exists
+    //check if function exists in global table
     Symbol* target = SymTable_get(global, (char*)(func->a));
     if(target == NULL || target->symbol_type != FUNCTION)
         return ERR_SEMATIC_UNDEFINED_FUNC;
     
 
-    // init argument symtable
-    scope++;
-    SymTable* argSymTable = malloc(sizeof(SymTable)); 
-    if(argSymTable == NULL)
-        return ERR_INTERNAL;
-    if(!SymTable_init(argSymTable)){
-        free(argSymTable);
-        return ERR_INTERNAL;
-    }
     
     // check if function is write() - it is an exception with variable number of args
     if(strcmp(func->a, "write") == 0){
@@ -71,63 +63,58 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         return OK;
     }
 
+   
+
+
+    // init argument symtable
+    scope++;
+    SymTable* argSymTable = malloc(sizeof(SymTable)); 
+    if(argSymTable == NULL)
+        return ERR_INTERNAL;
+    if(!SymTable_init(argSymTable)){
+        free(argSymTable);
+        return ERR_INTERNAL;
+    }
+    argSymTable->previous = global;
+
 
 
     // arg check for other functions
-    ASTNode* arg = func->b;
-    FuncDefArg* symTable_arg = target->args;
+    ASTNode* func_call_arg = func->b;
+    FuncDefArg* func_def_arg = target->args;
     // check the number of args and their types
-    while(arg != NULL && symTable_arg != NULL)
+    while(func_call_arg != NULL && func_def_arg != NULL)
     {
-        if(symTable_arg->name == NULL || ((ASTNode*)arg->a)->a == NULL)
+        if(func_def_arg->name == NULL || ((ASTNode*)func_call_arg->a)->a == NULL)
         {
-            if(symTable_arg->name != NULL || ((ASTNode*)arg->a)->a != NULL)
+            if(func_def_arg->name != NULL || ((ASTNode*)func_call_arg->a)->a != NULL)
                 return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         }
-        else if(strcmp(symTable_arg->name,((ASTNode*)arg->a)->a) != 0)
+        else if(strcmp(func_def_arg->name,((ASTNode*)func_call_arg->a)->a) != 0)
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         Type arg_type;
         bool arg_nilable;
-        ERR = handle_expression(((ASTNode*)arg->a)->b, tables, &arg_type, codeTable, scope, &arg_nilable);
+        ERR = handle_expression(((ASTNode*)func_call_arg->a)->b, tables, &arg_type, codeTable, scope, &arg_nilable);
         if(ERR)
             return ERR;
-
-        if (arg_type != symTable_arg->type)  // check arg type
+        if (arg_type != func_def_arg->type)  // check arg type
+            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
+    
+        
+        if (arg_nilable && !func_def_arg->nilable) // check if expression is nilable, but arg isnt
             return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
         
-        if (arg_nilable && !symTable_arg->nilable) // check if expression is nilable, but arg isnt
-            return ERR_SEMATIC_BAD_FUNC_ARG_TYPE;
-        
-        ERR = appendScope((char**)&((ASTNode*)arg->a)->a,1);
-        if (ERR)
-            return ERR;
-        symTable_arg = symTable_arg->next;
-        arg = arg->b;
-    }
-
-     
-    if(arg != NULL || symTable_arg != NULL)
-        return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
-    
-    *returnType = target->type;
-    *nillable = target->nilable;
-
-    
-    
-    //check function args
-  
-    argSymTable->previous = global;
-    while (symTable_arg != NULL)
-    {
+        //creating symbol for func def arg
         Symbol* argVar = Symbol_new();
         if(argVar == NULL){
             SymTable_free(argSymTable);
             return ERR_INTERNAL;
         }
         argVar->initialized=true;
-        
-        
-        char* dollar = strstr(symTable_arg->name, "$");
+
+
+
+        char* dollar = strstr(func_def_arg->identifier, "$");
         if(dollar != NULL)   // if jmeno promene obsahuje $
             *dollar = '\0';   // potom $ -> '\0'
         else
@@ -136,14 +123,15 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
             SymTable_free(argSymTable);
             return ERR_INTERNAL;
         }
-        argVar->name = malloc(strlen(symTable_arg->name)+1);
-        strcpy(argVar->name,symTable_arg->name);
+
+        argVar->name = malloc(strlen(func_def_arg->identifier)+1);
+        strcpy(argVar->name,func_def_arg->identifier);
         *dollar = '$';
 
-        argVar->nilable=symTable_arg->nilable;
+        argVar->nilable=func_def_arg->nilable;
         argVar->scope=scope;
         argVar->symbol_type=LET;
-        argVar->type=symTable_arg->type;
+        argVar->type=func_def_arg->type;
         ERR = SymTable_insert(argSymTable,argVar);
         if(ERR)
         {
@@ -151,9 +139,24 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
             SymTable_free(argSymTable);
             return ERR;
         }
-        symTable_arg= symTable_arg->next;
+
+        func_def_arg = func_def_arg->next;
+        func_call_arg = func_call_arg->b;
     }
 
+     
+    if(func_call_arg != NULL || func_def_arg != NULL)
+    {
+        SymTable_free(argSymTable);
+        return ERR_SEMATIC_BAD_FUNC_ARG_COUNT;
+    }
+    
+    *returnType = target->type;
+    *nillable = target->nilable;
+
+    
+    
+  
     bool skip = false;
     const char predefined[10][11]= {"write","readString","readInt","readDouble","Int2Double","Double2Int","length","substring","ord","chr"};
     for (int i = 0; i < 11; i++)
@@ -167,11 +170,8 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
         bool returning;
         ERR = handle_statements(target->func_def->b,argSymTable,codeTable,target->type,&scope,&returning,target->nilable,target->initialized,false);
         SymTable_free(argSymTable);
-        
         if(ERR)
             return ERR;
-
-
 
         //returning check
         if(target->type != TYPE_NIL)
@@ -181,7 +181,6 @@ Error funcCallCheck(ASTNode* func, Type* returnType, SymTable* tables, SymTable*
 
     target->initialized=true;
     return OK;
-
 }
 
 Error appendScope(char**name,int scope)
@@ -459,8 +458,7 @@ static Error handle_statement(ASTNode* statement ,SymTable* tables, SymTable*cod
 }
 
 Error handle_statements(ASTNode* statement, SymTable* tables, SymTable* codeTable, Type expected_type, int* scope, bool* returned, bool nilable_return,bool second_pass,bool main){
-    print_symtable(tables);
-    print_symtable(codeTable);
+  
     SymTable* localTable;
     if(!main)
     {
@@ -652,7 +650,7 @@ Error rearrange_global_statements(ASTNode* root, SymTable* codeTable, SymTable* 
             statement = (ASTNode**)&(assign_statement->b);
         }else{
             // set statement to check after the original statement
-            statement = (ASTNode**)&(def_statement->b);
+            *statement = (def_statement->b);
         }
 
         //insert into global table
