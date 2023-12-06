@@ -458,7 +458,7 @@ Error generate_var_def(ASTNode* var_let_def, SymTable* symtable){
 }
 
 Error generate_func_call(ASTNode* func_call, SymTable* symtable){
-    printf("\n# === call %s() ===\nPUSHFRAME\nCREATEFRAME", (char*)(func_call->a));
+    printf("\n# === call %s() ===\nCREATEFRAME", (char*)(func_call->a));
 
     // write() is a special little function with args on the stack
     if (strcmp((char*)(func_call->a), "write") == 0){
@@ -468,7 +468,6 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
             return ERR;
         
         printf("\nDEFVAR		TF@argCnt");
-
         printf("\nMOVE		TF@argCnt int@%d", args_on_stack);
 
     } else {
@@ -480,7 +479,7 @@ Error generate_func_call(ASTNode* func_call, SymTable* symtable){
         generate_func_call_args((ASTNode*)(func_call->b), func->args, symtable);
     }
 
-    printf("\nPUSHFRAME\nCALL		%s\nPOPFRAME\nPOPFRAME\n# === end call %s() ===", (char*)(func_call->a), (char*)(func_call->a));
+    printf("\nPUSHFRAME\nCALL		%s\nPOPFRAME\n# === end call %s() ===", (char*)(func_call->a), (char*)(func_call->a));
     return OK;
 }
 
@@ -497,9 +496,11 @@ Error generate_func_call_args(ASTNode* func_call_args, FuncDefArg* arg, SymTable
 
 
 Error generate_func_call_arg(ASTNode* func_call_arg, FuncDefArg* arg, SymTable* symtable){
+    printf("\nPUSHFRAME"); // protect out TF
     ERR = generate_expression((exp_node*)(func_call_arg->b), symtable);
     if (ERR)
         return ERR;
+    printf("\nPOPFRAME");
     
     printf("\nDEFVAR  TF@%s", arg->identifier);
     printf("\nPOPS    TF@%s", arg->identifier);

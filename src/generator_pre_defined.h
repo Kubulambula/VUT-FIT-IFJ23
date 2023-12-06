@@ -17,7 +17,6 @@
 	"\nDEFVAR		GF@$exitCode # Exit code for the program"\
 	"\nMOVE		GF@$exitCode int@0"\
 	"\n"\
-	"\nCREATEFRAME # safeguard frame"\
 	"\nJUMP		$main # Jump behind all those function definitions"\
 	"\n"
 
