@@ -418,6 +418,7 @@ Error generate_return(ASTNode* ret, SymTable* symtable){
     return OK;
 }
 
+
 Error generate_assign(ASTNode* assign, SymTable* symtable){
     printf("\n# === assign to %s ===", (char*)(assign->a));
     
@@ -425,16 +426,9 @@ Error generate_assign(ASTNode* assign, SymTable* symtable){
     ERR = generate_expression((exp_node*)(assign->b), symtable);
     if (ERR)
         return ERR;
-
-    // detect the frame
-    char frame_name[3];
-    if (SymTable_get(symtable, (char*)(assign->a)) == NULL)
-        strcpy(frame_name, "LF");
-    else
-        strcpy(frame_name, "GF");
     
     // write the code - pop the value from stack
-    printf("\nPOPS		%s@%s # pop the value to the variable\n# === assign to %s end ===", frame_name, (char*)(assign->a), (char*)(assign->a));
+    printf("\nPOPS		%s@%s # pop the value to the variable\n# === assign to %s end ===", SymTable_get(symtable, (char*)(assign->a)) == NULL ? "LF" : "GF", (char*)(assign->a), (char*)(assign->a));
     return OK;
 }
 
@@ -444,20 +438,13 @@ Error generate_var_def(ASTNode* var_let_def, SymTable* symtable){
     ASTNode* head = (ASTNode*)(var_let_def->b);
     // create the variable
     printf("\n# === Create var %s ===", (char*)(head->a));
-    // detect the frame
-    char frame_name[3];
-    if (SymTable_get(symtable, (char*)(head->a)) == NULL)
-        strcpy(frame_name, "LF");
-    else
-        strcpy(frame_name, "GF");
-    printf("\nDEFVAR		%s@%s", frame_name, (char*)(head->a));
+    printf("\nDEFVAR		%s@%s", SymTable_get(symtable, (char*)(head->a)) == NULL ? "LF" : "GF", (char*)(head->a));
 
-    if (head->b == NULL)
-        return OK; // no assignment expression
-    
+    // no initial expression
     if (head->b == NULL){
-        // TODO - check in symtable if type is nilable. If it is, init it implicitly to nil
-        return OK; // no initial expression
+        if ((bool)(((ASTNode*)(var_let_def->a))->b) == true) // if var is nilable - implicit nil initialization
+            printf("\nMOVE      %s@%s nil@nil", SymTable_get(symtable, (char*)(head->a)) == NULL ? "LF" : "GF", (char*)(head->a));
+        return OK;
     }
     printf("\n# === inicialize var %s ===", (char*)(head->a));
     // evaluate the expression
@@ -466,8 +453,7 @@ Error generate_var_def(ASTNode* var_let_def, SymTable* symtable){
         return ERR;
     
     // assign the expression value to the variable
-    printf("\nPOPS		%s@%s", frame_name, (char*)(head->a));
-
+    printf("\nPOPS		%s@%s", SymTable_get(symtable, (char*)(head->a)) == NULL ? "LF" : "GF", (char*)(head->a));
     return OK;
 }
 
