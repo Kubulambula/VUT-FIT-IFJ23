@@ -6,15 +6,17 @@ CFLAGS_WERROR = -std=c99 -Wall -Wextra -Werror -pedantic
 CFLAGS_DEBUG = -std=c99 -Wall -Wextra -pedantic
 CFLAGS_VERBOSE = -std=c99 -Wall -Wextra -pedantic -DVERBOSE
 
-EXECUTABLE = ifj23compiler
+EXECUTABLE = ./ifj23compiler
 
 TEST_DIR = .testdir
 
 
 # make - compiles ifj23compiler
 default:
-	$(CC) $(CFLAGS) -o $(EXECUTABLE) ./src/*.c
+	$(CC) $(CFLAGS) -o $(EXECUTABLE) ./*.c
 
+src:
+	$(CC) $(CFLAGS) -o $(EXECUTABLE) ./src/*.c
 
 # make debug - just like make, but compiles with debug
 debug:
